@@ -11,7 +11,7 @@ export class HungerSystem {
       this.accumulatedTime -= this.UPDATE_INTERVAL;
 
       const store = useGameStore.getState();
-      const decreaseRate = 1 + playerLevel * 0.1;
+      const decreaseRate = 1.2 + playerLevel * 0.12; // 레벨당 감소율 증가
       const newHunger = store.hunger - decreaseRate;
 
       store.setHunger(newHunger);

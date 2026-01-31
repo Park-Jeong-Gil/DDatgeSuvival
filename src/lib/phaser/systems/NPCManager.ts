@@ -123,22 +123,39 @@ export class NPCManager {
     playerY: number,
   ): { x: number; y: number } {
     const margin = 100;
-    const minDistFromPlayer = GAME_WIDTH / 2 + 50;
+    // Rectangular check matching camera bounds + 100px buffer
+    const halfW = GAME_WIDTH / 2 + 100;
+    const halfH = GAME_HEIGHT / 2 + 100;
 
-    for (let attempt = 0; attempt < 20; attempt++) {
+    for (let attempt = 0; attempt < 30; attempt++) {
       const x = margin + Math.random() * (MAP_WIDTH - margin * 2);
       const y = margin + Math.random() * (MAP_HEIGHT - margin * 2);
 
-      const dist = Phaser.Math.Distance.Between(playerX, playerY, x, y);
-      if (dist > minDistFromPlayer) {
-        return { x, y };
+      // Reject if within camera view + 100px buffer
+      if (
+        Math.abs(x - playerX) < halfW &&
+        Math.abs(y - playerY) < halfH
+      ) {
+        continue;
       }
+
+      return { x, y };
     }
 
-    // Fallback: random position
+    // Fallback: guaranteed off-screen spawn
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 800;
     return {
-      x: margin + Math.random() * (MAP_WIDTH - margin * 2),
-      y: margin + Math.random() * (MAP_HEIGHT - margin * 2),
+      x: Phaser.Math.Clamp(
+        playerX + Math.cos(angle) * dist,
+        margin,
+        MAP_WIDTH - margin,
+      ),
+      y: Phaser.Math.Clamp(
+        playerY + Math.sin(angle) * dist,
+        margin,
+        MAP_HEIGHT - margin,
+      ),
     };
   }
 
@@ -155,7 +172,7 @@ export class NPCManager {
   private getTargetCount(npcLevel: number, playerLevel: number): number {
     const diff = npcLevel - playerLevel;
     const absDiff = Math.abs(diff);
-
+    // 개체수 조절 로직
     // Prey (lower level) gets higher counts than predators
     if (diff < 0) {
       // Edible NPCs - spawn more
@@ -167,9 +184,9 @@ export class NPCManager {
       return 20;
     } else {
       // Predators - spawn fewer
-      if (absDiff === 1) return 3;
-      if (absDiff === 2) return 2;
-      if (absDiff === 3) return 1;
+      if (absDiff === 1) return 6;
+      if (absDiff === 2) return 4;
+      if (absDiff === 3) return 2;
     }
     return 0;
   }

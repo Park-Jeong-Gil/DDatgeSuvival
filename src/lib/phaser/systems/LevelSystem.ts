@@ -4,7 +4,7 @@ import type { Player } from "../entities/Player";
 
 export class LevelSystem {
   static getRequiredScore(level: number): number {
-    return level * 100 + 50;
+    return level * 50 + 25;
   }
 
   static getTotalScoreForLevel(level: number): number {

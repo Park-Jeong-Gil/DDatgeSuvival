@@ -15,13 +15,13 @@ export function generateMap(scene: Phaser.Scene): MapElements {
   const safeRadius = 200;
 
   // Trees
-  placeObjects(scene, obstacles, "obstacle_tree", 120, centerX, centerY, safeRadius);
+  placeObjects(scene, obstacles, "obstacle_tree", 60, centerX, centerY, safeRadius);
 
   // Rocks
-  placeObjects(scene, obstacles, "obstacle_rock", 80, centerX, centerY, safeRadius);
+  placeObjects(scene, obstacles, "obstacle_rock", 40, centerX, centerY, safeRadius);
 
   // Bushes (player can enter, speed reduction)
-  placeObjects(scene, bushes, "obstacle_bush", 60, centerX, centerY, safeRadius);
+  placeObjects(scene, bushes, "obstacle_bush", 30, centerX, centerY, safeRadius);
 
   return { obstacles, bushes };
 }
