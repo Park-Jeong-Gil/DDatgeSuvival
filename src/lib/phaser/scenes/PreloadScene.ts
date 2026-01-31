@@ -50,8 +50,7 @@ export class PreloadScene extends Phaser.Scene {
     for (const [level, color] of Object.entries(npcColors)) {
       const g = this.add.graphics();
       g.fillStyle(color, 1);
-      const size = 16 + Number(level) * 2;
-      const actualSize = level === "99" ? 128 : size;
+      const actualSize = level === "99" ? 128 : 32;
       g.fillRect(0, 0, actualSize, actualSize);
       g.generateTexture(`npc_${level}`, actualSize, actualSize);
       g.destroy();

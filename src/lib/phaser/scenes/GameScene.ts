@@ -30,6 +30,7 @@ export class GameScene extends Phaser.Scene {
   private survivalTimer: number = 0;
   private isGameOver: boolean = false;
   private inBush: boolean = false;
+  private invincibleUntil: number = 0;
 
   constructor() {
     super({ key: "GameScene" });
@@ -149,11 +150,18 @@ export class GameScene extends Phaser.Scene {
     this.handlePlayerMovement();
 
     // Systems update
-    this.hungerSystem.update(delta, store.level);
-    this.levelSystem.checkLevelUp(this.player);
-    this.npcManager.update(
+    this.hungerSystem.update(
       delta,
       store.level,
+      this.itemManager.getHungerDecreaseMultiplier()
+    );
+    this.levelSystem.checkLevelUp(this.player);
+
+    // Re-read level after potential level-up to keep NPC labels in sync
+    const currentLevel = useGameStore.getState().level;
+    this.npcManager.update(
+      delta,
+      currentLevel,
       this.player.currentSpeed,
       this.player.x,
       this.player.y,
@@ -219,6 +227,7 @@ export class GameScene extends Phaser.Scene {
       this.handleKnockback(npc);
     } else if (FoodChain.mustFlee(playerLevel, npcLevel)) {
       if (this.itemManager.isPlayerInvincible()) return;
+      if (this.time.now < this.invincibleUntil) return;
       this.handleGameOver("predator");
     }
   }
@@ -240,6 +249,9 @@ export class GameScene extends Phaser.Scene {
 
     // Remove NPC
     this.npcManager.removeNPC(npc);
+
+    // Brief invincibility after eating (200ms)
+    this.invincibleUntil = this.time.now + 200;
 
     // Visual feedback
     this.cameras.main.shake(100, 0.005);
@@ -268,6 +280,9 @@ export class GameScene extends Phaser.Scene {
       -Math.cos(angle) * knockbackForce,
       -Math.sin(angle) * knockbackForce
     );
+
+    // Invincibility during knockback (400ms)
+    this.invincibleUntil = this.time.now + 400;
 
     // Reset velocity after short delay
     this.time.delayedCall(300, () => {

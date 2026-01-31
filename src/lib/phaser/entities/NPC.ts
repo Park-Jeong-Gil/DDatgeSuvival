@@ -172,7 +172,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
 
   private chase(targetX: number, targetY: number, playerSpeed: number) {
     const angle = Phaser.Math.Angle.Between(this.x, this.y, targetX, targetY);
-    const speed = playerSpeed * 1.05; // 포식자 속도는 플레이어보다 약간 빠르게
+    const speed = playerSpeed * 1.03; // 포식자 속도는 플레이어보다 약간 빠르게
 
     this.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
 
