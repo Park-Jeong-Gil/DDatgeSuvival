@@ -25,11 +25,11 @@ export class VirtualJoystick {
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
 
+    // Create graphics with setScrollFactor(0) to fix to screen
     this.baseGraphics = scene.add.graphics();
     this.arrowGraphics = scene.add.graphics();
     this.knobGraphics = scene.add.graphics();
 
-    // Fixed to screen (ignore camera scroll)
     this.baseGraphics.setScrollFactor(0).setDepth(1000);
     this.arrowGraphics.setScrollFactor(0).setDepth(1001);
     this.knobGraphics.setScrollFactor(0).setDepth(1002);
@@ -47,10 +47,14 @@ export class VirtualJoystick {
     const screenW = this.scene.scale.width;
     const screenH = this.scene.scale.height;
 
-    this.baseX = BASE_RADIUS + 30;
-    this.baseY = screenH - BASE_RADIUS - 30;
+    // UIScene의 camera zoom=1이므로 순수 화면 픽셀 좌표 사용
+    const offsetFromBottom = 120;
+    this.baseX = screenW * 0.5;
+    this.baseY = screenH - offsetFromBottom;
+
     this.knobX = this.baseX;
     this.knobY = this.baseY;
+    this.draw();
   }
 
   private draw() {
@@ -62,8 +66,10 @@ export class VirtualJoystick {
   private drawBase() {
     const g = this.baseGraphics;
     const alpha = this.isActive ? ALPHA_ACTIVE : ALPHA_IDLE;
+
     g.clear();
 
+    // Draw at baseX, baseY with FIXED radius (screen pixels)
     // Outer ring
     g.lineStyle(2, 0x88ccee, alpha * 0.8);
     g.strokeCircle(this.baseX, this.baseY, BASE_RADIUS);
@@ -80,16 +86,17 @@ export class VirtualJoystick {
   private drawArrows() {
     const g = this.arrowGraphics;
     const alpha = this.isActive ? ALPHA_ACTIVE : ALPHA_IDLE;
+
     g.clear();
 
     const dist = BASE_RADIUS * 0.72;
     const size = 8;
 
     const arrows = [
-      { dx: 0, dy: -dist, angle: 0 }, // Up
-      { dx: 0, dy: dist, angle: Math.PI }, // Down
-      { dx: -dist, dy: 0, angle: -Math.PI / 2 }, // Left
-      { dx: dist, dy: 0, angle: Math.PI / 2 }, // Right
+      { dx: 0, dy: -dist, angle: -Math.PI / 2 }, // Up
+      { dx: 0, dy: dist, angle: Math.PI / 2 }, // Down
+      { dx: -dist, dy: 0, angle: -Math.PI }, // Left
+      { dx: dist, dy: 0, angle: 0 }, // Right
     ];
 
     for (const arrow of arrows) {
@@ -109,7 +116,7 @@ export class VirtualJoystick {
         cx - Math.sin(a) * size,
         cy + Math.cos(a) * size,
         cx + Math.cos(a) * size * 1.3,
-        cy + Math.sin(a) * size * 1.3
+        cy + Math.sin(a) * size * 1.3,
       );
     }
   }
@@ -127,6 +134,7 @@ export class VirtualJoystick {
   private drawKnob() {
     const g = this.knobGraphics;
     const alpha = this.isActive ? ALPHA_ACTIVE : ALPHA_IDLE;
+
     g.clear();
 
     // Knob outer glow
@@ -150,12 +158,14 @@ export class VirtualJoystick {
     if (!this.visible) return;
     if (this.activePointerId !== null) return;
 
+    // UIScene의 camera zoom=1이므로 pointer와 UI 좌표가 완벽히 일치
     const dx = pointer.x - this.baseX;
     const dy = pointer.y - this.baseY;
     const dist = Math.sqrt(dx * dx + dy * dy);
 
-    // Allow touch within base radius + some padding
-    if (dist <= BASE_RADIUS * 1.5) {
+    const touchRadius = BASE_RADIUS * 1.8;
+
+    if (dist <= touchRadius) {
       this.activePointerId = pointer.id;
       this.isActive = true;
       this.updateKnob(pointer.x, pointer.y);
@@ -190,7 +200,7 @@ export class VirtualJoystick {
     let dy = py - this.baseY;
     const dist = Math.sqrt(dx * dx + dy * dy);
 
-    // Clamp to base radius
+    // Clamp to base radius (FIXED screen pixels)
     if (dist > BASE_RADIUS) {
       dx = (dx / dist) * BASE_RADIUS;
       dy = (dy / dist) * BASE_RADIUS;
@@ -213,7 +223,7 @@ export class VirtualJoystick {
       // Clamp
       const mag = Math.sqrt(
         this.direction.x * this.direction.x +
-          this.direction.y * this.direction.y
+          this.direction.y * this.direction.y,
       );
       if (mag > 1) {
         this.direction.x /= mag;

@@ -1,6 +1,7 @@
 import * as Phaser from "phaser";
 import { PreloadScene } from "./scenes/PreloadScene";
 import { GameScene } from "./scenes/GameScene";
+import { UIScene } from "./scenes/UIScene";
 import { GAME_WIDTH, GAME_HEIGHT } from "./constants";
 
 export { GAME_WIDTH, GAME_HEIGHT } from "./constants";
@@ -22,7 +23,7 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
   input: {
     activePointers: 2,
   },
-  scene: [PreloadScene, GameScene],
+  scene: [PreloadScene, GameScene, UIScene],
   scale: {
     mode: Phaser.Scale.RESIZE,
   },

@@ -20,7 +20,6 @@ import { LevelSystem } from "../systems/LevelSystem";
 import { NPCManager } from "../systems/NPCManager";
 import { ItemManager } from "../systems/ItemManager";
 import { generateMap, type MapElements } from "../utils/mapGenerator";
-import { VirtualJoystick } from "../ui/VirtualJoystick";
 
 export class GameScene extends Phaser.Scene {
   player!: Player;
@@ -46,8 +45,9 @@ export class GameScene extends Phaser.Scene {
   private playerHpGraphics?: Phaser.GameObjects.Graphics;
   private inputReady: boolean = false;
   private isMobile: boolean = false;
-  private joystick?: VirtualJoystick;
+  private joystickDirection = { x: 0, y: 0 };
   private onLevelUpHandler = this.onLevelUp.bind(this);
+  private onJoystickUpdateHandler = this.onJoystickUpdate.bind(this);
 
   constructor() {
     super({ key: "GameScene" });
@@ -85,9 +85,11 @@ export class GameScene extends Phaser.Scene {
     // Resize handler
     this.scale.on("resize", this.handleResize, this);
 
-    // Virtual joystick for mobile
-    this.joystick = new VirtualJoystick(this);
-    this.joystick.setVisible(this.isMobile);
+    // Start UIScene (조이스틱과 HUD 관리)
+    this.scene.launch("UIScene");
+
+    // UIScene의 조이스틱 입력 수신
+    EventBus.on("joystick-update", this.onJoystickUpdateHandler, this);
 
     // Input
     if (this.input.keyboard) {
@@ -432,12 +434,9 @@ export class GameScene extends Phaser.Scene {
     let vx = 0;
     let vy = 0;
 
-    // Joystick input
-    if (this.joystick) {
-      const dir = this.joystick.getDirection();
-      vx = dir.x;
-      vy = dir.y;
-    }
+    // Joystick input (UIScene에서 전달받음)
+    vx = this.joystickDirection.x;
+    vy = this.joystickDirection.y;
 
     // Keyboard input (overrides joystick if pressed)
     if (this.cursors) {
@@ -701,17 +700,18 @@ export class GameScene extends Phaser.Scene {
 
   private handleResize() {
     this.updateCameraZoom();
-    if (this.joystick) {
-      this.joystick.setVisible(this.isMobile);
-      this.joystick.updatePosition();
-    }
   }
 
   shutdown() {
     this.scale.off("resize", this.handleResize, this);
     EventBus.off("level-up", this.onLevelUpHandler);
-    this.joystick?.destroy();
+    EventBus.off("joystick-update", this.onJoystickUpdateHandler, this);
     this.npcManager.destroy();
     this.itemManager.destroy();
+  }
+
+  private onJoystickUpdate(...args: unknown[]) {
+    const direction = args[0] as { x: number; y: number };
+    this.joystickDirection = direction;
   }
 }
