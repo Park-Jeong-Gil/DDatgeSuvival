@@ -1,6 +1,7 @@
 "use client";
 
 import { useGameStore } from "@/store/gameStore";
+import { useRef } from "react";
 import { getNpcNameKo } from "@/lib/npcNames";
 import { useRouter } from "next/navigation";
 
@@ -23,6 +24,12 @@ export default function GameOverOverlay() {
   const survivalTime = useGameStore((s) => s.survivalTime);
   const killsCount = useGameStore((s) => s.killsCount);
   const deathReason = useGameStore((s) => s.deathReason);
+  const predatorName = useGameStore((s) => s.predatorName);
+  // 최초 predatorName을 보존
+  const predatorNameRef = useRef<string | null>(predatorName);
+  if (predatorName && predatorNameRef.current !== predatorName) {
+    predatorNameRef.current = predatorName;
+  }
   const resetGame = useGameStore((s) => s.resetGame);
 
   const npcName = getNpcNameKo(level);
@@ -46,6 +53,13 @@ export default function GameOverOverlay() {
         <p className="text-gray-400 mb-4">
           {deathReasonText[deathReason ?? "hunger"]}
         </p>
+        {deathReason === "predator" && predatorNameRef.current && (
+          <div className="mb-4">
+            <span className="inline-block px-3 py-2 bg-red-900/80 rounded-lg text-lg font-bold text-red-200 border border-red-500 shadow">
+              포식자: {predatorNameRef.current}
+            </span>
+          </div>
+        )}
 
         <div className="flex flex-col gap-2 mb-6 text-left">
           <div className="flex justify-between text-white">

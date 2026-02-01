@@ -45,10 +45,10 @@ export default function HUD() {
         <BuffDisplay buffs={activeBuffs} />
       </div>
 
-      {/* Bottom Right - Minimap */}
-      <div className="absolute bottom-4 right-4">
+      {/* Bottom Right - Minimap (비활성화됨) */}
+      {/* <div className="absolute bottom-4 right-4">
         <MiniMap />
-      </div>
+      </div> */}
     </div>
   );
 }

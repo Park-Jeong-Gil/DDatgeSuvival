@@ -17,7 +17,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setDepth(10);
 
     const body = this.body as Phaser.Physics.Arcade.Body;
-    body.setSize(28, 28);
+    body.setSize(32, 32, false);
+    body.setOffset(0, 0);
   }
 
   updateStats(level: number) {
@@ -25,5 +26,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.currentSpeed = 80 + level * 5;
     const size = 16 + level * 2;
     this.setScale(size / 32);
+
+    if (this.body) {
+      const body = this.body as Phaser.Physics.Arcade.Body;
+      body.setOffset(0, 0);
+    }
   }
 }

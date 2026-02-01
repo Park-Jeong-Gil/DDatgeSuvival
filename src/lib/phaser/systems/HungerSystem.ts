@@ -11,12 +11,12 @@ export class HungerSystem {
       this.accumulatedTime -= this.UPDATE_INTERVAL;
 
       const store = useGameStore.getState();
-      const decreaseRate = (1.1 + playerLevel * 0.12) * hungerMultiplier;
+      const decreaseRate = (1.2 + playerLevel * 0.2) * hungerMultiplier;
       const newHunger = store.hunger - decreaseRate;
 
       store.setHunger(newHunger);
 
-      if (newHunger <= 0) {
+      if (newHunger <= 0 && !store.isGameOver) {
         store.setGameOver("hunger");
       }
     }

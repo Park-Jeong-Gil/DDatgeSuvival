@@ -2,8 +2,9 @@ import * as Phaser from "phaser";
 import { EventBus } from "../EventBus";
 import { Player } from "../entities/Player";
 import { NPC } from "../entities/NPC";
+import { NPCState } from "@/types/npc";
 import { Item } from "../entities/Item";
-import { MAP_WIDTH, MAP_HEIGHT } from "../constants";
+import { MAP_WIDTH, MAP_HEIGHT, GAME_WIDTH, GAME_HEIGHT } from "../constants";
 import { useGameStore } from "@/store/gameStore";
 import { FoodChain } from "../systems/FoodChain";
 import { HungerSystem } from "../systems/HungerSystem";
@@ -31,6 +32,7 @@ export class GameScene extends Phaser.Scene {
   private isGameOver: boolean = false;
   private inBush: boolean = false;
   private invincibleUntil: number = 0;
+  private warningGraphics!: Phaser.GameObjects.Graphics;
 
   constructor() {
     super({ key: "GameScene" });
@@ -87,6 +89,11 @@ export class GameScene extends Phaser.Scene {
     // Listen for level up
     EventBus.on("level-up", this.onLevelUp.bind(this));
 
+    // Warning indicator (fixed to camera)
+    this.warningGraphics = this.add.graphics();
+    this.warningGraphics.setScrollFactor(0);
+    this.warningGraphics.setDepth(100);
+
     // Mark playing
     useGameStore.getState().setIsPlaying(true);
 
@@ -100,8 +107,36 @@ export class GameScene extends Phaser.Scene {
       this.npcManager.npcGroup,
       (_playerObj, npcObj) => {
         if (this.isGameOver) return;
-        this.handleNPCCollision(npcObj as NPC);
-      }
+        if (!this.player.active) return;
+        const npc = npcObj as NPC;
+
+        // NPC 유효성 체크
+        if (!npc.active || npc.destroyed) return;
+        if (!npc.body) return;
+        const npcBody = npc.body as Phaser.Physics.Arcade.Body;
+        if (!npcBody.enable) return;
+
+        // body 위치 기반 실제 AABB 겹침 검증 (Phaser 내부 버그 방어)
+        const playerBody = this.player.body as Phaser.Physics.Arcade.Body;
+        const overlapX =
+          playerBody.position.x < npcBody.position.x + npcBody.width &&
+          playerBody.position.x + playerBody.width > npcBody.position.x;
+        const overlapY =
+          playerBody.position.y < npcBody.position.y + npcBody.height &&
+          playerBody.position.y + playerBody.height > npcBody.position.y;
+
+        if (!overlapX || !overlapY) {
+          return;
+        }
+
+        // 플레이어가 무적 상태면 무시
+        if (
+          this.time.now < this.invincibleUntil ||
+          this.itemManager.isPlayerInvincible()
+        )
+          return;
+        this.handleNPCCollision(npc);
+      },
     );
 
     // Player vs Items
@@ -111,7 +146,7 @@ export class GameScene extends Phaser.Scene {
       (_playerObj, itemObj) => {
         if (this.isGameOver) return;
         this.itemManager.collectItem(itemObj as Item);
-      }
+      },
     );
 
     // Player vs Obstacles
@@ -120,17 +155,13 @@ export class GameScene extends Phaser.Scene {
     // NPC vs Obstacles
     this.physics.add.collider(
       this.npcManager.npcGroup,
-      this.mapElements.obstacles
+      this.mapElements.obstacles,
     );
 
     // Player vs Bushes (overlap, not collide)
-    this.physics.add.overlap(
-      this.player,
-      this.mapElements.bushes,
-      () => {
-        this.inBush = true;
-      }
-    );
+    this.physics.add.overlap(this.player, this.mapElements.bushes, () => {
+      this.inBush = true;
+    });
   }
 
   update(time: number, delta: number) {
@@ -153,7 +184,7 @@ export class GameScene extends Phaser.Scene {
     this.hungerSystem.update(
       delta,
       store.level,
-      this.itemManager.getHungerDecreaseMultiplier()
+      this.itemManager.getHungerDecreaseMultiplier(),
     );
     this.levelSystem.checkLevelUp(this.player);
 
@@ -165,7 +196,7 @@ export class GameScene extends Phaser.Scene {
       this.player.currentSpeed,
       this.player.x,
       this.player.y,
-      this.itemManager.isPlayerInvisible()
+      this.itemManager.isPlayerInvisible(),
     );
     this.itemManager.update(delta);
 
@@ -178,6 +209,92 @@ export class GameScene extends Phaser.Scene {
 
     // Update player position
     store.setPlayerPosition(this.player.x, this.player.y);
+
+    // Warning indicators for off-screen predators
+    this.updateWarningIndicators();
+  }
+
+  private updateWarningIndicators() {
+    this.warningGraphics.clear();
+
+    const cam = this.cameras.main;
+    const bounds = cam.worldView;
+    const margin = 30; // 화면 가장자리에서 표시할 여백
+    const screenCX = GAME_WIDTH / 2;
+    const screenCY = GAME_HEIGHT / 2;
+
+    this.npcManager.npcGroup.children.iterate((obj) => {
+      const npc = obj as NPC;
+      if (!npc.active || npc.destroyed) return true;
+      if (npc.aiState !== NPCState.CHASE) return true;
+
+      // 화면 안에 이미 보이면 표시 안 함
+      if (
+        npc.x >= bounds.x &&
+        npc.x <= bounds.right &&
+        npc.y >= bounds.y &&
+        npc.y <= bounds.bottom
+      ) {
+        return true;
+      }
+
+      // 플레이어 → NPC 방향 계산
+      const dx = npc.x - this.player.x;
+      const dy = npc.y - this.player.y;
+      const angle = Math.atan2(dy, dx);
+
+      // 화면 가장자리에 위치 계산 (screen 좌표계)
+      const halfW = GAME_WIDTH / 2 - margin;
+      const halfH = GAME_HEIGHT / 2 - margin;
+
+      let edgeX: number, edgeY: number;
+      const absCos = Math.abs(Math.cos(angle));
+      const absSin = Math.abs(Math.sin(angle));
+
+      if (absCos * halfH > absSin * halfW) {
+        // 좌우 가장자리
+        edgeX = screenCX + Math.sign(Math.cos(angle)) * halfW;
+        edgeY = screenCY + Math.tan(angle) * Math.sign(Math.cos(angle)) * halfW;
+      } else {
+        // 상하 가장자리
+        edgeX =
+          screenCX +
+          (Math.cos(angle) / Math.sin(angle)) *
+            Math.sign(Math.sin(angle)) *
+            halfH;
+        edgeY = screenCY + Math.sign(Math.sin(angle)) * halfH;
+      }
+
+      // Clamp
+      edgeX = Phaser.Math.Clamp(edgeX, margin, GAME_WIDTH - margin);
+      edgeY = Phaser.Math.Clamp(edgeY, margin, GAME_HEIGHT - margin);
+
+      // 빨간 삼각형 화살표 그리기
+      const arrowSize = 12;
+      this.warningGraphics.fillStyle(0xff0000, 0.9);
+      this.warningGraphics.beginPath();
+      this.warningGraphics.moveTo(
+        edgeX + Math.cos(angle) * arrowSize,
+        edgeY + Math.sin(angle) * arrowSize,
+      );
+      this.warningGraphics.lineTo(
+        edgeX + Math.cos(angle + 2.4) * arrowSize,
+        edgeY + Math.sin(angle + 2.4) * arrowSize,
+      );
+      this.warningGraphics.lineTo(
+        edgeX + Math.cos(angle - 2.4) * arrowSize,
+        edgeY + Math.sin(angle - 2.4) * arrowSize,
+      );
+      this.warningGraphics.closePath();
+      this.warningGraphics.fillPath();
+
+      // 경고 원 (깜빡임 효과)
+      const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 200);
+      this.warningGraphics.fillStyle(0xff0000, pulse * 0.4);
+      this.warningGraphics.fillCircle(edgeX, edgeY, arrowSize + 4);
+
+      return true;
+    });
   }
 
   private handlePlayerMovement() {
@@ -209,6 +326,11 @@ export class GameScene extends Phaser.Scene {
   }
 
   private handleNPCCollision(npc: NPC) {
+    if (!npc.active || npc.destroyed) return;
+    if (!npc.body) return;
+    const body = npc.body as Phaser.Physics.Arcade.Body;
+    if (!body.enable) return;
+
     const playerLevel = this.player.level;
     const npcLevel = npc.level;
 
@@ -226,20 +348,67 @@ export class GameScene extends Phaser.Scene {
     } else if (FoodChain.sameLevel(playerLevel, npcLevel)) {
       this.handleKnockback(npc);
     } else if (FoodChain.mustFlee(playerLevel, npcLevel)) {
-      if (this.itemManager.isPlayerInvincible()) return;
+      // 플레이어가 무적 상태면 포식자 5초 정지
+      if (this.itemManager.isPlayerInvincible()) {
+        npc.stunUntil = Date.now() + 5000;
+        return;
+      }
       if (this.time.now < this.invincibleUntil) return;
-      this.handleGameOver("predator");
+
+      // 화면에 렌더링되지 않은 포식자와의 충돌은 무시 (유령 포식자 방지)
+      const cam = this.cameras.main;
+      if (
+        !npc.isRenderableInCamera(cam) ||
+        !npc.wasRecentlyVisible(this.time.now) ||
+        !npc.isNameLabelVisible()
+      ) {
+        npc.recoverRenderState();
+        this.npcManager.relocateNPC(npc, this.player.x, this.player.y);
+        return;
+      }
+
+      // 포식자가 CHASE 상태가 아닌 경우 (배회 중 우연히 접촉):
+      // 즉사가 아닌 경고 처리 - NPC를 CHASE로 전환 + 플레이어 넉백
+      // 이렇게 하면 플레이어는 반드시 "추격!" 표시를 본 후에만 게임오버
+      if (!npc.isChasing()) {
+        npc.aiState = NPCState.CHASE;
+        npc.setDepth(12);
+        this.handleKnockback(npc);
+        return;
+      }
+
+      // CHASE 상태인 포식자만 게임오버 판정
+      const predatorName = npc.getNameLabelText();
+      this.handleGameOver("predator", predatorName);
     }
   }
 
   private handleEat(npc: NPC) {
+    // NPCManager의 완전한 제거 메서드 사용
+    this.npcManager.removeNPC(npc);
+
     const store = useGameStore.getState();
 
     // Score
     store.addScore(npc.scoreValue);
 
-    // Hunger restore
-    this.hungerSystem.restore(npc.hungerRestore);
+    // Hunger restore - 레벨 차이에 따른 회복량 조정
+    const playerLevel = this.player.level;
+    const levelDiff = playerLevel - npc.level;
+    let hungerRestoreAmount = npc.hungerRestore;
+
+    if (levelDiff > 0) {
+      // 플레이어가 더 높음 (레벨 낮은 먹이) - 회복량 감소
+      hungerRestoreAmount =
+        npc.hungerRestore * Math.max(0.3, 1 - levelDiff * 0.15);
+    } else if (levelDiff < 0) {
+      // 먹이가 더 높음 (레벨 높은 먹이) - 회복량 감소
+      hungerRestoreAmount =
+        npc.hungerRestore * Math.max(0.4, 1 + levelDiff * 0.1);
+    }
+    // levelDiff === 0 (같은 레벨) - 기본 회복량 유지
+
+    this.hungerSystem.restore(hungerRestoreAmount);
 
     // Kill count
     store.incrementKills();
@@ -247,11 +416,8 @@ export class GameScene extends Phaser.Scene {
     // Try skin drop
     this.itemManager.tryDropSkin(npc.level, npc.x, npc.y);
 
-    // Remove NPC
-    this.npcManager.removeNPC(npc);
-
-    // Brief invincibility after eating (200ms)
-    this.invincibleUntil = this.time.now + 200;
+    // 무적 시간 증가 (200ms → 500ms)
+    this.invincibleUntil = this.time.now + 500;
 
     // Visual feedback
     this.cameras.main.shake(100, 0.005);
@@ -267,18 +433,18 @@ export class GameScene extends Phaser.Scene {
       npc.x,
       npc.y,
       this.player.x,
-      this.player.y
+      this.player.y,
     );
     const knockbackForce = 300;
 
     this.player.setVelocity(
       Math.cos(angle) * knockbackForce,
-      Math.sin(angle) * knockbackForce
+      Math.sin(angle) * knockbackForce,
     );
 
     npc.setVelocity(
       -Math.cos(angle) * knockbackForce,
-      -Math.sin(angle) * knockbackForce
+      -Math.sin(angle) * knockbackForce,
     );
 
     // Invincibility during knockback (400ms)
@@ -292,24 +458,49 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  private handleGameOver(reason: "hunger" | "predator" | "boss") {
+  private handleGameOver(
+    reason: "hunger" | "predator" | "boss",
+    predatorName?: string,
+  ) {
     if (this.isGameOver) return;
     this.isGameOver = true;
 
-    useGameStore.getState().setGameOver(reason);
-    EventBus.emit("game-over", { reason });
+    useGameStore.getState().setGameOver(reason, predatorName);
+    EventBus.emit("game-over", { reason, predatorName });
 
     // Freeze player
     this.player.setVelocity(0, 0);
     this.player.setTint(0xff0000);
 
-    // Camera effect
+    // Freeze all NPCs
+    if (this.npcManager && this.npcManager.npcGroup) {
+      this.npcManager.npcGroup.children.iterate((npcObj) => {
+        if (
+          npcObj instanceof NPC &&
+          npcObj.body &&
+          npcObj.active &&
+          typeof npcObj.setVelocity === "function"
+        ) {
+          npcObj.setVelocity(0, 0);
+        }
+        return null; // 타입 에러 해결
+      });
+    }
+
+    // Camera effect (fadeOut 제거)
     this.cameras.main.shake(500, 0.02);
-    this.cameras.main.fadeOut(1000, 0, 0, 0);
+    // this.cameras.main.fadeOut(1000, 0, 0, 0); // 제거
   }
 
   private onLevelUp(...args: unknown[]) {
     const data = args[0] as { level: number };
+
+    // HP 30% 회복
+    const maxHunger = 100;
+    const currentHunger = useGameStore.getState().hunger;
+    const healAmount = maxHunger * 0.3;
+    this.hungerSystem.restore(healAmount);
+
     // Camera shake
     this.cameras.main.shake(200, 0.01);
 
@@ -317,11 +508,7 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.flash(500, 255, 255, 100);
 
     // Update NPC spawns
-    this.npcManager.onLevelUp(
-      data.level,
-      this.player.x,
-      this.player.y
-    );
+    this.npcManager.onLevelUp(data.level, this.player.x, this.player.y);
   }
 
   shutdown() {

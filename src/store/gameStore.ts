@@ -12,6 +12,7 @@ interface GameStore {
   isPlaying: boolean;
   isGameOver: boolean;
   deathReason: "hunger" | "predator" | "boss" | null;
+  predatorName: string | null;
   currentSkinId: string;
   activeBuffs: ActiveBuff[];
   nickname: string;
@@ -24,7 +25,10 @@ interface GameStore {
   setLevel: (level: number) => void;
   setHunger: (hunger: number) => void;
   setIsPlaying: (playing: boolean) => void;
-  setGameOver: (reason: "hunger" | "predator" | "boss") => void;
+  setGameOver: (
+    reason: "hunger" | "predator" | "boss",
+    predatorName?: string,
+  ) => void;
   setSurvivalTime: (time: number) => void;
   incrementKills: () => void;
   setCurrentSkin: (skinId: string) => void;
@@ -45,6 +49,7 @@ const initialState = {
   isPlaying: false,
   isGameOver: false,
   deathReason: null as "hunger" | "predator" | "boss" | null,
+  predatorName: null as string | null,
   currentSkinId: "custom_1",
   activeBuffs: [] as ActiveBuff[],
   nickname: "",
@@ -58,14 +63,20 @@ export const useGameStore = create<GameStore>((set) => ({
   setScore: (score) => set({ score }),
   addScore: (amount) => set((state) => ({ score: state.score + amount })),
   setLevel: (level) => set({ level }),
-  setHunger: (hunger) =>
-    set({ hunger: Math.max(0, Math.min(100, hunger)) }),
+  setHunger: (hunger) => set({ hunger: Math.max(0, Math.min(100, hunger)) }),
   setIsPlaying: (isPlaying) => set({ isPlaying }),
-  setGameOver: (deathReason) =>
-    set({ isGameOver: true, isPlaying: false, deathReason }),
+  setGameOver: (deathReason, predatorName) =>
+    set((state) => {
+      if (state.isGameOver) return state;
+      return {
+        isGameOver: true,
+        isPlaying: false,
+        deathReason,
+        predatorName: predatorName ?? null,
+      };
+    }),
   setSurvivalTime: (survivalTime) => set({ survivalTime }),
-  incrementKills: () =>
-    set((state) => ({ killsCount: state.killsCount + 1 })),
+  incrementKills: () => set((state) => ({ killsCount: state.killsCount + 1 })),
   setCurrentSkin: (currentSkinId) => set({ currentSkinId }),
   setActiveBuffs: (activeBuffs) => set({ activeBuffs }),
   setNickname: (nickname) => set({ nickname }),

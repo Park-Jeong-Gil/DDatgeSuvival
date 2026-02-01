@@ -8,21 +8,29 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
   baseSpeed: number;
   scoreValue: number;
   hungerRestore: number;
-
-  // AI state
+  destroyed: boolean = false;
   aiState: NPCState = NPCState.WANDER;
   private wanderTimer: number = 0;
   private wanderDirection: Phaser.Math.Vector2 = new Phaser.Math.Vector2(0, 0);
   private readonly WANDER_INTERVAL = 2000 + Math.random() * 2000;
   private chaseStartTime: number = 0;
   private readonly MAX_CHASE_DURATION = 8000;
-
-  // Labels
+  private _stunUntil: number = 0;
   private nameLabel: Phaser.GameObjects.Text;
   private chaseLabel: Phaser.GameObjects.Text;
+  private lastSeenAt: number = -Infinity;
 
   constructor(scene: Phaser.Scene, x: number, y: number, data: NPCData) {
-    super(scene, x, y, data.spriteKey);
+    const textureKey = data.spriteKey;
+    const textureExists = scene.textures.exists(textureKey);
+
+    if (!textureExists) {
+      console.error(
+        `[NPC] Texture "${textureKey}" not found for Lv${data.level} ${data.nameKo}`,
+      );
+    }
+
+    super(scene, x, y, textureExists ? textureKey : "npc_0");
 
     this.npcData = data;
     this.level = data.level;
@@ -33,15 +41,21 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
+    // NPC는 항상 플레이어(depth 10) 위에 렌더링
+    this.setDepth(11);
+
     this.setCollideWorldBounds(true);
     const scale = data.baseSize / (data.level === 99 ? 128 : 32);
     this.setScale(scale);
-    this.setDepth(5);
+    this.setActive(true);
+    this.setVisible(true);
+    this.setAlpha(1);
 
     const body = this.body as Phaser.Physics.Arcade.Body;
     body.setBounce(0.2);
+    body.setSize(this.displayWidth, this.displayHeight, true);
 
-    // Name label (Lv# name)
+    // Name label
     this.nameLabel = scene.add.text(x, y, `Lv${data.level} ${data.nameKo}`, {
       fontSize: "10px",
       fontFamily: "monospace",
@@ -65,6 +79,169 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     this.chaseLabel.setVisible(false);
   }
 
+  public getNameLabelText(): string {
+    return this.nameLabel?.text || `Lv${this.level}`;
+  }
+
+  public isNameLabelVisible(): boolean {
+    return this.nameLabel?.visible ?? false;
+  }
+
+  public isChasing(): boolean {
+    return this.aiState === NPCState.CHASE;
+  }
+
+  public set stunUntil(time: number) {
+    this._stunUntil = time;
+  }
+
+  public get stunUntil(): number {
+    return this._stunUntil;
+  }
+
+  private isTextureReady(): boolean {
+    const textureKey = this.texture?.key;
+    if (!textureKey || !this.scene.textures.exists(textureKey)) return false;
+    const texture = this.scene.textures.get(textureKey);
+    const source = texture?.source?.[0];
+    return !!source && source.width > 0 && source.height > 0;
+  }
+
+  public isRenderableInCamera(camera: Phaser.Cameras.Scene2D.Camera): boolean {
+    if (this.destroyed || !this.active) return false;
+    if (!this.visible || this.alpha <= 0) return false;
+    if (this.displayWidth <= 0 || this.displayHeight <= 0) return false;
+    if (!this.texture || !this.scene.textures.exists(this.texture.key)) {
+      return false;
+    }
+    if (!this.scene.sys.displayList.exists(this)) return false;
+    const updateList = this.scene.sys.updateList as unknown as {
+      contains?: (child: Phaser.GameObjects.GameObject) => boolean;
+      list?: Phaser.GameObjects.GameObject[];
+    };
+    const inUpdateList =
+      typeof updateList.contains === "function"
+        ? updateList.contains(this)
+        : Array.isArray(updateList.list)
+          ? updateList.list.includes(this)
+          : true;
+    if (!inUpdateList) return false;
+
+    const bounds = this.getBounds();
+    const inView = Phaser.Geom.Intersects.RectangleToRectangle(
+      camera.worldView,
+      bounds,
+    );
+
+    const renderFlagsOk = this.renderFlags !== 0;
+    const willRender =
+      typeof (
+        this as unknown as {
+          willRender?: (cam: Phaser.Cameras.Scene2D.Camera) => boolean;
+        }
+      ).willRender === "function"
+        ? (
+            this as unknown as {
+              willRender: (cam: Phaser.Cameras.Scene2D.Camera) => boolean;
+            }
+          ).willRender(camera)
+        : camera.cull([this]).length > 0;
+
+    return inView && renderFlagsOk && willRender;
+  }
+
+  public wasRecentlyVisible(now: number, windowMs: number = 200): boolean {
+    return now - this.lastSeenAt <= windowMs;
+  }
+
+  public recoverRenderState() {
+    this.ensureRenderable();
+  }
+
+  preUpdate(time: number, delta: number) {
+    super.preUpdate(time, delta);
+    const cam = this.scene?.cameras?.main;
+    if (!cam) return;
+    if (this.isRenderableInCamera(cam)) {
+      this.lastSeenAt = time;
+    }
+    this.syncPhysicsWithRenderState(cam, time);
+  }
+
+  private ensureRenderable() {
+    if (this.destroyed || !this.active) return;
+
+    const displayList = this.scene?.sys?.displayList;
+    if (displayList && !displayList.exists(this)) {
+      displayList.add(this);
+    }
+    const updateList = this.scene?.sys?.updateList as unknown as {
+      add?: (child: Phaser.GameObjects.GameObject) => void;
+      contains?: (child: Phaser.GameObjects.GameObject) => boolean;
+      list?: Phaser.GameObjects.GameObject[];
+    };
+    const inUpdateList =
+      updateList &&
+      (typeof updateList.contains === "function"
+        ? updateList.contains(this)
+        : Array.isArray(updateList.list)
+          ? updateList.list.includes(this)
+          : false);
+    if (updateList?.add && !inUpdateList) {
+      updateList.add(this);
+    }
+
+    if (!this.visible) this.setVisible(true);
+    if (this.alpha <= 0) this.setAlpha(1);
+
+    const textureKey = this.texture?.key;
+    if (!textureKey || !this.scene.textures.exists(textureKey)) {
+      if (this.scene.textures.exists("npc_0")) {
+        this.setTexture("npc_0");
+      }
+    }
+
+    if (this.body) {
+      const body = this.body as Phaser.Physics.Arcade.Body;
+      if (!this.isTextureReady()) {
+        body.enable = false;
+        return;
+      }
+      body.setSize(this.displayWidth, this.displayHeight, true);
+    }
+  }
+
+  private syncPhysicsWithRenderState(
+    camera: Phaser.Cameras.Scene2D.Camera,
+    now: number,
+  ) {
+    if (this.destroyed || !this.active || !this.body) return;
+    const body = this.body as Phaser.Physics.Arcade.Body;
+    if (!this.isTextureReady()) {
+      if (body.enable) {
+        this.setVelocity(0, 0);
+        body.enable = false;
+      }
+      return;
+    }
+    const shouldHavePhysics =
+      this.isRenderableInCamera(camera) || this.wasRecentlyVisible(now);
+
+    if (!shouldHavePhysics) {
+      if (body.enable) {
+        this.setVelocity(0, 0);
+        body.enable = false;
+      }
+      return;
+    }
+
+    if (!body.enable) {
+      body.enable = true;
+      body.reset(this.x, this.y);
+      body.setSize(this.displayWidth, this.displayHeight, true);
+    }
+  }
+
   updateAI(
     delta: number,
     playerX: number,
@@ -75,7 +252,22 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
   ) {
     if (!this.active) return;
 
-    // Update label positions and colors
+    this.ensureRenderable();
+
+    // 정지 상태 체크
+    if (Date.now() < this._stunUntil) {
+      this.setVelocity(0, 0);
+      const stunRemaining = Math.ceil((this._stunUntil - Date.now()) / 1000);
+      this.chaseLabel.setText(`기절!(${stunRemaining})`);
+      this.chaseLabel.setVisible(true);
+      // 정지 중에도 라벨 위치 업데이트
+      const offsetY = this.displayHeight / 2 + 5;
+      this.nameLabel.setPosition(this.x, this.y - offsetY);
+      this.chaseLabel.setPosition(this.x, this.y - offsetY - 14);
+      this.nameLabel.setVisible(true);
+      return;
+    }
+
     this.updateLabels(playerLevel);
 
     const distance = Phaser.Math.Distance.Between(
@@ -87,8 +279,12 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
 
     const levelDiff = playerLevel - this.level;
     const baseDetection = 200 + this.level * 10;
-    // Predators have reduced detection range (2/3)
-    const detectionRange = baseDetection;
+
+    let detectionRange = baseDetection;
+    if (levelDiff < 0) {
+      const reductionFactor = Math.pow(0.85, Math.abs(levelDiff));
+      detectionRange = baseDetection * reductionFactor;
+    }
 
     // If player is invisible or out of range, wander
     if (isPlayerInvisible || distance > detectionRange) {
@@ -100,22 +296,24 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     }
 
     if (levelDiff < 0) {
-      // NPC is predator (higher level than player) - chase
+      // NPC is predator - chase
       if (this.aiState !== NPCState.CHASE) {
         this.aiState = NPCState.CHASE;
         this.chaseStartTime = Date.now();
+        // 추격 시 depth를 12로 올려 다른 NPC 위에 표시
+        this.setDepth(12);
       }
 
-      // Check chase duration limit
+      // Chase duration limit
       if (Date.now() - this.chaseStartTime > this.MAX_CHASE_DURATION) {
+        this._stunUntil = Date.now() + 5000;
         this.aiState = NPCState.WANDER;
         this.chaseStartTime = 0;
         this.chaseLabel.setVisible(false);
-        this.wander(delta);
+        this.setDepth(11);
         return;
       }
 
-      // Show chase countdown
       const remaining = Math.ceil(
         (this.MAX_CHASE_DURATION - (Date.now() - this.chaseStartTime)) / 1000,
       );
@@ -124,13 +322,19 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
 
       this.chase(playerX, playerY, playerSpeed);
     } else if (levelDiff > 0) {
-      // NPC is prey (lower level than player) - flee
+      // NPC is prey - flee
+      if (this.aiState === NPCState.CHASE) {
+        this.setDepth(11);
+      }
       this.aiState = NPCState.FLEE;
       this.chaseStartTime = 0;
       this.chaseLabel.setVisible(false);
       this.flee(playerX, playerY, playerSpeed);
     } else {
       // Same level - wander
+      if (this.aiState === NPCState.CHASE) {
+        this.setDepth(11);
+      }
       this.aiState = NPCState.WANDER;
       this.chaseStartTime = 0;
       this.chaseLabel.setVisible(false);
@@ -139,7 +343,6 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
   }
 
   private updateLabels(playerLevel: number) {
-    // Simple culling - only show labels for NPCs near the camera
     const cam = this.scene.cameras.main;
     const bounds = cam.worldView;
     const inView =
@@ -154,25 +357,23 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       return;
     }
 
-    // Position labels above the NPC
     const offsetY = this.displayHeight / 2 + 5;
     this.nameLabel.setPosition(this.x, this.y - offsetY);
     this.chaseLabel.setPosition(this.x, this.y - offsetY - 14);
     this.nameLabel.setVisible(true);
 
-    // Color based on level comparison
     if (this.level === 99 || this.level > playerLevel) {
-      this.nameLabel.setColor("#ff4444"); // Red - predator / boss
+      this.nameLabel.setColor("#ff4444");
     } else if (this.level === playerLevel) {
-      this.nameLabel.setColor("#aaaaaa"); // Gray - same level
+      this.nameLabel.setColor("#aaaaaa");
     } else {
-      this.nameLabel.setColor("#44ff44"); // Green - prey
+      this.nameLabel.setColor("#44ff44");
     }
   }
 
   private chase(targetX: number, targetY: number, playerSpeed: number) {
     const angle = Phaser.Math.Angle.Between(this.x, this.y, targetX, targetY);
-    const speed = playerSpeed * 1.03; // 포식자 속도는 플레이어보다 약간 빠르게
+    const speed = playerSpeed * 1.01;
 
     this.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
 
@@ -182,7 +383,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
 
   private flee(targetX: number, targetY: number, playerSpeed: number) {
     const angle = Phaser.Math.Angle.Between(this.x, this.y, targetX, targetY);
-    const speed = playerSpeed * 0.3; // 먹이 도망치는 속도는 플레이어보다 느리게
+    const speed = playerSpeed * 0.3;
 
     this.setVelocity(-Math.cos(angle) * speed, -Math.sin(angle) * speed);
 
@@ -210,8 +411,26 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
   }
 
   destroy(fromScene?: boolean) {
+    this.active = false;
+    this.destroyed = true;
+    this.visible = false;
+
+    if (this.body) {
+      this.setVelocity(0, 0);
+    }
+
+    if (this.body) {
+      const body = this.body as Phaser.Physics.Arcade.Body;
+      body.enable = false;
+
+      if (this.scene && this.scene.physics && this.scene.physics.world) {
+        this.scene.physics.world.remove(body);
+      }
+    }
+
     this.nameLabel?.destroy();
     this.chaseLabel?.destroy();
+
     super.destroy(fromScene);
   }
 }

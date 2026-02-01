@@ -93,6 +93,8 @@ export class NPCManager {
       // Boss always stays
       if (npc.level === 99) return true;
       if (npc.level < minLevel || npc.level > maxLevel) {
+        // Group에서도 완전히 제거 (유령 NPC 방지)
+        this.npcGroup.remove(npc, true, true);
         npc.destroy();
         return false;
       }
@@ -132,10 +134,7 @@ export class NPCManager {
       const y = margin + Math.random() * (MAP_HEIGHT - margin * 2);
 
       // Reject if within camera view + 100px buffer
-      if (
-        Math.abs(x - playerX) < halfW &&
-        Math.abs(y - playerY) < halfH
-      ) {
+      if (Math.abs(x - playerX) < halfW && Math.abs(y - playerY) < halfH) {
         continue;
       }
 
@@ -159,6 +158,17 @@ export class NPCManager {
     };
   }
 
+  relocateNPC(npc: NPC, playerX: number, playerY: number) {
+    if (!npc || !npc.active) return;
+    const pos = this.getSpawnPosition(playerX, playerY);
+    npc.setPosition(pos.x, pos.y);
+    const body = npc.body as Phaser.Physics.Arcade.Body | undefined;
+    if (body) {
+      body.reset(pos.x, pos.y);
+      body.enable = true;
+    }
+  }
+
   private getSpawnableRange(playerLevel: number): number[] {
     const minLevel = Math.max(0, playerLevel - 3);
     const maxLevel = Math.min(18, playerLevel + 3);
@@ -176,9 +186,22 @@ export class NPCManager {
     // Prey (lower level) gets higher counts than predators
     if (diff < 0) {
       // Edible NPCs - spawn more
-      if (absDiff === 1) return 80;
-      if (absDiff === 2) return 50;
-      if (absDiff === 3) return 36;
+      let baseCount = 0;
+      if (absDiff === 1) baseCount = 80;
+      else if (absDiff === 2) baseCount = 60;
+      else if (absDiff === 3) baseCount = 40;
+
+      // 플레이어 레벨 1일 때만 1.5배 (초반 생존율 향상)
+      if (playerLevel === 1) {
+        return Math.round(baseCount * 1.5);
+      }
+
+      // 플레이어 레벨 3 이상일 때 15% 감소 (후반 난이도 조정)
+      if (playerLevel >= 3) {
+        return Math.round(baseCount * 0.85);
+      }
+
+      return baseCount;
     } else if (diff === 0) {
       // Same level
       return 20;
@@ -196,8 +219,30 @@ export class NPCManager {
   }
 
   removeNPC(npc: NPC) {
-    npc.destroy();
+    // 먼저 모든 상태 비활성화
+    npc.active = false;
+    npc.destroyed = true;
+    npc.visible = false;
+
+    // Physics body 비활성화 (충돌 완전 제거)
+    if (npc.body) {
+      const body = npc.body as Phaser.Physics.Arcade.Body;
+      body.enable = false;
+
+      // Physics world에서 제거
+      if (this.scene.physics && this.scene.physics.world) {
+        this.scene.physics.world.remove(body);
+      }
+    }
+
+    // Group에서 완전 제거
+    this.npcGroup.remove(npc, true, true);
+
+    // 내부 배열에서도 제거
     this.npcs = this.npcs.filter((n) => n !== npc);
+
+    // 완전히 destroy
+    npc.destroy();
   }
 
   private updatePositionsInStore() {
