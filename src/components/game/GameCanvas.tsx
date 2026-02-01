@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from "react";
 
+let phaserGame: Phaser.Game | null = null;
+
 export default function GameCanvas() {
   const gameRef = useRef<Phaser.Game | null>(null);
 
@@ -12,7 +14,22 @@ export default function GameCanvas() {
       const Phaser = (await import("phaser")).default;
       const { gameConfig } = await import("@/lib/phaser/config");
 
-      gameRef.current = new Phaser.Game(gameConfig);
+      const container = document.getElementById("game-container");
+      if (!container) return;
+
+      // Clean up any existing canvas elements
+      while (container.firstChild) {
+        container.removeChild(container.firstChild);
+      }
+
+      if (phaserGame) {
+        phaserGame.destroy(true);
+        phaserGame = null;
+      }
+
+      const config = { ...gameConfig, parent: container };
+      phaserGame = new Phaser.Game(config);
+      gameRef.current = phaserGame;
     };
 
     initGame();
@@ -21,6 +38,10 @@ export default function GameCanvas() {
       if (gameRef.current) {
         gameRef.current.destroy(true);
         gameRef.current = null;
+      }
+      if (phaserGame) {
+        phaserGame.destroy(true);
+        phaserGame = null;
       }
     };
   }, []);

@@ -33,6 +33,9 @@ export class GameScene extends Phaser.Scene {
   private inBush: boolean = false;
   private invincibleUntil: number = 0;
   private warningGraphics!: Phaser.GameObjects.Graphics;
+  private playerLabelText?: Phaser.GameObjects.Text;
+  private playerHpGraphics?: Phaser.GameObjects.Graphics;
+  private inputReady: boolean = false;
 
   constructor() {
     super({ key: "GameScene" });
@@ -59,6 +62,8 @@ export class GameScene extends Phaser.Scene {
     // Player
     this.player = new Player(this, MAP_WIDTH / 2, MAP_HEIGHT / 2);
 
+    this.createPlayerOverlay();
+
     // Camera
     this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
     this.cameras.main.setBounds(0, 0, MAP_WIDTH, MAP_HEIGHT);
@@ -72,6 +77,24 @@ export class GameScene extends Phaser.Scene {
         S: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S),
         D: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D),
       };
+      this.input.keyboard.addCapture([
+        Phaser.Input.Keyboard.KeyCodes.W,
+        Phaser.Input.Keyboard.KeyCodes.A,
+        Phaser.Input.Keyboard.KeyCodes.S,
+        Phaser.Input.Keyboard.KeyCodes.D,
+        Phaser.Input.Keyboard.KeyCodes.UP,
+        Phaser.Input.Keyboard.KeyCodes.DOWN,
+        Phaser.Input.Keyboard.KeyCodes.LEFT,
+        Phaser.Input.Keyboard.KeyCodes.RIGHT,
+      ]);
+    }
+
+    // Ensure canvas has focus for keyboard input
+    const canvas = this.game.canvas as HTMLCanvasElement | null;
+    if (canvas) {
+      canvas.setAttribute("tabindex", "0");
+      canvas.focus();
+      canvas.addEventListener("pointerdown", () => canvas.focus());
     }
 
     // Systems
@@ -178,6 +201,7 @@ export class GameScene extends Phaser.Scene {
     this.inBush = false;
 
     // Player movement
+    this.ensureInput();
     this.handlePlayerMovement();
 
     // Systems update
@@ -209,9 +233,80 @@ export class GameScene extends Phaser.Scene {
 
     // Update player position
     store.setPlayerPosition(this.player.x, this.player.y);
+    store.setPlayerDisplaySize(
+      this.player.displayWidth,
+      this.player.displayHeight,
+    );
+    store.setCameraScroll(
+      this.cameras.main.scrollX,
+      this.cameras.main.scrollY,
+      this.cameras.main.zoom,
+    );
 
     // Warning indicators for off-screen predators
     this.updateWarningIndicators();
+
+    // Player label & HP overlay
+    this.updatePlayerOverlay();
+  }
+
+  private createPlayerOverlay() {
+    this.playerLabelText = this.add.text(
+      this.player.x,
+      this.player.y,
+      "",
+      {
+        fontSize: "10px",
+        fontFamily: "monospace",
+        color: "#ffffff",
+        stroke: "#000000",
+        strokeThickness: 2,
+      },
+    );
+    this.playerLabelText.setOrigin(0.5, 1);
+    this.playerLabelText.setDepth(20);
+
+    this.playerHpGraphics = this.add.graphics();
+    this.playerHpGraphics.setDepth(20);
+  }
+
+  private updatePlayerOverlay() {
+    if (!this.playerLabelText || !this.playerHpGraphics) return;
+
+    const store = useGameStore.getState();
+    const nickname = store.nickname || "플레이어";
+    const label = `Lv ${store.level} ${nickname}`;
+
+    const labelOffset = this.player.displayHeight / 2 + 8;
+    this.playerLabelText.setText(label);
+    this.playerLabelText.setPosition(this.player.x, this.player.y - labelOffset);
+
+    const barWidth = Math.max(32, this.player.displayWidth * 1.6);
+    const barHeight = 6;
+    const barX = this.player.x - barWidth / 2;
+    const barY = this.player.y + this.player.displayHeight / 2 + 6;
+    const hungerRatio = Phaser.Math.Clamp(store.hunger / store.maxHunger, 0, 1);
+
+    const getColor = () => {
+      if (store.hunger >= 80) return 0x22c55e;
+      if (store.hunger >= 40) return 0xfacc15;
+      if (store.hunger >= 20) return 0xf97316;
+      return 0xef4444;
+    };
+
+    this.playerHpGraphics.clear();
+    this.playerHpGraphics.fillStyle(0x374151, 1);
+    this.playerHpGraphics.fillRoundedRect(barX, barY, barWidth, barHeight, 3);
+    this.playerHpGraphics.fillStyle(getColor(), 1);
+    this.playerHpGraphics.fillRoundedRect(
+      barX,
+      barY,
+      Math.max(2, barWidth * hungerRatio),
+      barHeight,
+      3,
+    );
+    this.playerHpGraphics.lineStyle(1, 0x4b5563, 1);
+    this.playerHpGraphics.strokeRoundedRect(barX, barY, barWidth, barHeight, 3);
   }
 
   private updateWarningIndicators() {
@@ -323,6 +418,38 @@ export class GameScene extends Phaser.Scene {
 
     if (vx < 0) this.player.setFlipX(true);
     else if (vx > 0) this.player.setFlipX(false);
+  }
+
+  private ensureInput() {
+    if (!this.input.keyboard) return;
+    if (!this.input.enabled) this.input.enabled = true;
+    if (!this.input.keyboard.enabled) this.input.keyboard.enabled = true;
+    if (!this.cursors) {
+      this.cursors = this.input.keyboard.createCursorKeys();
+    }
+    if (!this.wasd) {
+      this.wasd = {
+        W: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W),
+        A: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A),
+        S: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S),
+        D: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D),
+      };
+    }
+
+    if (!this.inputReady) {
+      this.input.keyboard.addCapture([
+        Phaser.Input.Keyboard.KeyCodes.W,
+        Phaser.Input.Keyboard.KeyCodes.A,
+        Phaser.Input.Keyboard.KeyCodes.S,
+        Phaser.Input.Keyboard.KeyCodes.D,
+        Phaser.Input.Keyboard.KeyCodes.UP,
+        Phaser.Input.Keyboard.KeyCodes.DOWN,
+        Phaser.Input.Keyboard.KeyCodes.LEFT,
+        Phaser.Input.Keyboard.KeyCodes.RIGHT,
+      ]);
+      this.input.keyboard.resetKeys();
+      this.inputReady = true;
+    }
   }
 
   private handleNPCCollision(npc: NPC) {

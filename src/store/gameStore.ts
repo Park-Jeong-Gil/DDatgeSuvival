@@ -18,6 +18,9 @@ interface GameStore {
   nickname: string;
   npcPositions: NPCPosition[];
   playerPosition: { x: number; y: number };
+  playerDisplaySize: { width: number; height: number };
+  cameraScroll: { x: number; y: number };
+  cameraZoom: number;
 
   // Actions
   setScore: (score: number) => void;
@@ -36,6 +39,8 @@ interface GameStore {
   setNickname: (nickname: string) => void;
   setNpcPositions: (positions: NPCPosition[]) => void;
   setPlayerPosition: (x: number, y: number) => void;
+  setPlayerDisplaySize: (width: number, height: number) => void;
+  setCameraScroll: (x: number, y: number, zoom: number) => void;
   resetGame: () => void;
 }
 
@@ -55,6 +60,9 @@ const initialState = {
   nickname: "",
   npcPositions: [] as NPCPosition[],
   playerPosition: { x: 2500, y: 2500 },
+  playerDisplaySize: { width: 32, height: 32 },
+  cameraScroll: { x: 0, y: 0 },
+  cameraZoom: 1,
 };
 
 export const useGameStore = create<GameStore>((set) => ({
@@ -82,5 +90,10 @@ export const useGameStore = create<GameStore>((set) => ({
   setNickname: (nickname) => set({ nickname }),
   setNpcPositions: (npcPositions) => set({ npcPositions }),
   setPlayerPosition: (x, y) => set({ playerPosition: { x, y } }),
-  resetGame: () => set({ ...initialState }),
+  setPlayerDisplaySize: (width, height) =>
+    set({ playerDisplaySize: { width, height } }),
+  setCameraScroll: (x, y, zoom) =>
+    set({ cameraScroll: { x, y }, cameraZoom: zoom }),
+  resetGame: () =>
+    set((state) => ({ ...initialState, nickname: state.nickname })),
 }));

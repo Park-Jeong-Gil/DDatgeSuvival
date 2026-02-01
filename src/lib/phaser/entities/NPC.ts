@@ -19,6 +19,9 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
   private nameLabel: Phaser.GameObjects.Text;
   private chaseLabel: Phaser.GameObjects.Text;
   private lastSeenAt: number = -Infinity;
+  private lastRenderCheckAt: number = 0;
+  private lastRecoverAt: number = 0;
+  private renderableNow: boolean = true;
 
   constructor(scene: Phaser.Scene, x: number, y: number, data: NPCData) {
     const textureKey = data.spriteKey;
@@ -111,43 +114,14 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     if (this.destroyed || !this.active) return false;
     if (!this.visible || this.alpha <= 0) return false;
     if (this.displayWidth <= 0 || this.displayHeight <= 0) return false;
-    if (!this.texture || !this.scene.textures.exists(this.texture.key)) {
-      return false;
-    }
+    if (!this.isTextureReady()) return false;
     if (!this.scene.sys.displayList.exists(this)) return false;
-    const updateList = this.scene.sys.updateList as unknown as {
-      contains?: (child: Phaser.GameObjects.GameObject) => boolean;
-      list?: Phaser.GameObjects.GameObject[];
-    };
-    const inUpdateList =
-      typeof updateList.contains === "function"
-        ? updateList.contains(this)
-        : Array.isArray(updateList.list)
-          ? updateList.list.includes(this)
-          : true;
-    if (!inUpdateList) return false;
 
     const bounds = this.getBounds();
-    const inView = Phaser.Geom.Intersects.RectangleToRectangle(
+    return Phaser.Geom.Intersects.RectangleToRectangle(
       camera.worldView,
       bounds,
     );
-
-    const renderFlagsOk = this.renderFlags !== 0;
-    const willRender =
-      typeof (
-        this as unknown as {
-          willRender?: (cam: Phaser.Cameras.Scene2D.Camera) => boolean;
-        }
-      ).willRender === "function"
-        ? (
-            this as unknown as {
-              willRender: (cam: Phaser.Cameras.Scene2D.Camera) => boolean;
-            }
-          ).willRender(camera)
-        : camera.cull([this]).length > 0;
-
-    return inView && renderFlagsOk && willRender;
   }
 
   public wasRecentlyVisible(now: number, windowMs: number = 200): boolean {
@@ -162,10 +136,18 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     super.preUpdate(time, delta);
     const cam = this.scene?.cameras?.main;
     if (!cam) return;
-    if (this.isRenderableInCamera(cam)) {
-      this.lastSeenAt = time;
+    if (time - this.lastRenderCheckAt >= 150) {
+      this.lastRenderCheckAt = time;
+      this.renderableNow = this.isRenderableInCamera(cam);
+      if (this.renderableNow) {
+        this.lastSeenAt = time;
+      }
+      if (!this.renderableNow && time - this.lastRecoverAt >= 500) {
+        this.lastRecoverAt = time;
+        this.ensureRenderable();
+      }
     }
-    this.syncPhysicsWithRenderState(cam, time);
+    this.syncPhysicsWithRenderState(cam, time, this.renderableNow);
   }
 
   private ensureRenderable() {
@@ -175,22 +157,6 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     if (displayList && !displayList.exists(this)) {
       displayList.add(this);
     }
-    const updateList = this.scene?.sys?.updateList as unknown as {
-      add?: (child: Phaser.GameObjects.GameObject) => void;
-      contains?: (child: Phaser.GameObjects.GameObject) => boolean;
-      list?: Phaser.GameObjects.GameObject[];
-    };
-    const inUpdateList =
-      updateList &&
-      (typeof updateList.contains === "function"
-        ? updateList.contains(this)
-        : Array.isArray(updateList.list)
-          ? updateList.list.includes(this)
-          : false);
-    if (updateList?.add && !inUpdateList) {
-      updateList.add(this);
-    }
-
     if (!this.visible) this.setVisible(true);
     if (this.alpha <= 0) this.setAlpha(1);
 
@@ -214,6 +180,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
   private syncPhysicsWithRenderState(
     camera: Phaser.Cameras.Scene2D.Camera,
     now: number,
+    renderableNow: boolean,
   ) {
     if (this.destroyed || !this.active || !this.body) return;
     const body = this.body as Phaser.Physics.Arcade.Body;
@@ -224,8 +191,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       }
       return;
     }
-    const shouldHavePhysics =
-      this.isRenderableInCamera(camera) || this.wasRecentlyVisible(now);
+    const shouldHavePhysics = renderableNow || this.wasRecentlyVisible(now);
 
     if (!shouldHavePhysics) {
       if (body.enable) {
@@ -251,8 +217,6 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     isPlayerInvisible: boolean,
   ) {
     if (!this.active) return;
-
-    this.ensureRenderable();
 
     // 정지 상태 체크
     if (Date.now() < this._stunUntil) {
