@@ -27,7 +27,7 @@ export function generateMap(scene: Phaser.Scene): MapElements {
     centerY,
     safeRadius,
     allPlacedObjects,
-    80 // tree 반경
+    80, // tree 반경
   );
 
   // Rocks
@@ -40,7 +40,7 @@ export function generateMap(scene: Phaser.Scene): MapElements {
     centerY,
     safeRadius,
     allPlacedObjects,
-    60 // rock 반경
+    60, // rock 반경
   );
 
   // Bushes (player can enter, speed reduction)
@@ -53,7 +53,7 @@ export function generateMap(scene: Phaser.Scene): MapElements {
     centerY,
     safeRadius,
     allPlacedObjects,
-    50 // bush 반경
+    50, // bush 반경
   );
 
   return { obstacles, bushes };
@@ -68,7 +68,7 @@ function placeObjects(
   safeCenterY: number,
   safeRadius: number,
   allPlacedObjects: { x: number; y: number; radius: number }[],
-  objectRadius: number
+  objectRadius: number,
 ) {
   const margin = 80;
   const minSpacing = objectRadius * 2; // 반경의 2배 간격 확보
@@ -87,7 +87,7 @@ function placeObjects(
         x,
         y,
         safeCenterX,
-        safeCenterY
+        safeCenterY,
       );
       if (distFromCenter < safeRadius) continue;
 
@@ -107,7 +107,7 @@ function placeObjects(
     if (valid!) {
       const obj = group.create(x!, y!, textureKey);
       obj.setDepth(2);
-      
+
       // 배치된 객체를 공유 배열에 추가 (다른 타입과의 겹침도 방지)
       allPlacedObjects.push({ x: x!, y: y!, radius: objectRadius });
     }

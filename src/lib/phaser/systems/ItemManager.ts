@@ -191,7 +191,7 @@ export class ItemManager {
             x,
             y,
             obstacle.x,
-            obstacle.y
+            obstacle.y,
           );
           if (distance < minDistanceFromObstacle) {
             tooClose = true;
@@ -206,12 +206,7 @@ export class ItemManager {
       // 덤불과의 거리 체크 (덤불은 통과 가능하지만 너무 가까우면 안 보임)
       this.mapElements.bushes.children.iterate((bush) => {
         if (bush && bush instanceof Phaser.GameObjects.Sprite) {
-          const distance = Phaser.Math.Distance.Between(
-            x,
-            y,
-            bush.x,
-            bush.y
-          );
+          const distance = Phaser.Math.Distance.Between(x, y, bush.x, bush.y);
           if (distance < 40) {
             tooClose = true;
             return false;
