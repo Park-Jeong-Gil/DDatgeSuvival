@@ -1,7 +1,7 @@
 export const GAME_WIDTH = 800;
 export const GAME_HEIGHT = 600;
-export const MAP_WIDTH = 1800;
-export const MAP_HEIGHT = 1800;
+export const MAP_WIDTH = 1600;
+export const MAP_HEIGHT = 1600;
 
 // 모바일 기준 (960px 이하)
 export const MOBILE_BREAKPOINT = 960;

@@ -7,6 +7,7 @@ import { useGameStore } from "@/store/gameStore";
 import { EventBus } from "../EventBus";
 import type { ItemData } from "@/types/item";
 import type { ActiveBuff } from "@/types/game";
+import type { MapElements } from "../utils/mapGenerator";
 
 export class ItemManager {
   private scene: Phaser.Scene;
@@ -15,6 +16,7 @@ export class ItemManager {
   private spawnTimer: number = 0;
   private readonly SPAWN_INTERVAL = 10000;
   private readonly MAX_ITEMS = 15;
+  private mapElements: MapElements;
 
   // Active buff tracking
   private activeBuffs: Map<
@@ -22,9 +24,10 @@ export class ItemManager {
     { effect: string; remainingTime: number; duration: number }
   > = new Map();
 
-  constructor(scene: Phaser.Scene) {
+  constructor(scene: Phaser.Scene, mapElements: MapElements) {
     this.scene = scene;
     this.itemGroup = scene.physics.add.staticGroup();
+    this.mapElements = mapElements;
   }
 
   update(delta: number) {
@@ -163,13 +166,66 @@ export class ItemManager {
     const data = this.rollItem();
     if (!data) return;
 
-    const margin = 200;
-    const x = margin + Math.random() * (MAP_WIDTH - margin * 2);
-    const y = margin + Math.random() * (MAP_HEIGHT - margin * 2);
+    const position = this.findValidItemPosition();
+    if (!position) return; // 유효한 위치를 찾지 못하면 스킵
 
-    const item = new Item(this.scene, x, y, data);
+    const item = new Item(this.scene, position.x, position.y, data);
     this.itemGroup.add(item);
     this.items.push(item);
+  }
+
+  private findValidItemPosition(): { x: number; y: number } | null {
+    const margin = 200;
+    const minDistanceFromObstacle = 60; // 장애물과 최소 거리
+
+    for (let attempt = 0; attempt < 50; attempt++) {
+      const x = margin + Math.random() * (MAP_WIDTH - margin * 2);
+      const y = margin + Math.random() * (MAP_HEIGHT - margin * 2);
+
+      // 모든 장애물과의 거리 체크
+      let tooClose = false;
+
+      this.mapElements.obstacles.children.iterate((obstacle) => {
+        if (obstacle && obstacle instanceof Phaser.GameObjects.Sprite) {
+          const distance = Phaser.Math.Distance.Between(
+            x,
+            y,
+            obstacle.x,
+            obstacle.y
+          );
+          if (distance < minDistanceFromObstacle) {
+            tooClose = true;
+            return false; // 순회 중단
+          }
+        }
+        return true;
+      });
+
+      if (tooClose) continue;
+
+      // 덤불과의 거리 체크 (덤불은 통과 가능하지만 너무 가까우면 안 보임)
+      this.mapElements.bushes.children.iterate((bush) => {
+        if (bush && bush instanceof Phaser.GameObjects.Sprite) {
+          const distance = Phaser.Math.Distance.Between(
+            x,
+            y,
+            bush.x,
+            bush.y
+          );
+          if (distance < 40) {
+            tooClose = true;
+            return false;
+          }
+        }
+        return true;
+      });
+
+      if (!tooClose) {
+        return { x, y };
+      }
+    }
+
+    return null; // 50번 시도해도 찾지 못함
   }
 
   private rollItem(): ItemData | null {

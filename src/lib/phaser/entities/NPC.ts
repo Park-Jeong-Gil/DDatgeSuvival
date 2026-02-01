@@ -289,7 +289,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     );
 
     const levelDiff = playerLevel - this.level;
-    const baseDetection = 200 + this.level * 10;
+    const baseDetection = 180 + this.level * 5; // 감지 거리 기본값 원래 10
 
     let detectionRange = baseDetection;
     if (levelDiff < 0) {

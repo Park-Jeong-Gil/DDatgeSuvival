@@ -124,7 +124,7 @@ export class GameScene extends Phaser.Scene {
     this.hungerSystem = new HungerSystem();
     this.levelSystem = new LevelSystem();
     this.npcManager = new NPCManager(this);
-    this.itemManager = new ItemManager(this);
+    this.itemManager = new ItemManager(this, this.mapElements);
 
     // Initial NPC spawn
     this.npcManager.initialSpawn(1, MAP_WIDTH / 2, MAP_HEIGHT / 2);
@@ -250,6 +250,9 @@ export class GameScene extends Phaser.Scene {
       this.itemManager.isPlayerInvisible(),
     );
     this.itemManager.update(delta);
+
+    // 플레이어와 겹치는 모든 먹을 수 있는 NPC 동시 처리
+    this.checkMultipleNPCEating();
 
     // Survival time
     this.survivalTimer += delta;
@@ -552,6 +555,53 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  private checkMultipleNPCEating() {
+    if (this.isGameOver || !this.player.active) return;
+
+    // 무적 상태 체크
+    const isInvincible =
+      this.time.now < this.invincibleUntil ||
+      this.itemManager.isPlayerInvincible();
+
+    const playerBody = this.player.body as Phaser.Physics.Arcade.Body;
+    if (!playerBody) return;
+
+    const eatableNPCs: NPC[] = [];
+    const playerLevel = useGameStore.getState().level;
+
+    // 모든 NPC를 순회하며 먹을 수 있는 것들만 수집
+    this.npcManager.npcGroup.children.iterate((npcObj) => {
+      const npc = npcObj as NPC;
+      if (!npc.active || npc.destroyed || !npc.body) return true;
+
+      const npcBody = npc.body as Phaser.Physics.Arcade.Body;
+      if (!npcBody.enable) return true;
+
+      // Phaser의 overlap 함수로 정확한 충돌 검사
+      const overlaps = this.physics.overlap(this.player, npc);
+      if (!overlaps) return true;
+
+      // 먹을 수 있는지 체크
+      const canEat =
+        FoodChain.canEat(playerLevel, npc.level) ||
+        (FoodChain.sameLevel(playerLevel, npc.level) &&
+          this.itemManager.canEatSameLevel());
+
+      if (canEat) {
+        eatableNPCs.push(npc);
+      }
+
+      return true;
+    });
+
+    // 먹을 수 있는 NPC들을 모두 동시에 처리
+    if (eatableNPCs.length > 0) {
+      eatableNPCs.forEach((npc) => {
+        this.handleEat(npc);
+      });
+    }
+  }
+
   private handleEat(npc: NPC) {
     // NPCManager의 완전한 제거 메서드 사용
     this.npcManager.removeNPC(npc);
@@ -665,6 +715,7 @@ export class GameScene extends Phaser.Scene {
     const data = args[0] as { level: number };
 
     if (!this.hungerSystem) return;
+    if (!this.cameras || !this.cameras.main) return;
 
     // HP 30% 회복
     const maxHunger = 100;

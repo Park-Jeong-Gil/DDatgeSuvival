@@ -187,13 +187,15 @@ export class NPCManager {
     if (diff < 0) {
       // Edible NPCs - spawn more
       let baseCount = 0;
-      if (absDiff === 1) baseCount = 80;
-      else if (absDiff === 2) baseCount = 60;
-      else if (absDiff === 3) baseCount = 40;
+      if (absDiff === 1)
+        baseCount = 30; // 약한 먹이 NPC는 더 많이 스폰
+      else if (absDiff === 2)
+        baseCount = 25; // 중간 먹이 NPC는 적당히 스폰
+      else if (absDiff === 3) baseCount = 20; // 강한 먹이 NPC는 덜 스폰
 
       // 플레이어 레벨 1일 때만 1.5배 (초반 생존율 향상)
       if (playerLevel === 1) {
-        return Math.round(baseCount * 1.5);
+        return Math.round(baseCount * 2.5);
       }
 
       // 플레이어 레벨 3 이상일 때 15% 감소 (후반 난이도 조정)
@@ -207,9 +209,9 @@ export class NPCManager {
       return 20;
     } else {
       // Predators - spawn fewer
-      if (absDiff === 1) return 6;
-      if (absDiff === 2) return 4;
-      if (absDiff === 3) return 2;
+      if (absDiff === 1) return 4;
+      if (absDiff === 2) return 3;
+      if (absDiff === 3) return 1;
     }
     return 0;
   }
