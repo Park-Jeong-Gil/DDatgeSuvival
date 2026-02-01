@@ -400,13 +400,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
 
     this.chaseBarGraphics.clear();
     this.chaseBarGraphics.fillStyle(0x374151, 1);
-    this.chaseBarGraphics.fillRoundedRect(
-      barX,
-      barY,
-      barWidth,
-      barHeight,
-      2,
-    );
+    this.chaseBarGraphics.fillRoundedRect(barX, barY, barWidth, barHeight, 2);
 
     const fillColor = isStunned ? 0x22c55e : 0xef4444;
     this.chaseBarGraphics.fillStyle(fillColor, 1);
