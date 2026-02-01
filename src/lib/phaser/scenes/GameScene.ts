@@ -36,6 +36,7 @@ export class GameScene extends Phaser.Scene {
   private playerLabelText?: Phaser.GameObjects.Text;
   private playerHpGraphics?: Phaser.GameObjects.Graphics;
   private inputReady: boolean = false;
+  private onLevelUpHandler = this.onLevelUp.bind(this);
 
   constructor() {
     super({ key: "GameScene" });
@@ -110,7 +111,7 @@ export class GameScene extends Phaser.Scene {
     this.setupCollisions();
 
     // Listen for level up
-    EventBus.on("level-up", this.onLevelUp.bind(this));
+    EventBus.on("level-up", this.onLevelUpHandler);
 
     // Warning indicator (fixed to camera)
     this.warningGraphics = this.add.graphics();
@@ -140,15 +141,23 @@ export class GameScene extends Phaser.Scene {
         if (!npcBody.enable) return;
 
         // body 위치 기반 실제 AABB 겹침 검증 (Phaser 내부 버그 방어)
+        // 작은 겹침도 판정되도록 여유 폭을 둔다.
         const playerBody = this.player.body as Phaser.Physics.Arcade.Body;
-        const overlapX =
-          playerBody.position.x < npcBody.position.x + npcBody.width &&
-          playerBody.position.x + playerBody.width > npcBody.position.x;
-        const overlapY =
-          playerBody.position.y < npcBody.position.y + npcBody.height &&
-          playerBody.position.y + playerBody.height > npcBody.position.y;
+        const overlapPadding = 6;
+        const playerRect = new Phaser.Geom.Rectangle(
+          playerBody.position.x - overlapPadding,
+          playerBody.position.y - overlapPadding,
+          playerBody.width + overlapPadding * 2,
+          playerBody.height + overlapPadding * 2,
+        );
+        const npcRect = new Phaser.Geom.Rectangle(
+          npcBody.position.x - overlapPadding,
+          npcBody.position.y - overlapPadding,
+          npcBody.width + overlapPadding * 2,
+          npcBody.height + overlapPadding * 2,
+        );
 
-        if (!overlapX || !overlapY) {
+        if (!Phaser.Geom.Intersects.RectangleToRectangle(playerRect, npcRect)) {
           return;
         }
 
@@ -620,6 +629,8 @@ export class GameScene extends Phaser.Scene {
   private onLevelUp(...args: unknown[]) {
     const data = args[0] as { level: number };
 
+    if (!this.hungerSystem) return;
+
     // HP 30% 회복
     const maxHunger = 100;
     const currentHunger = useGameStore.getState().hunger;
@@ -637,7 +648,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   shutdown() {
-    EventBus.off("level-up", this.onLevelUp);
+    EventBus.off("level-up", this.onLevelUpHandler);
     this.npcManager.destroy();
     this.itemManager.destroy();
   }
