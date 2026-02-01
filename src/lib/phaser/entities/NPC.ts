@@ -57,6 +57,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
 
     const body = this.body as Phaser.Physics.Arcade.Body;
     body.setBounce(0.2);
+    body.setCollideWorldBounds(true); // 물리 바디에서도 월드 경계 충돌 활성화
     body.setSize(this.displayWidth, this.displayHeight, true);
 
     // Name label
@@ -222,6 +223,49 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
   ) {
     if (!this.active) return;
 
+    // 월드 경계 체크 및 강제 이동
+    const worldBounds = this.scene.physics.world.bounds;
+    const margin = 10; // 경계에서 약간 안쪽으로
+    let needsRepositioning = false;
+
+    if (this.x < worldBounds.x + margin) {
+      this.x = worldBounds.x + margin;
+      needsRepositioning = true;
+    } else if (this.x > worldBounds.right - margin) {
+      this.x = worldBounds.right - margin;
+      needsRepositioning = true;
+    }
+
+    if (this.y < worldBounds.y + margin) {
+      this.y = worldBounds.y + margin;
+      needsRepositioning = true;
+    } else if (this.y > worldBounds.bottom - margin) {
+      this.y = worldBounds.bottom - margin;
+      needsRepositioning = true;
+    }
+
+    // 경계에 도달하면 안쪽으로 방향 전환
+    if (needsRepositioning) {
+      const centerX = worldBounds.centerX;
+      const centerY = worldBounds.centerY;
+      const angleToCenter = Phaser.Math.Angle.Between(
+        this.x,
+        this.y,
+        centerX,
+        centerY,
+      );
+      const speed = this.baseSpeed * 0.5;
+      this.setVelocity(
+        Math.cos(angleToCenter) * speed,
+        Math.sin(angleToCenter) * speed,
+      );
+      // 배회 방향도 중앙으로 설정
+      this.wanderDirection.set(
+        Math.cos(angleToCenter),
+        Math.sin(angleToCenter),
+      );
+    }
+
     const now = Date.now();
 
     // 정지 상태 체크
@@ -348,12 +392,82 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
   }
 
   private flee(targetX: number, targetY: number, playerSpeed: number) {
-    const angle = Phaser.Math.Angle.Between(this.x, this.y, targetX, targetY);
+    const worldBounds = this.scene.physics.world.bounds;
+    const margin = 100; // 경계로부터 여유 거리
+
+    // 기본 도망 방향 계산 (플레이어 반대 방향)
+    const angleFromPlayer = Phaser.Math.Angle.Between(
+      this.x,
+      this.y,
+      targetX,
+      targetY,
+    );
+    let fleeAngle = angleFromPlayer + Math.PI; // 반대 방향
+
+    // 경계 근처인지 확인
+    const nearLeftEdge = this.x < worldBounds.x + margin;
+    const nearRightEdge = this.x > worldBounds.right - margin;
+    const nearTopEdge = this.y < worldBounds.y + margin;
+    const nearBottomEdge = this.y > worldBounds.bottom - margin;
+
+    // 경계 근처라면 도망 방향을 조정
+    if (nearLeftEdge || nearRightEdge || nearTopEdge || nearBottomEdge) {
+      // 맵 중앙으로 향하는 각도
+      const centerX = worldBounds.centerX;
+      const centerY = worldBounds.centerY;
+      const angleToCenter = Phaser.Math.Angle.Between(
+        this.x,
+        this.y,
+        centerX,
+        centerY,
+      );
+
+      // 플레이어로부터 도망가면서도 중앙을 향하도록 각도 혼합
+      // 경계에 가까울수록 중앙 방향 비중 증가
+      let centerWeight = 0;
+
+      if (nearLeftEdge)
+        centerWeight = Math.max(
+          centerWeight,
+          1 - (this.x - worldBounds.x) / margin,
+        );
+      if (nearRightEdge)
+        centerWeight = Math.max(
+          centerWeight,
+          1 - (worldBounds.right - this.x) / margin,
+        );
+      if (nearTopEdge)
+        centerWeight = Math.max(
+          centerWeight,
+          1 - (this.y - worldBounds.y) / margin,
+        );
+      if (nearBottomEdge)
+        centerWeight = Math.max(
+          centerWeight,
+          1 - (worldBounds.bottom - this.y) / margin,
+        );
+
+      // 경계에 매우 가까우면 거의 중앙으로만 이동
+      if (centerWeight > 0.7) {
+        fleeAngle = angleToCenter;
+      } else {
+        // 도망 방향과 중앙 방향을 혼합
+        const fleeX = Math.cos(fleeAngle);
+        const fleeY = Math.sin(fleeAngle);
+        const centerX_dir = Math.cos(angleToCenter);
+        const centerY_dir = Math.sin(angleToCenter);
+
+        const mixedX = fleeX * (1 - centerWeight) + centerX_dir * centerWeight;
+        const mixedY = fleeY * (1 - centerWeight) + centerY_dir * centerWeight;
+
+        fleeAngle = Math.atan2(mixedY, mixedX);
+      }
+    }
+
     const speed = playerSpeed * 0.3;
+    this.setVelocity(Math.cos(fleeAngle) * speed, Math.sin(fleeAngle) * speed);
 
-    this.setVelocity(-Math.cos(angle) * speed, -Math.sin(angle) * speed);
-
-    if (-Math.cos(angle) < 0) this.setFlipX(true);
+    if (Math.cos(fleeAngle) < 0) this.setFlipX(true);
     else this.setFlipX(false);
   }
 

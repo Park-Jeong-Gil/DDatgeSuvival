@@ -147,7 +147,24 @@ export class GameScene extends Phaser.Scene {
   }
 
   private setupCollisions() {
-    // Player vs NPC
+    // Player vs NPC - 물리적 충돌 (동일 레벨일 때만)
+    this.physics.add.collider(
+      this.player,
+      this.npcManager.npcGroup,
+      undefined,
+      (_playerObj, npcObj) => {
+        const npc = npcObj as NPC;
+        if (!npc.active || npc.destroyed) return false;
+
+        const playerLevel = this.player.level;
+        const npcLevel = npc.level;
+
+        // 동일 레벨인 경우에만 물리적 충돌 발생
+        return FoodChain.sameLevel(playerLevel, npcLevel);
+      },
+    );
+
+    // Player vs NPC - 게임 로직 처리 (먹기/죽기)
     this.physics.add.overlap(
       this.player,
       this.npcManager.npcGroup,
@@ -161,27 +178,6 @@ export class GameScene extends Phaser.Scene {
         if (!npc.body) return;
         const npcBody = npc.body as Phaser.Physics.Arcade.Body;
         if (!npcBody.enable) return;
-
-        // body 위치 기반 실제 AABB 겹침 검증 (Phaser 내부 버그 방어)
-        // 작은 겹침도 판정되도록 여유 폭을 둔다.
-        const playerBody = this.player.body as Phaser.Physics.Arcade.Body;
-        const overlapPadding = 6;
-        const playerRect = new Phaser.Geom.Rectangle(
-          playerBody.position.x - overlapPadding,
-          playerBody.position.y - overlapPadding,
-          playerBody.width + overlapPadding * 2,
-          playerBody.height + overlapPadding * 2,
-        );
-        const npcRect = new Phaser.Geom.Rectangle(
-          npcBody.position.x - overlapPadding,
-          npcBody.position.y - overlapPadding,
-          npcBody.width + overlapPadding * 2,
-          npcBody.height + overlapPadding * 2,
-        );
-
-        if (!Phaser.Geom.Intersects.RectangleToRectangle(playerRect, npcRect)) {
-          return;
-        }
 
         // 플레이어가 무적 상태면 무시
         if (
@@ -518,7 +514,8 @@ export class GameScene extends Phaser.Scene {
     ) {
       this.handleEat(npc);
     } else if (FoodChain.sameLevel(playerLevel, npcLevel)) {
-      this.handleKnockback(npc);
+      // 같은 레벨은 장애물처럼 단순 충돌만 처리 (넉백 없음)
+      return;
     } else if (FoodChain.mustFlee(playerLevel, npcLevel)) {
       // 플레이어가 무적 상태면 포식자 5초 정지
       if (this.itemManager.isPlayerInvincible()) {
@@ -591,8 +588,8 @@ export class GameScene extends Phaser.Scene {
     // 무적 시간 증가 (200ms → 500ms)
     this.invincibleUntil = this.time.now + 500;
 
-    // Visual feedback
-    this.cameras.main.shake(100, 0.005);
+    // Visual feedback (효과 감소: 100ms → 50ms, 0.005 → 0.002)
+    this.cameras.main.shake(50, 0.002);
 
     EventBus.emit("npc-eaten", {
       npcLevel: npc.level,
@@ -607,7 +604,7 @@ export class GameScene extends Phaser.Scene {
       this.player.x,
       this.player.y,
     );
-    const knockbackForce = 300;
+    const knockbackForce = 600; // 2배 증가
 
     this.player.setVelocity(
       Math.cos(angle) * knockbackForce,

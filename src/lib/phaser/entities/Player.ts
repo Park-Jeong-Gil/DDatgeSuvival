@@ -16,8 +16,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setScale(size / 32);
     this.setDepth(10);
 
+    // Physics body를 원본 텍스처 크기로 설정 (Phaser가 자동으로 스케일 적용)
     const body = this.body as Phaser.Physics.Arcade.Body;
-    body.setSize(32, 32, false);
+    body.setSize(32, 32, true);
     body.setOffset(0, 0);
   }
 
@@ -27,8 +28,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const size = 16 + level * 2;
     this.setScale(size / 32);
 
+    // Physics body를 원본 크기로 유지 (Phaser가 자동으로 스케일 적용)
     if (this.body) {
       const body = this.body as Phaser.Physics.Arcade.Body;
+      body.setSize(32, 32, true);
       body.setOffset(0, 0);
     }
   }
