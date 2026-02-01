@@ -220,6 +220,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     playerLevel: number,
     playerSpeed: number,
     isPlayerInvisible: boolean,
+    bushes?: Phaser.Physics.Arcade.StaticGroup,
   ) {
     if (!this.active) return;
 
@@ -328,7 +329,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       }
       this.updateChaseBar(now, true, false);
 
-      this.chase(playerX, playerY, playerSpeed);
+      this.chase(playerX, playerY, playerSpeed, bushes);
     } else if (levelDiff > 0) {
       // NPC is prey - flee
       if (this.aiState === NPCState.CHASE) {
@@ -381,9 +382,34 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     }
   }
 
-  private chase(targetX: number, targetY: number, playerSpeed: number) {
+  private chase(
+    targetX: number,
+    targetY: number,
+    playerSpeed: number,
+    bushes?: Phaser.Physics.Arcade.StaticGroup,
+  ) {
     const angle = Phaser.Math.Angle.Between(this.x, this.y, targetX, targetY);
-    const speed = playerSpeed * 1.01;
+    let speed = playerSpeed * 1.01;
+
+    // 추격 중인 포식자가 풀숲에 있으면 속도 감소
+    if (bushes) {
+      const inBush = bushes.children.entries.some((bush) => {
+        const bushSprite = bush as Phaser.Physics.Arcade.Sprite;
+        const distance = Phaser.Math.Distance.Between(
+          this.x,
+          this.y,
+          bushSprite.x,
+          bushSprite.y,
+        );
+        // 풀숲의 반경 내에 있는지 체크 (scale 9.0 적용)
+        const bushRadius = (bushSprite.displayWidth / 2) * 0.9;
+        return distance < bushRadius;
+      });
+
+      if (inBush) {
+        speed *= 0.5;
+      }
+    }
 
     this.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
 

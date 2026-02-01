@@ -17,6 +17,20 @@ export function generateMap(scene: Phaser.Scene): MapElements {
   // 모든 장애물의 위치를 추적 (타입 간 겹침 방지)
   const allPlacedObjects: { x: number; y: number; radius: number }[] = [];
 
+  // Bushes 먼저 배치 (넓은 면적, 최대 4개, 위에 나무/바위 생성 가능)
+  placeObjects(
+    scene,
+    bushes,
+    "obstacle_bush",
+    4, // 최대 4개
+    centerX,
+    centerY,
+    safeRadius,
+    [], // 풀숲끼리만 겹침 방지
+    450, // 매우 큰 반경 (9배 스케일)
+    9.0, // 9배 크기
+  );
+
   // Trees (더 큰 간격)
   placeObjects(
     scene,
@@ -28,6 +42,7 @@ export function generateMap(scene: Phaser.Scene): MapElements {
     safeRadius,
     allPlacedObjects,
     80, // tree 반경
+    1.0,
   );
 
   // Rocks
@@ -41,19 +56,7 @@ export function generateMap(scene: Phaser.Scene): MapElements {
     safeRadius,
     allPlacedObjects,
     60, // rock 반경
-  );
-
-  // Bushes (player can enter, speed reduction)
-  placeObjects(
-    scene,
-    bushes,
-    "obstacle_bush",
-    30,
-    centerX,
-    centerY,
-    safeRadius,
-    allPlacedObjects,
-    50, // bush 반경
+    1.0,
   );
 
   return { obstacles, bushes };
@@ -69,6 +72,7 @@ function placeObjects(
   safeRadius: number,
   allPlacedObjects: { x: number; y: number; radius: number }[],
   objectRadius: number,
+  scale: number = 1.0,
 ) {
   const margin = 80;
   const minSpacing = objectRadius * 2; // 반경의 2배 간격 확보
@@ -107,6 +111,7 @@ function placeObjects(
     if (valid!) {
       const obj = group.create(x!, y!, textureKey);
       obj.setDepth(2);
+      obj.setScale(scale);
 
       // 배치된 객체를 공유 배열에 추가 (다른 타입과의 겹침도 방지)
       allPlacedObjects.push({ x: x!, y: y!, radius: objectRadius });

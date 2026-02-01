@@ -4,6 +4,7 @@ import { npcDatabase, getNPCDataByLevel } from "../data/npcData";
 import { MAP_WIDTH, MAP_HEIGHT, GAME_WIDTH, GAME_HEIGHT } from "../constants";
 import { useGameStore } from "@/store/gameStore";
 import type { NPCPosition } from "@/types/game";
+import type { MapElements } from "../utils/mapGenerator";
 
 export class NPCManager {
   private scene: Phaser.Scene;
@@ -13,13 +14,15 @@ export class NPCManager {
   private readonly SPAWN_INTERVAL = 3000;
   private positionUpdateTimer: number = 0;
   private readonly POSITION_UPDATE_INTERVAL = 100; // 10fps for minimap
+  private bushes?: Phaser.Physics.Arcade.StaticGroup;
 
-  constructor(scene: Phaser.Scene) {
+  constructor(scene: Phaser.Scene, mapElements?: MapElements) {
     this.scene = scene;
     this.npcGroup = scene.physics.add.group({
       classType: NPC,
       runChildUpdate: false,
     });
+    this.bushes = mapElements?.bushes;
   }
 
   update(
@@ -47,6 +50,7 @@ export class NPCManager {
           playerLevel,
           playerSpeed,
           isPlayerInvisible,
+          this.bushes,
         );
       }
     }

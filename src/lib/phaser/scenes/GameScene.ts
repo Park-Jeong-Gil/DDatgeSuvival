@@ -123,7 +123,7 @@ export class GameScene extends Phaser.Scene {
     // Systems
     this.hungerSystem = new HungerSystem();
     this.levelSystem = new LevelSystem();
-    this.npcManager = new NPCManager(this);
+    this.npcManager = new NPCManager(this, this.mapElements);
     this.itemManager = new ItemManager(this, this.mapElements);
 
     // Initial NPC spawn
@@ -208,10 +208,7 @@ export class GameScene extends Phaser.Scene {
       this.mapElements.obstacles,
     );
 
-    // Player vs Bushes (overlap, not collide)
-    this.physics.add.overlap(this.player, this.mapElements.bushes, () => {
-      this.inBush = true;
-    });
+    // Player vs Bushes - 플레이어는 속도 감소 없음 (NPC 추격 감속에만 사용)
   }
 
   update(time: number, delta: number) {
@@ -224,8 +221,7 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    // Reset bush state (re-checked in overlap)
-    this.inBush = false;
+    // Reset bush state (no longer used for player)
 
     // Player movement
     this.ensureInput();
@@ -427,7 +423,7 @@ export class GameScene extends Phaser.Scene {
 
   private handlePlayerMovement() {
     let speedMultiplier = this.itemManager.getSpeedMultiplier();
-    if (this.inBush) speedMultiplier *= 0.5;
+    // 플레이어는 풀숲에서 속도 감소 없음
 
     const speed = this.player.currentSpeed * speedMultiplier;
     let vx = 0;
