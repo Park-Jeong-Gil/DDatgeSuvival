@@ -19,6 +19,9 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
       debug: false,
     },
   },
+  input: {
+    activePointers: 2,
+  },
   scene: [PreloadScene, GameScene],
   scale: {
     mode: Phaser.Scale.RESIZE,

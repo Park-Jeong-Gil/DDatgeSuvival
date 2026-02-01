@@ -20,6 +20,7 @@ import { LevelSystem } from "../systems/LevelSystem";
 import { NPCManager } from "../systems/NPCManager";
 import { ItemManager } from "../systems/ItemManager";
 import { generateMap, type MapElements } from "../utils/mapGenerator";
+import { VirtualJoystick } from "../ui/VirtualJoystick";
 
 export class GameScene extends Phaser.Scene {
   player!: Player;
@@ -45,6 +46,7 @@ export class GameScene extends Phaser.Scene {
   private playerHpGraphics?: Phaser.GameObjects.Graphics;
   private inputReady: boolean = false;
   private isMobile: boolean = false;
+  private joystick?: VirtualJoystick;
   private onLevelUpHandler = this.onLevelUp.bind(this);
 
   constructor() {
@@ -74,13 +76,18 @@ export class GameScene extends Phaser.Scene {
 
     this.createPlayerOverlay();
 
-    // Camera
-    this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
+    // Camera (manual centering in update() instead of startFollow
+    // to ensure player, overlay, and camera update in the same frame)
     this.cameras.main.setBounds(0, 0, MAP_WIDTH, MAP_HEIGHT);
+    this.cameras.main.centerOn(this.player.x, this.player.y);
     this.updateCameraZoom();
 
     // Resize handler
     this.scale.on("resize", this.handleResize, this);
+
+    // Virtual joystick for mobile
+    this.joystick = new VirtualJoystick(this);
+    this.joystick.setVisible(this.isMobile);
 
     // Input
     if (this.input.keyboard) {
@@ -253,7 +260,16 @@ export class GameScene extends Phaser.Scene {
       store.setSurvivalTime(store.survivalTime + 1);
     }
 
-    // Update player position
+    // Manually center camera on player (same frame as overlay positioning)
+    this.cameras.main.centerOn(this.player.x, this.player.y);
+
+    // Player label & HP overlay
+    this.updatePlayerOverlay();
+
+    // Warning indicators for off-screen predators
+    this.updateWarningIndicators();
+
+    // Update store
     store.setPlayerPosition(this.player.x, this.player.y);
     store.setPlayerDisplaySize(
       this.player.displayWidth,
@@ -264,12 +280,6 @@ export class GameScene extends Phaser.Scene {
       this.cameras.main.scrollY,
       this.cameras.main.zoom,
     );
-
-    // Warning indicators for off-screen predators
-    this.updateWarningIndicators();
-
-    // Player label & HP overlay
-    this.updatePlayerOverlay();
   }
 
   private createPlayerOverlay() {
@@ -422,18 +432,32 @@ export class GameScene extends Phaser.Scene {
     let vx = 0;
     let vy = 0;
 
-    if (!this.cursors) return;
+    // Joystick input
+    if (this.joystick) {
+      const dir = this.joystick.getDirection();
+      vx = dir.x;
+      vy = dir.y;
+    }
 
-    if (this.cursors.left.isDown || this.wasd.A.isDown) vx = -1;
-    else if (this.cursors.right.isDown || this.wasd.D.isDown) vx = 1;
+    // Keyboard input (overrides joystick if pressed)
+    if (this.cursors) {
+      let kx = 0;
+      let ky = 0;
+      if (this.cursors.left.isDown || this.wasd.A.isDown) kx = -1;
+      else if (this.cursors.right.isDown || this.wasd.D.isDown) kx = 1;
 
-    if (this.cursors.up.isDown || this.wasd.W.isDown) vy = -1;
-    else if (this.cursors.down.isDown || this.wasd.S.isDown) vy = 1;
+      if (this.cursors.up.isDown || this.wasd.W.isDown) ky = -1;
+      else if (this.cursors.down.isDown || this.wasd.S.isDown) ky = 1;
 
-    if (vx !== 0 && vy !== 0) {
-      const factor = Math.SQRT1_2;
-      vx *= factor;
-      vy *= factor;
+      if (kx !== 0 || ky !== 0) {
+        vx = kx;
+        vy = ky;
+        if (vx !== 0 && vy !== 0) {
+          const factor = Math.SQRT1_2;
+          vx *= factor;
+          vy *= factor;
+        }
+      }
     }
 
     this.player.setVelocity(vx * speed, vy * speed);
@@ -677,11 +701,16 @@ export class GameScene extends Phaser.Scene {
 
   private handleResize() {
     this.updateCameraZoom();
+    if (this.joystick) {
+      this.joystick.setVisible(this.isMobile);
+      this.joystick.updatePosition();
+    }
   }
 
   shutdown() {
     this.scale.off("resize", this.handleResize, this);
     EventBus.off("level-up", this.onLevelUpHandler);
+    this.joystick?.destroy();
     this.npcManager.destroy();
     this.itemManager.destroy();
   }
