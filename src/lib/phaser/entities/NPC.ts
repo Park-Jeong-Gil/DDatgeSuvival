@@ -18,6 +18,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
   private _stunUntil: number = 0;
   private nameLabel: Phaser.GameObjects.Text;
   private chaseLabel: Phaser.GameObjects.Text;
+  private chaseBarGraphics?: Phaser.GameObjects.Graphics;
   private lastSeenAt: number = -Infinity;
   private lastRenderCheckAt: number = 0;
   private lastRecoverAt: number = 0;
@@ -80,6 +81,9 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     this.chaseLabel.setOrigin(0.5, 1);
     this.chaseLabel.setDepth(15);
     this.chaseLabel.setVisible(false);
+
+    this.chaseBarGraphics = scene.add.graphics();
+    this.chaseBarGraphics.setDepth(15);
   }
 
   public getNameLabelText(): string {
@@ -218,17 +222,16 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
   ) {
     if (!this.active) return;
 
+    const now = Date.now();
+
     // 정지 상태 체크
-    if (Date.now() < this._stunUntil) {
+    if (now < this._stunUntil) {
       this.setVelocity(0, 0);
-      const stunRemaining = Math.ceil((this._stunUntil - Date.now()) / 1000);
-      this.chaseLabel.setText(`기절!(${stunRemaining})`);
-      this.chaseLabel.setVisible(true);
       // 정지 중에도 라벨 위치 업데이트
       const offsetY = this.displayHeight / 2 + 5;
       this.nameLabel.setPosition(this.x, this.y - offsetY);
-      this.chaseLabel.setPosition(this.x, this.y - offsetY - 14);
       this.nameLabel.setVisible(true);
+      this.updateChaseBar(now, false, true);
       return;
     }
 
@@ -255,6 +258,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       this.aiState = NPCState.WANDER;
       this.chaseStartTime = 0;
       this.chaseLabel.setVisible(false);
+      this.clearChaseBar();
       this.wander(delta);
       return;
     }
@@ -274,15 +278,11 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
         this.aiState = NPCState.WANDER;
         this.chaseStartTime = 0;
         this.chaseLabel.setVisible(false);
+        this.clearChaseBar();
         this.setDepth(11);
         return;
       }
-
-      const remaining = Math.ceil(
-        (this.MAX_CHASE_DURATION - (Date.now() - this.chaseStartTime)) / 1000,
-      );
-      this.chaseLabel.setText(`추격!(${remaining})`);
-      this.chaseLabel.setVisible(true);
+      this.updateChaseBar(now, true, false);
 
       this.chase(playerX, playerY, playerSpeed);
     } else if (levelDiff > 0) {
@@ -293,6 +293,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       this.aiState = NPCState.FLEE;
       this.chaseStartTime = 0;
       this.chaseLabel.setVisible(false);
+      this.clearChaseBar();
       this.flee(playerX, playerY, playerSpeed);
     } else {
       // Same level - wander
@@ -302,6 +303,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       this.aiState = NPCState.WANDER;
       this.chaseStartTime = 0;
       this.chaseLabel.setVisible(false);
+      this.clearChaseBar();
       this.wander(delta);
     }
   }
@@ -318,12 +320,12 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     if (!inView) {
       this.nameLabel.setVisible(false);
       this.chaseLabel.setVisible(false);
+      this.clearChaseBar();
       return;
     }
 
     const offsetY = this.displayHeight / 2 + 5;
     this.nameLabel.setPosition(this.x, this.y - offsetY);
-    this.chaseLabel.setPosition(this.x, this.y - offsetY - 14);
     this.nameLabel.setVisible(true);
 
     if (this.level === 99 || this.level > playerLevel) {
@@ -374,6 +376,53 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     else if (this.wanderDirection.x > 0) this.setFlipX(false);
   }
 
+  private updateChaseBar(now: number, isChasing: boolean, isStunned: boolean) {
+    if (!this.chaseBarGraphics) return;
+
+    const barWidth = Math.max(32, this.displayWidth * 1.6);
+    const barHeight = 4;
+    const barX = this.x - barWidth / 2;
+    const barY = this.y + this.displayHeight / 2 + 6;
+
+    let ratio = 0;
+    if (isChasing) {
+      const elapsed = now - this.chaseStartTime;
+      ratio = Phaser.Math.Clamp(
+        (this.MAX_CHASE_DURATION - elapsed) / this.MAX_CHASE_DURATION,
+        0,
+        1,
+      );
+    } else if (isStunned) {
+      const remaining = this._stunUntil - now;
+      const total = 5000;
+      ratio = Phaser.Math.Clamp(1 - remaining / total, 0, 1);
+    }
+
+    this.chaseBarGraphics.clear();
+    this.chaseBarGraphics.fillStyle(0x374151, 1);
+    this.chaseBarGraphics.fillRoundedRect(
+      barX,
+      barY,
+      barWidth,
+      barHeight,
+      2,
+    );
+
+    const fillColor = isStunned ? 0x22c55e : 0xef4444;
+    this.chaseBarGraphics.fillStyle(fillColor, 1);
+    this.chaseBarGraphics.fillRoundedRect(
+      barX,
+      barY,
+      Math.max(2, barWidth * ratio),
+      barHeight,
+      2,
+    );
+  }
+
+  private clearChaseBar() {
+    this.chaseBarGraphics?.clear();
+  }
+
   destroy(fromScene?: boolean) {
     this.active = false;
     this.destroyed = true;
@@ -394,6 +443,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
 
     this.nameLabel?.destroy();
     this.chaseLabel?.destroy();
+    this.chaseBarGraphics?.destroy();
 
     super.destroy(fromScene);
   }

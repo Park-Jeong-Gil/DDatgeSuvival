@@ -5,7 +5,10 @@ interface HungerBarProps {
   size?: "default" | "compact";
 }
 
-export default function HungerBar({ hunger, size = "default" }: HungerBarProps) {
+export default function HungerBar({
+  hunger,
+  size = "default",
+}: HungerBarProps) {
   const getColor = () => {
     if (hunger >= 80) return "bg-green-500";
     if (hunger >= 40) return "bg-yellow-500";

@@ -251,18 +251,13 @@ export class GameScene extends Phaser.Scene {
   }
 
   private createPlayerOverlay() {
-    this.playerLabelText = this.add.text(
-      this.player.x,
-      this.player.y,
-      "",
-      {
-        fontSize: "10px",
-        fontFamily: "monospace",
-        color: "#ffffff",
-        stroke: "#000000",
-        strokeThickness: 2,
-      },
-    );
+    this.playerLabelText = this.add.text(this.player.x, this.player.y, "", {
+      fontSize: "10px",
+      fontFamily: "monospace",
+      color: "#ffffff",
+      stroke: "#000000",
+      strokeThickness: 2,
+    });
     this.playerLabelText.setOrigin(0.5, 1);
     this.playerLabelText.setDepth(20);
 
@@ -279,7 +274,10 @@ export class GameScene extends Phaser.Scene {
 
     const labelOffset = this.player.displayHeight / 2 + 8;
     this.playerLabelText.setText(label);
-    this.playerLabelText.setPosition(this.player.x, this.player.y - labelOffset);
+    this.playerLabelText.setPosition(
+      this.player.x,
+      this.player.y - labelOffset,
+    );
 
     const barWidth = Math.max(32, this.player.displayWidth * 1.6);
     const barHeight = 6;
