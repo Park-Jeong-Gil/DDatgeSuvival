@@ -10,10 +10,18 @@
   --color-foreground: var(--foreground);
 }
 
+@font-face {
+  font-family: "Mulmaru";
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/2601-4@1.1/Mulmaru.woff2")
+    format("woff2");
+  font-weight: normal;
+  font-display: swap;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Mulmaru", Arial, Helvetica, sans-serif;
   overflow: hidden;
   margin: 0;
   padding: 0;
