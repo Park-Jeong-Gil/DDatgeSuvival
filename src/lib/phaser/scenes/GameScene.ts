@@ -4,7 +4,15 @@ import { Player } from "../entities/Player";
 import { NPC } from "../entities/NPC";
 import { NPCState } from "@/types/npc";
 import { Item } from "../entities/Item";
-import { MAP_WIDTH, MAP_HEIGHT, GAME_WIDTH, GAME_HEIGHT } from "../constants";
+import {
+  MAP_WIDTH,
+  MAP_HEIGHT,
+  GAME_WIDTH,
+  GAME_HEIGHT,
+  MOBILE_BREAKPOINT,
+  MOBILE_GAME_WIDTH,
+  MOBILE_GAME_HEIGHT,
+} from "../constants";
 import { useGameStore } from "@/store/gameStore";
 import { FoodChain } from "../systems/FoodChain";
 import { HungerSystem } from "../systems/HungerSystem";
@@ -36,6 +44,7 @@ export class GameScene extends Phaser.Scene {
   private playerLabelText?: Phaser.GameObjects.Text;
   private playerHpGraphics?: Phaser.GameObjects.Graphics;
   private inputReady: boolean = false;
+  private isMobile: boolean = false;
   private onLevelUpHandler = this.onLevelUp.bind(this);
 
   constructor() {
@@ -68,6 +77,10 @@ export class GameScene extends Phaser.Scene {
     // Camera
     this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
     this.cameras.main.setBounds(0, 0, MAP_WIDTH, MAP_HEIGHT);
+    this.updateCameraZoom();
+
+    // Resize handler
+    this.scale.on("resize", this.handleResize, this);
 
     // Input
     if (this.input.keyboard) {
@@ -322,8 +335,10 @@ export class GameScene extends Phaser.Scene {
     const cam = this.cameras.main;
     const bounds = cam.worldView;
     const margin = 30; // 화면 가장자리에서 표시할 여백
-    const screenCX = GAME_WIDTH / 2;
-    const screenCY = GAME_HEIGHT / 2;
+    const screenW = this.scale.width;
+    const screenH = this.scale.height;
+    const screenCX = screenW / 2;
+    const screenCY = screenH / 2;
 
     this.npcManager.npcGroup.children.iterate((obj) => {
       const npc = obj as NPC;
@@ -346,8 +361,8 @@ export class GameScene extends Phaser.Scene {
       const angle = Math.atan2(dy, dx);
 
       // 화면 가장자리에 위치 계산 (screen 좌표계)
-      const halfW = GAME_WIDTH / 2 - margin;
-      const halfH = GAME_HEIGHT / 2 - margin;
+      const halfW = screenW / 2 - margin;
+      const halfH = screenH / 2 - margin;
 
       let edgeX: number, edgeY: number;
       const absCos = Math.abs(Math.cos(angle));
@@ -368,8 +383,8 @@ export class GameScene extends Phaser.Scene {
       }
 
       // Clamp
-      edgeX = Phaser.Math.Clamp(edgeX, margin, GAME_WIDTH - margin);
-      edgeY = Phaser.Math.Clamp(edgeY, margin, GAME_HEIGHT - margin);
+      edgeX = Phaser.Math.Clamp(edgeX, margin, screenW - margin);
+      edgeY = Phaser.Math.Clamp(edgeY, margin, screenH - margin);
 
       // 빨간 삼각형 화살표 그리기
       const arrowSize = 12;
@@ -647,7 +662,25 @@ export class GameScene extends Phaser.Scene {
     this.npcManager.onLevelUp(data.level, this.player.x, this.player.y);
   }
 
+  private updateCameraZoom() {
+    const screenW = this.scale.width;
+    const screenH = this.scale.height;
+    this.isMobile = screenW <= MOBILE_BREAKPOINT;
+
+    const baseW = this.isMobile ? MOBILE_GAME_WIDTH : GAME_WIDTH;
+    const baseH = this.isMobile ? MOBILE_GAME_HEIGHT : GAME_HEIGHT;
+
+    const zoomX = screenW / baseW;
+    const zoomY = screenH / baseH;
+    this.cameras.main.setZoom(Math.min(zoomX, zoomY));
+  }
+
+  private handleResize() {
+    this.updateCameraZoom();
+  }
+
   shutdown() {
+    this.scale.off("resize", this.handleResize, this);
     EventBus.off("level-up", this.onLevelUpHandler);
     this.npcManager.destroy();
     this.itemManager.destroy();

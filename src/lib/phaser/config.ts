@@ -21,8 +21,7 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
   },
   scene: [PreloadScene, GameScene],
   scale: {
-    mode: Phaser.Scale.FIT,
-    autoCenter: Phaser.Scale.CENTER_BOTH,
+    mode: Phaser.Scale.RESIZE,
   },
   pixelArt: true,
   roundPixels: false,
