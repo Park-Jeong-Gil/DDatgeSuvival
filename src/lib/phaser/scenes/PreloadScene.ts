@@ -49,6 +49,14 @@ export class PreloadScene extends Phaser.Scene {
       this.load.image(`${name}_chase`, `assets/sprites/npcs/${name}_2.png`);
     });
 
+    // Item sprites
+    this.load.image("item_golden_fruit", "assets/sprites/items/item_golden_fruit.png");
+    this.load.image("item_satiety_potion", "assets/sprites/items/item_satiety_potion.png");
+    this.load.image("item_predator_shield", "assets/sprites/items/item_predator_shield.png");
+    this.load.image("item_wing_feather", "assets/sprites/items/item_wing_feather.png");
+    this.load.image("item_invisible_cloak", "assets/sprites/items/item_invisible_cloak.png");
+    this.load.image("item_giant_power", "assets/sprites/items/item_giant_power.png");
+
     this.createPlaceholderTextures();
   }
 
@@ -96,6 +104,22 @@ export class PreloadScene extends Phaser.Scene {
       }
     });
 
+    // Item sprites - LINEAR 필터 적용
+    const itemKeys = [
+      "item_golden_fruit",
+      "item_satiety_potion",
+      "item_predator_shield",
+      "item_wing_feather",
+      "item_invisible_cloak",
+      "item_giant_power",
+    ];
+
+    itemKeys.forEach((key) => {
+      if (this.textures.exists(key)) {
+        this.textures.get(key).setFilter(Phaser.Textures.FilterMode.LINEAR);
+      }
+    });
+
     EventBus.emit("current-scene-ready", this);
     this.scene.start("GameScene");
   }
@@ -138,24 +162,6 @@ export class PreloadScene extends Phaser.Scene {
       const actualSize = level === "99" ? 128 : 32;
       g.fillRect(0, 0, actualSize, actualSize);
       g.generateTexture(`npc_${level}`, actualSize, actualSize);
-      g.destroy();
-    }
-
-    // Item placeholders
-    const itemConfigs = [
-      { key: "item_golden_fruit", color: 0xfbbf24 },
-      { key: "item_satiety_potion", color: 0x3b82f6 },
-      { key: "item_predator_shield", color: 0xa855f7 },
-      { key: "item_wing_feather", color: 0x67e8f9 },
-      { key: "item_invisible_cloak", color: 0xe2e8f0 },
-      { key: "item_giant_power", color: 0xef4444 },
-    ];
-
-    for (const { key, color } of itemConfigs) {
-      const g = this.add.graphics();
-      g.fillStyle(color, 1);
-      g.fillCircle(8, 8, 8);
-      g.generateTexture(key, 16, 16);
       g.destroy();
     }
 

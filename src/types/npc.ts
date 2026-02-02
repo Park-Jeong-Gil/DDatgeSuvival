@@ -13,4 +13,5 @@ export enum NPCState {
   WANDER = "WANDER",
   CHASE = "CHASE",
   FLEE = "FLEE",
+  STUNNED = "STUNNED",
 }

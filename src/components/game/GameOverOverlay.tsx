@@ -25,6 +25,7 @@ export default function GameOverOverlay() {
   const killsCount = useGameStore((s) => s.killsCount);
   const deathReason = useGameStore((s) => s.deathReason);
   const predatorName = useGameStore((s) => s.predatorName);
+  const collectedItems = useGameStore((s) => s.collectedItems);
   // 최초 predatorName을 보존
   const predatorNameRef = useRef<string | null>(predatorName);
   if (predatorName && predatorNameRef.current !== predatorName) {
@@ -33,6 +34,12 @@ export default function GameOverOverlay() {
   const resetGame = useGameStore((s) => s.resetGame);
 
   const npcName = getNpcNameKo(level);
+
+  // 아이템 개수 집계
+  const itemCounts = collectedItems.reduce((acc, item) => {
+    acc[item.id] = (acc[item.id] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
 
   const handleRetry = () => {
     resetGame();
@@ -81,6 +88,32 @@ export default function GameOverOverlay() {
             <span className="font-bold">{killsCount}</span>
           </div>
         </div>
+
+        {/* 수집한 아이템 목록 */}
+        {collectedItems.length > 0 && (
+          <div className="mb-6">
+            <h3 className="text-sm font-bold text-gray-300 mb-2 text-left">
+              Collected Items
+            </h3>
+            <div className="bg-gray-800/50 rounded-lg p-3 max-h-32 overflow-y-auto">
+              <div className="flex flex-col gap-1.5 text-left">
+                {Object.entries(itemCounts).map(([itemId, count]) => {
+                  const item = collectedItems.find((i) => i.id === itemId);
+                  if (!item) return null;
+                  return (
+                    <div
+                      key={itemId}
+                      className="flex justify-between items-center text-sm"
+                    >
+                      <span className="text-gray-300">{item.name}</span>
+                      <span className="font-bold text-white">×{count}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="flex gap-3">
           <button

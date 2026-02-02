@@ -184,23 +184,20 @@ export class GameScene extends Phaser.Scene {
         const npcBody = npc.body as Phaser.Physics.Arcade.Body;
         if (!npcBody.enable) return;
 
-        // 플레이어가 무적 상태면 무시
-        if (
-          this.time.now < this.invincibleUntil ||
-          this.itemManager.isPlayerInvincible()
-        )
-          return;
         this.handleNPCCollision(npc);
       },
     );
 
-    // Player vs Items
+    // Player vs Items - overlap으로 감지
     this.physics.add.overlap(
       this.player,
       this.itemManager.itemGroup,
       (_playerObj, itemObj) => {
         if (this.isGameOver) return;
-        this.itemManager.collectItem(itemObj as Item);
+        const item = itemObj as Item;
+        if (!item || !item.active) return;
+        
+        this.itemManager.collectItem(item);
       },
     );
 
@@ -252,6 +249,13 @@ export class GameScene extends Phaser.Scene {
       this.isMobile,
     );
     this.itemManager.update(delta);
+
+    // Update player alpha based on invisible buff
+    if (this.itemManager.isPlayerInvisible()) {
+      this.player.setAlpha(0.5);
+    } else {
+      this.player.setAlpha(1.0);
+    }
 
     // 플레이어와 겹치는 모든 먹을 수 있는 NPC 동시 처리
     this.checkMultipleNPCEating();
@@ -521,6 +525,27 @@ export class GameScene extends Phaser.Scene {
     return (overlapX * overlapY) / playerArea;
   }
 
+  private getItemOverlapRatio(item: Item): number {
+    const playerBody = this.player.body as Phaser.Physics.Arcade.Body;
+    const itemBody = item.body as Phaser.Physics.Arcade.Body;
+    if (!playerBody || !itemBody) return 0;
+
+    const overlapX = Math.max(
+      0,
+      Math.min(playerBody.right, itemBody.right) -
+        Math.max(playerBody.left, itemBody.left),
+    );
+    const overlapY = Math.max(
+      0,
+      Math.min(playerBody.bottom, itemBody.bottom) -
+        Math.max(playerBody.top, itemBody.top),
+    );
+    const playerArea = playerBody.width * playerBody.height;
+    if (playerArea <= 0) return 0;
+
+    return (overlapX * overlapY) / playerArea;
+  }
+
   private handleNPCCollision(npc: NPC) {
     if (!npc.active || npc.destroyed) return;
     if (!npc.body) return;
@@ -547,9 +572,19 @@ export class GameScene extends Phaser.Scene {
       // 같은 레벨은 장애물처럼 단순 충돌만 처리 (넉백 없음)
       return;
     } else if (FoodChain.mustFlee(playerLevel, npcLevel)) {
-      // 플레이어가 무적 상태면 포식자 5초 정지
+      // giant_power 버프로 포식자도 기절
+      if (this.itemManager.canEatSameLevel()) {
+        npc.stunUntil = Date.now() + 10000;
+        npc.aiState = NPCState.STUNNED;
+        npc.setTint(0x888888);
+        return;
+      }
+
+      // 플레이어가 무적 상태면 포식자 즉시 기절
       if (this.itemManager.isPlayerInvincible()) {
-        npc.stunUntil = Date.now() + 5000;
+        npc.stunUntil = Date.now() + 10000;
+        npc.aiState = NPCState.STUNNED;
+        npc.setTint(0x888888);
         return;
       }
       if (this.time.now < this.invincibleUntil) return;
@@ -565,13 +600,9 @@ export class GameScene extends Phaser.Scene {
         this.npcManager.relocateNPC(npc, this.player.x, this.player.y);
         return;
       }
-
-      // 50% 이상 겹쳐야 포식자 판정 진행
-      if (this.getOverlapRatio(npc) < 0.5) return;
-
+      
       // 포식자가 CHASE 상태가 아닌 경우 (배회 중 우연히 접촉):
       // 즉사가 아닌 경고 처리 - NPC를 CHASE로 전환 + 플레이어 넉백
-      // 이렇게 하면 플레이어는 반드시 "추격!" 표시를 본 후에만 게임오버
       if (!npc.isChasing()) {
         npc.aiState = NPCState.CHASE;
         npc.setDepth(12);
@@ -579,7 +610,7 @@ export class GameScene extends Phaser.Scene {
         return;
       }
 
-      // CHASE 상태인 포식자만 게임오버 판정
+      // CHASE 상태인 포식자는 즉시 게임오버
       const predatorName = npc.getNameLabelText();
       this.handleGameOver("predator", predatorName);
     }

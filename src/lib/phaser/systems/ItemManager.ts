@@ -11,7 +11,7 @@ import type { MapElements } from "../utils/mapGenerator";
 
 export class ItemManager {
   private scene: Phaser.Scene;
-  itemGroup: Phaser.Physics.Arcade.StaticGroup;
+  itemGroup: Phaser.Physics.Arcade.Group;
   private items: Item[] = [];
   private spawnTimer: number = 0;
   private readonly SPAWN_INTERVAL = 10000;
@@ -26,7 +26,7 @@ export class ItemManager {
 
   constructor(scene: Phaser.Scene, mapElements: MapElements) {
     this.scene = scene;
-    this.itemGroup = scene.physics.add.staticGroup();
+    this.itemGroup = scene.physics.add.group();
     this.mapElements = mapElements;
   }
 
@@ -54,6 +54,9 @@ export class ItemManager {
     const data = item.itemData;
     this.applyEffect(data);
     EventBus.emit("item-collected", { item: data });
+
+    // 아이템 수집 기록
+    useGameStore.getState().addCollectedItem(data);
 
     item.destroy();
     this.items = this.items.filter((i) => i !== item);

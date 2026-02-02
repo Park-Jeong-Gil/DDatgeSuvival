@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { ActiveBuff, NPCPosition } from "@/types/game";
+import type { ItemData } from "@/types/item";
 
 interface GameStore {
   // State
@@ -21,6 +22,7 @@ interface GameStore {
   playerDisplaySize: { width: number; height: number };
   cameraScroll: { x: number; y: number };
   cameraZoom: number;
+  collectedItems: ItemData[];
 
   // Actions
   setScore: (score: number) => void;
@@ -41,6 +43,7 @@ interface GameStore {
   setPlayerPosition: (x: number, y: number) => void;
   setPlayerDisplaySize: (width: number, height: number) => void;
   setCameraScroll: (x: number, y: number, zoom: number) => void;
+  addCollectedItem: (item: ItemData) => void;
   resetGame: () => void;
 }
 
@@ -63,6 +66,7 @@ const initialState = {
   playerDisplaySize: { width: 32, height: 32 },
   cameraScroll: { x: 0, y: 0 },
   cameraZoom: 1,
+  collectedItems: [] as ItemData[],
 };
 
 export const useGameStore = create<GameStore>((set) => ({
@@ -94,6 +98,8 @@ export const useGameStore = create<GameStore>((set) => ({
     set({ playerDisplaySize: { width, height } }),
   setCameraScroll: (x, y, zoom) =>
     set({ cameraScroll: { x, y }, cameraZoom: zoom }),
+  addCollectedItem: (item) =>
+    set((state) => ({ collectedItems: [...state.collectedItems, item] })),
   resetGame: () =>
     set((state) => ({ ...initialState, nickname: state.nickname })),
 }));

@@ -37,7 +37,7 @@ export const buffItems: ItemData[] = [
     category: "buff",
     effect: "speed_boost",
     duration: 20,
-    rarity: "uncommon",
+    rarity: "common",
     spriteKey: "item_wing_feather",
   },
   {
