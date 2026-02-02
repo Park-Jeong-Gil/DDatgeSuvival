@@ -32,6 +32,7 @@ export class NPCManager {
     playerX: number,
     playerY: number,
     isPlayerInvisible: boolean,
+    isMobile?: boolean,
   ) {
     // Spawn check
     this.spawnTimer += delta;
@@ -51,6 +52,7 @@ export class NPCManager {
           playerSpeed,
           isPlayerInvisible,
           this.bushes,
+          isMobile,
         );
       }
     }

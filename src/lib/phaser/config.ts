@@ -28,5 +28,5 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
     mode: Phaser.Scale.RESIZE,
   },
   pixelArt: true,
-  roundPixels: false,
+  roundPixels: true,
 };

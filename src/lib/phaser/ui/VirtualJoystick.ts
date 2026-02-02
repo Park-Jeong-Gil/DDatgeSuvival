@@ -48,9 +48,15 @@ export class VirtualJoystick {
     const screenH = this.scene.scale.height;
 
     // UIScene의 camera zoom=1이므로 순수 화면 픽셀 좌표 사용
-    const offsetFromBottom = 120;
-    this.baseX = screenW * 0.5;
-    this.baseY = screenH - offsetFromBottom;
+    const isMobile = screenW <= 960;
+    if (isMobile) {
+      // 하단 25% 컨트롤 영역의 중앙에 배치
+      this.baseX = screenW * 0.5;
+      this.baseY = screenH * 0.875; // 75% + 12.5% = 하단 영역 중앙
+    } else {
+      this.baseX = screenW * 0.5;
+      this.baseY = screenH - 180;
+    }
 
     this.knobX = this.baseX;
     this.knobY = this.baseY;
@@ -209,26 +215,16 @@ export class VirtualJoystick {
     this.knobX = this.baseX + dx;
     this.knobY = this.baseY + dy;
 
-    // Normalized direction (-1 to 1)
+    // 데드존 이후 방향만 추출, 항상 최대 속도 (키보드와 동일)
     const normDist = Math.min(dist, BASE_RADIUS) / BASE_RADIUS;
     if (normDist < DEAD_ZONE) {
       this.direction = { x: 0, y: 0 };
     } else {
-      const scale = (normDist - DEAD_ZONE) / (1 - DEAD_ZONE);
+      const mag = Math.sqrt(dx * dx + dy * dy);
       this.direction = {
-        x: (dx / BASE_RADIUS) * scale,
-        y: (dy / BASE_RADIUS) * scale,
+        x: dx / mag,
+        y: dy / mag,
       };
-
-      // Clamp
-      const mag = Math.sqrt(
-        this.direction.x * this.direction.x +
-          this.direction.y * this.direction.y,
-      );
-      if (mag > 1) {
-        this.direction.x /= mag;
-        this.direction.y /= mag;
-      }
     }
 
     this.draw();

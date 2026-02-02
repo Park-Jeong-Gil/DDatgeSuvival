@@ -221,6 +221,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     playerSpeed: number,
     isPlayerInvisible: boolean,
     bushes?: Phaser.Physics.Arcade.StaticGroup,
+    isMobile?: boolean,
   ) {
     if (!this.active) return;
 
@@ -296,6 +297,10 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     if (levelDiff < 0) {
       const reductionFactor = Math.pow(0.85, Math.abs(levelDiff));
       detectionRange = baseDetection * reductionFactor;
+    }
+    // 모바일: 화면이 좁으므로 감지 범위 2/3로 축소
+    if (isMobile) {
+      detectionRange *= 0.67;
     }
 
     // If player is invisible or out of range, wander

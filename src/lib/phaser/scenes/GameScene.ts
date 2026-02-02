@@ -244,6 +244,7 @@ export class GameScene extends Phaser.Scene {
       this.player.x,
       this.player.y,
       this.itemManager.isPlayerInvisible(),
+      this.isMobile,
     );
     this.itemManager.update(delta);
 
@@ -257,11 +258,12 @@ export class GameScene extends Phaser.Scene {
       store.setSurvivalTime(store.survivalTime + 1);
     }
 
-    // Manually center camera on player (same frame as overlay positioning)
+    // 카메라를 정확한 플레이어 좌표에 센터링
+    // roundPixels: true 덕분에 (player.x - scrollX) * zoom 이 매 프레임 동일한 상수가 되어 떨림 없음
     this.cameras.main.centerOn(this.player.x, this.player.y);
 
     // Player label & HP overlay
-    this.updatePlayerOverlay();
+    this.updatePlayerOverlay(this.player.x, this.player.y);
 
     // Warning indicators for off-screen predators
     this.updateWarningIndicators();
@@ -294,24 +296,21 @@ export class GameScene extends Phaser.Scene {
     this.playerHpGraphics.setDepth(20);
   }
 
-  private updatePlayerOverlay() {
+  private updatePlayerOverlay(px: number, py: number) {
     if (!this.playerLabelText || !this.playerHpGraphics) return;
 
     const store = useGameStore.getState();
     const nickname = store.nickname || "플레이어";
     const label = `Lv ${store.level} ${nickname}`;
 
-    const labelOffset = this.player.displayHeight / 2 + 8;
+    const labelOffset = Math.round(this.player.displayHeight / 2 + 8);
     this.playerLabelText.setText(label);
-    this.playerLabelText.setPosition(
-      this.player.x,
-      this.player.y - labelOffset,
-    );
+    this.playerLabelText.setPosition(px, py - labelOffset);
 
-    const barWidth = Math.max(32, this.player.displayWidth * 1.6);
+    const barWidth = Math.max(32, Math.round(this.player.displayWidth * 1.6));
     const barHeight = 6;
-    const barX = this.player.x - barWidth / 2;
-    const barY = this.player.y + this.player.displayHeight / 2 + 6;
+    const barX = px - barWidth / 2;
+    const barY = py + Math.round(this.player.displayHeight / 2 + 6);
     const hungerRatio = Phaser.Math.Clamp(store.hunger / store.maxHunger, 0, 1);
 
     const getColor = () => {
@@ -342,8 +341,9 @@ export class GameScene extends Phaser.Scene {
     const cam = this.cameras.main;
     const bounds = cam.worldView;
     const margin = 30; // 화면 가장자리에서 표시할 여백
-    const screenW = this.scale.width;
-    const screenH = this.scale.height;
+    // 뷰포트 크기 사용 (모바일에서 상단 75%만 게임 영역)
+    const screenW = cam.width;
+    const screenH = cam.height;
     const screenCX = screenW / 2;
     const screenCY = screenH / 2;
 
@@ -734,11 +734,15 @@ export class GameScene extends Phaser.Scene {
     const screenH = this.scale.height;
     this.isMobile = screenW <= MOBILE_BREAKPOINT;
 
+    // 모바일: 상단 75%만 게임 화면, 하단 25%는 컨트롤 영역
+    const viewportH = this.isMobile ? Math.floor(screenH * 0.75) : screenH;
+    this.cameras.main.setViewport(0, 0, screenW, viewportH);
+
     const baseW = this.isMobile ? MOBILE_GAME_WIDTH : GAME_WIDTH;
     const baseH = this.isMobile ? MOBILE_GAME_HEIGHT : GAME_HEIGHT;
 
     const zoomX = screenW / baseW;
-    const zoomY = screenH / baseH;
+    const zoomY = viewportH / baseH;
     this.cameras.main.setZoom(Math.min(zoomX, zoomY));
   }
 
