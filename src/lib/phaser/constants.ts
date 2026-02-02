@@ -5,5 +5,5 @@ export const MAP_HEIGHT = 2000;
 
 // 모바일 기준 (960px 이하)
 export const MOBILE_BREAKPOINT = 960;
-export const MOBILE_GAME_WIDTH = 280;
-export const MOBILE_GAME_HEIGHT = 210;
+export const MOBILE_GAME_WIDTH = 420; // 280 * 1.5
+export const MOBILE_GAME_HEIGHT = 315; // 210 * 1.5
