@@ -36,7 +36,7 @@ export default function LeaderboardPage() {
     try {
       const userId = getOrCreateUserId();
       const res = await fetch(
-        `/api/scores?sort=${sort}&limit=100&userId=${userId}`
+        `/api/scores?sort=${sort}&limit=100&userId=${userId}`,
       );
       const data: LeaderboardResponse = await res.json();
       setScores(data.scores);
@@ -48,13 +48,13 @@ export default function LeaderboardPage() {
   };
 
   return (
-    <main 
+    <main
       className="min-h-screen bg-gray-900 p-6"
       style={{
-        backgroundImage: 'url(/assets/background/main_background.png)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
+        backgroundImage: "url(/assets/background/main_background.png)",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
       }}
     >
       <div className="max-w-2xl mx-auto">

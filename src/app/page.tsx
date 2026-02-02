@@ -30,19 +30,19 @@ export default function HomePage() {
           userId: crypto.randomUUID(),
           nickname: trimmed,
           createdAt: new Date().toISOString(),
-        })
+        }),
       );
     }
   };
 
   return (
-    <main 
+    <main
       className="flex flex-col items-center justify-center h-screen bg-gray-900 gap-6"
       style={{
-        backgroundImage: 'url(/assets/background/main_background.png)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
+        backgroundImage: "url(/assets/background/main_background.png)",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
       }}
     >
       <h1 className="text-5xl font-bold text-white tracking-wider drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
