@@ -27,8 +27,8 @@ export function generateMap(scene: Phaser.Scene): MapElements {
     centerY,
     safeRadius,
     [], // 풀숲끼리만 겹침 방지
-    450, // 매우 큰 반경 (9배 스케일)
-    9.0, // 9배 크기
+    900, // 매우 큰 반경 (18배 스케일)
+    18.0, // 18배 크기
   );
 
   // Trees (더 큰 간격)
@@ -41,8 +41,8 @@ export function generateMap(scene: Phaser.Scene): MapElements {
     centerY,
     safeRadius,
     allPlacedObjects,
-    80, // tree 반경
-    1.0,
+    160, // tree 반경 (2x)
+    2.0,
   );
 
   // Rocks
@@ -55,8 +55,8 @@ export function generateMap(scene: Phaser.Scene): MapElements {
     centerY,
     safeRadius,
     allPlacedObjects,
-    60, // rock 반경
-    1.0,
+    120, // rock 반경 (2x)
+    2.0,
   );
 
   return { obstacles, bushes };

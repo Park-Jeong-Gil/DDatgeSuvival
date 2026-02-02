@@ -48,6 +48,7 @@ export class GameScene extends Phaser.Scene {
   private joystickDirection = { x: 0, y: 0 };
   private onLevelUpHandler = this.onLevelUp.bind(this);
   private onJoystickUpdateHandler = this.onJoystickUpdate.bind(this);
+  private onPostUpdateHandler = this.onPostUpdate.bind(this);
 
   constructor() {
     super({ key: "GameScene" });
@@ -76,10 +77,10 @@ export class GameScene extends Phaser.Scene {
 
     this.createPlayerOverlay();
 
-    // Camera (manual centering in update() instead of startFollow
-    // to ensure player, overlay, and camera update in the same frame)
+    // Camera
     this.cameras.main.setBounds(0, 0, MAP_WIDTH, MAP_HEIGHT);
-    this.cameras.main.centerOn(this.player.x, this.player.y);
+    this.cameras.main.startFollow(this.player, true, 1, 1);
+    this.cameras.main.setRoundPixels(false);
     this.updateCameraZoom();
 
     // Resize handler
@@ -131,6 +132,9 @@ export class GameScene extends Phaser.Scene {
 
     // Collisions
     this.setupCollisions();
+
+    // 물리 스텝 이후 오버레이 위치 갱신 (카메라 startFollow와 동기화)
+    this.events.on("postupdate", this.onPostUpdateHandler);
 
     // Listen for level up
     EventBus.on("level-up", this.onLevelUpHandler);
@@ -257,13 +261,6 @@ export class GameScene extends Phaser.Scene {
       this.survivalTimer -= 1000;
       store.setSurvivalTime(store.survivalTime + 1);
     }
-
-    // 카메라를 정확한 플레이어 좌표에 센터링
-    // roundPixels: true 덕분에 (player.x - scrollX) * zoom 이 매 프레임 동일한 상수가 되어 떨림 없음
-    this.cameras.main.centerOn(this.player.x, this.player.y);
-
-    // Player label & HP overlay
-    this.updatePlayerOverlay(this.player.x, this.player.y);
 
     // Warning indicators for off-screen predators
     this.updateWarningIndicators();
@@ -456,8 +453,18 @@ export class GameScene extends Phaser.Scene {
 
     this.player.setVelocity(vx * speed, vy * speed);
 
-    if (vx < 0) this.player.setFlipX(true);
-    else if (vx > 0) this.player.setFlipX(false);
+    // 기본 스프라이트가 왼쪽(←)을 바라봄 → 오른쪽 이동 시 반전
+    if (vx > 0) this.player.setFlipX(true);
+    else if (vx < 0) this.player.setFlipX(false);
+
+    // 이동 상태에 따라 스프라이트 전환 (eat 상태가 아닐 때만)
+    if (this.player.getPlayerState() !== "eat") {
+      if (vx !== 0 || vy !== 0) {
+        this.player.setPlayerState("run");
+      } else {
+        this.player.setPlayerState("idle");
+      }
+    }
   }
 
   private ensureInput() {
@@ -492,6 +499,27 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  private getOverlapRatio(npc: NPC): number {
+    const playerBody = this.player.body as Phaser.Physics.Arcade.Body;
+    const npcBody = npc.body as Phaser.Physics.Arcade.Body;
+    if (!playerBody || !npcBody) return 0;
+
+    const overlapX = Math.max(
+      0,
+      Math.min(playerBody.right, npcBody.right) -
+        Math.max(playerBody.left, npcBody.left),
+    );
+    const overlapY = Math.max(
+      0,
+      Math.min(playerBody.bottom, npcBody.bottom) -
+        Math.max(playerBody.top, npcBody.top),
+    );
+    const playerArea = playerBody.width * playerBody.height;
+    if (playerArea <= 0) return 0;
+
+    return (overlapX * overlapY) / playerArea;
+  }
+
   private handleNPCCollision(npc: NPC) {
     if (!npc.active || npc.destroyed) return;
     if (!npc.body) return;
@@ -502,6 +530,8 @@ export class GameScene extends Phaser.Scene {
     const npcLevel = npc.level;
 
     if (FoodChain.isBoss(npcLevel)) {
+      // 보스도 50% 이상 겹쳐야 잡힘
+      if (this.getOverlapRatio(npc) < 0.5) return;
       this.handleGameOver("boss");
       return;
     }
@@ -534,6 +564,9 @@ export class GameScene extends Phaser.Scene {
         this.npcManager.relocateNPC(npc, this.player.x, this.player.y);
         return;
       }
+
+      // 50% 이상 겹쳐야 포식자 판정 진행
+      if (this.getOverlapRatio(npc) < 0.5) return;
 
       // 포식자가 CHASE 상태가 아닌 경우 (배회 중 우연히 접촉):
       // 즉사가 아닌 경고 처리 - NPC를 CHASE로 전환 + 플레이어 넉백
@@ -599,6 +632,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   private handleEat(npc: NPC) {
+    // 먹기 애니메이션
+    this.player.playEatAnimation();
+
     // NPCManager의 완전한 제거 메서드 사용
     this.npcManager.removeNPC(npc);
 
@@ -752,10 +788,16 @@ export class GameScene extends Phaser.Scene {
 
   shutdown() {
     this.scale.off("resize", this.handleResize, this);
+    this.events.off("postupdate", this.onPostUpdateHandler);
     EventBus.off("level-up", this.onLevelUpHandler);
     EventBus.off("joystick-update", this.onJoystickUpdateHandler, this);
     this.npcManager.destroy();
     this.itemManager.destroy();
+  }
+
+  private onPostUpdate() {
+    if (this.isGameOver || !this.player || !this.player.active) return;
+    this.updatePlayerOverlay(this.player.x, this.player.y);
   }
 
   private onJoystickUpdate(...args: unknown[]) {

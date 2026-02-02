@@ -7,10 +7,21 @@ export class PreloadScene extends Phaser.Scene {
   }
 
   preload() {
+    // Player sprites
+    this.load.image("player_idle", "assets/sprites/player/idle.png");
+    this.load.image("player_run", "assets/sprites/player/run.png");
+    this.load.image("player_eat", "assets/sprites/player/eat.png");
+
     this.createPlaceholderTextures();
   }
 
   create() {
+    // 플레이어 스프라이트는 고해상도(370x262)를 축소 렌더링하므로
+    // NEAREST 대신 LINEAR 필터를 적용하여 이동 시 떨림 방지
+    ["player_idle", "player_run", "player_eat"].forEach((key) => {
+      this.textures.get(key).setFilter(Phaser.Textures.FilterMode.LINEAR);
+    });
+
     EventBus.emit("current-scene-ready", this);
     this.scene.start("GameScene");
   }
