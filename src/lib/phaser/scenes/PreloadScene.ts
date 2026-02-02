@@ -50,12 +50,30 @@ export class PreloadScene extends Phaser.Scene {
     });
 
     // Item sprites
-    this.load.image("item_golden_fruit", "assets/sprites/items/item_golden_fruit.png");
-    this.load.image("item_satiety_potion", "assets/sprites/items/item_satiety_potion.png");
-    this.load.image("item_predator_shield", "assets/sprites/items/item_predator_shield.png");
-    this.load.image("item_wing_feather", "assets/sprites/items/item_wing_feather.png");
-    this.load.image("item_invisible_cloak", "assets/sprites/items/item_invisible_cloak.png");
-    this.load.image("item_giant_power", "assets/sprites/items/item_giant_power.png");
+    this.load.image(
+      "item_golden_fruit",
+      "assets/sprites/items/item_golden_fruit.png",
+    );
+    this.load.image(
+      "item_satiety_potion",
+      "assets/sprites/items/item_satiety_potion.png",
+    );
+    this.load.image(
+      "item_predator_shield",
+      "assets/sprites/items/item_predator_shield.png",
+    );
+    this.load.image(
+      "item_wing_feather",
+      "assets/sprites/items/item_wing_feather.png",
+    );
+    this.load.image(
+      "item_invisible_cloak",
+      "assets/sprites/items/item_invisible_cloak.png",
+    );
+    this.load.image(
+      "item_giant_power",
+      "assets/sprites/items/item_giant_power.png",
+    );
 
     this.createPlaceholderTextures();
   }

@@ -196,7 +196,7 @@ export class GameScene extends Phaser.Scene {
         if (this.isGameOver) return;
         const item = itemObj as Item;
         if (!item || !item.active) return;
-        
+
         this.itemManager.collectItem(item);
       },
     );
@@ -600,7 +600,7 @@ export class GameScene extends Phaser.Scene {
         this.npcManager.relocateNPC(npc, this.player.x, this.player.y);
         return;
       }
-      
+
       // 포식자가 CHASE 상태가 아닌 경우 (배회 중 우연히 접촉):
       // 즉사가 아닌 경고 처리 - NPC를 CHASE로 전환 + 플레이어 넉백
       if (!npc.isChasing()) {

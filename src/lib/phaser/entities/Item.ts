@@ -24,7 +24,7 @@ export class Item extends Phaser.Physics.Arcade.Sprite {
     }
 
     this.setDepth(3);
-    
+
     // 이미지 크기를 32x32로 조정 (기존 placeholder 크기와 동일)
     this.setDisplaySize(32, 32);
 

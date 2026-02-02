@@ -36,10 +36,13 @@ export default function GameOverOverlay() {
   const npcName = getNpcNameKo(level);
 
   // 아이템 개수 집계
-  const itemCounts = collectedItems.reduce((acc, item) => {
-    acc[item.id] = (acc[item.id] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+  const itemCounts = collectedItems.reduce(
+    (acc, item) => {
+      acc[item.id] = (acc[item.id] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
 
   const handleRetry = () => {
     resetGame();
