@@ -8,6 +8,7 @@ export interface ScoreRecord {
   kills_count: number;
   death_reason: string;
   skin_id: string;
+  collected_items: Record<string, number> | null;
   created_at: string;
   updated_at: string;
 }

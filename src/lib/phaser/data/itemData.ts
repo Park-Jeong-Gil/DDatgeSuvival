@@ -68,3 +68,7 @@ export const rarityWeights: Record<string, number> = {
   rare: 12,
   epic: 3,
 };
+
+export function getItemById(id: string): ItemData | undefined {
+  return allItems.find((item) => item.id === id);
+}

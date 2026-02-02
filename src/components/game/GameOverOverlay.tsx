@@ -61,6 +61,13 @@ export default function GameOverOverlay() {
             killsCount,
             deathReason: deathReason ?? "hunger",
             skinId: currentSkinId,
+            collectedItems: collectedItems.reduce(
+              (acc, item) => {
+                acc[item.id] = (acc[item.id] || 0) + 1;
+                return acc;
+              },
+              {} as Record<string, number>,
+            ),
           }),
         });
 
