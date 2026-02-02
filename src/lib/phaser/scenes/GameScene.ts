@@ -60,11 +60,12 @@ export class GameScene extends Phaser.Scene {
     this.isGameOver = false;
     this.survivalTimer = 0;
 
-    // Ground
+    // Background - 기본 배경 타일 (4배 작게 보이도록 스케일 조정)
     this.add
-      .tileSprite(0, 0, MAP_WIDTH, MAP_HEIGHT, "ground_tile")
+      .tileSprite(0, 0, MAP_WIDTH, MAP_HEIGHT, "base_background")
       .setOrigin(0, 0)
-      .setDepth(0);
+      .setDepth(0)
+      .setTileScale(0.28, 0.28);
 
     // World bounds
     this.physics.world.setBounds(0, 0, MAP_WIDTH, MAP_HEIGHT);

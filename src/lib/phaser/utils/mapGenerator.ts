@@ -32,8 +32,8 @@ export function generateMap(scene: Phaser.Scene): MapElements {
   placeObjects(
     scene,
     obstacles,
-    "obstacle_tree",
-    60,
+    "tree_tile",
+    30,
     centerX,
     centerY,
     safeRadius,
@@ -46,8 +46,8 @@ export function generateMap(scene: Phaser.Scene): MapElements {
   placeObjects(
     scene,
     obstacles,
-    "obstacle_rock",
-    40,
+    "rock_tile",
+    15,
     centerX,
     centerY,
     safeRadius,
@@ -124,31 +124,51 @@ function createCloudShapedBush(
   centerX: number,
   centerY: number,
 ) {
-  // 8~15개의 사각형으로 비정형 모양 만들기
+  // 8~15개의 사각형으로 비정형 모양 만들기 (grass_tile 텍스처 사용)
   const rectangleCount = 8 + Math.floor(Math.random() * 8);
 
   for (let i = 0; i < rectangleCount; i++) {
     // 중심에서 방사형으로 배치
     const angle = (Math.PI * 2 * i) / rectangleCount + Math.random() * 0.5;
-    const distance = Math.random() * 150; // 중심에서의 거리 (0~150) - 2배 축소
+    const distance = Math.random() * 150; // 중심에서의 거리 (0~150)
 
     const x = centerX + Math.cos(angle) * distance;
     const y = centerY + Math.sin(angle) * distance;
 
-    // 다양한 크기 (4배 ~ 11배) - 2배 축소
-    const scale = 4 + Math.random() * 7;
+    // 다양한 크기 (100~250 픽셀)
+    const size = 100 + Math.random() * 150;
 
+    // grass_tile을 사용한 타일스프라이트 생성
+    const grassTile = scene.add.tileSprite(x, y, size, size, "grass_tile");
+    grassTile.setDepth(1);
+    grassTile.setTileScale(0.25, 0.25);
+    grassTile.setAlpha(0.7 + Math.random() * 0.2);
+
+    // 실제 충돌 영역은 기존 bush 텍스처 사용 (투명하게)
     const bush = group.create(x, y, textureKey);
     bush.setDepth(2);
-    bush.setScale(scale);
-    bush.setAlpha(0.7 + Math.random() * 0.3); // 약간의 투명도 변화
+    bush.setScale(size / 32);
+    bush.setAlpha(0); // 완전 투명 (충돌 영역만 사용)
   }
 
-  // 중심에 큰 것 하나 더 추가 (밀도감) - 2배 축소
+  // 중심에 큰 것 하나 더 추가 (밀도감)
+  const centerSize = 250 + Math.random() * 100;
+
+  const centerGrassTile = scene.add.tileSprite(
+    centerX,
+    centerY,
+    centerSize,
+    centerSize,
+    "grass_tile",
+  );
+  centerGrassTile.setDepth(1);
+  centerGrassTile.setTileScale(0.25, 0.25);
+  centerGrassTile.setAlpha(0.8);
+
   const centerBush = group.create(centerX, centerY, textureKey);
   centerBush.setDepth(2);
-  centerBush.setScale(9 + Math.random() * 3);
-  centerBush.setAlpha(0.8);
+  centerBush.setScale(centerSize / 32);
+  centerBush.setAlpha(0); // 완전 투명 (충돌 영역만 사용)
 }
 
 function placeObjects(
@@ -199,11 +219,22 @@ function placeObjects(
 
     if (valid!) {
       const obj = group.create(x!, y!, textureKey);
-      obj.setDepth(2);
-      obj.setScale(scale);
+      obj.setDepth(20); // 플레이어/NPC보다 위에 표시
 
-      // 배치된 객체를 공유 배열에 추가 (다른 타입과의 겹침도 방지)
-      allPlacedObjects.push({ x: x!, y: y!, radius: objectRadius });
+      // 이미지를 객체 크기의 1/3로 조정
+      const targetSize = (objectRadius * 2) / 3;
+      obj.setDisplaySize(targetSize, targetSize);
+
+      // 물리적 body 크기를 이미지의 60%로 줄이고 하단에 배치
+      const bodySize = targetSize * 0.6;
+      obj.body.setSize(bodySize, bodySize);
+      obj.body.setOffset(
+        (obj.width - bodySize) / 2,
+        obj.height - bodySize - (obj.height - targetSize) / 2,
+      );
+
+      // 배치된 객체를 공유 배열에 추가 (실제 body 크기 기준으로)
+      allPlacedObjects.push({ x: x!, y: y!, radius: bodySize / 2 });
     }
   }
 }

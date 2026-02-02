@@ -12,6 +12,14 @@ export class PreloadScene extends Phaser.Scene {
     this.load.image("player_run", "assets/sprites/player/run.png");
     this.load.image("player_eat", "assets/sprites/player/eat.png");
 
+    // Background tiles
+    this.load.image("base_background", "assets/tiles/base_background.png");
+    this.load.image("grass_tile", "assets/tiles/grass.png");
+
+    // Obstacle tiles
+    this.load.image("tree_tile", "assets/tiles/tree.png");
+    this.load.image("rock_tile", "assets/tiles/rock.png");
+
     this.createPlaceholderTextures();
   }
 
@@ -111,7 +119,7 @@ export class PreloadScene extends Phaser.Scene {
     bushG.generateTexture("obstacle_bush", 32, 32);
     bushG.destroy();
 
-    // Ground tile
+    // Ground tile (fallback - 실제로는 base_background 이미지 사용)
     const groundG = this.add.graphics();
     groundG.fillStyle(0x65a30d, 1);
     groundG.fillRect(0, 0, 64, 64);
