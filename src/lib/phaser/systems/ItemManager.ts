@@ -152,17 +152,9 @@ export class ItemManager {
     return this.hasActiveBuff("hunger_slow") ? 0.5 : 1.0;
   }
 
-  // NPC kill skin drop
-  tryDropSkin(npcLevel: number, x: number, y: number) {
-    const dropChance = npcLevel * 5 + 10;
-    if (Math.random() * 100 < dropChance) {
-      const skin = rollSkinDrop();
-      if (skin) {
-        // Apply skin immediately
-        useGameStore.getState().setCurrentSkin(skin.id);
-        EventBus.emit("skin-acquired", { skin });
-      }
-    }
+  // NPC kill skin drop (disabled until customization feature is implemented)
+  tryDropSkin(_npcLevel: number, _x: number, _y: number) {
+    // TODO: Enable when skin customization feature is added
   }
 
   private spawnRandomItem() {
