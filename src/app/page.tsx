@@ -36,11 +36,21 @@ export default function HomePage() {
   };
 
   return (
-    <main className="flex flex-col items-center justify-center h-screen bg-gray-900 gap-6">
-      <h1 className="text-5xl font-bold text-white tracking-wider">
+    <main 
+      className="flex flex-col items-center justify-center h-screen bg-gray-900 gap-6"
+      style={{
+        backgroundImage: 'url(/assets/background/main_background.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}
+    >
+      <h1 className="text-5xl font-bold text-white tracking-wider drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
         DDatge Survival
       </h1>
-      <p className="text-gray-400 text-lg">Eat or Be Eaten</p>
+      <p className="text-gray-200 text-lg drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+        Eat or Be Eaten
+      </p>
 
       <input
         type="text"
@@ -48,23 +58,23 @@ export default function HomePage() {
         onChange={(e) => handleNicknameChange(e.target.value)}
         placeholder="Enter nickname..."
         maxLength={12}
-        className="px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white text-center text-lg w-64 focus:outline-none focus:border-green-500"
+        className="px-4 py-2 bg-gray-800/90 border border-gray-600 rounded-lg text-white text-center text-lg w-64 focus:outline-none focus:border-green-500 drop-shadow-lg"
       />
 
       <div className="flex flex-col gap-3 w-64">
         <Link
           href="/game"
-          className="px-8 py-4 bg-green-600 text-white rounded-lg text-xl font-bold text-center hover:bg-green-500 transition"
+          className="px-8 py-4 bg-green-600 text-white rounded-lg text-xl font-bold text-center hover:bg-green-500 transition drop-shadow-lg"
         >
           START GAME
         </Link>
         <Link
           href="/leaderboard"
-          className="px-8 py-3 bg-gray-700 text-white rounded-lg text-center hover:bg-gray-600 transition"
+          className="px-8 py-3 bg-gray-700/90 text-white rounded-lg text-center hover:bg-gray-600 transition drop-shadow-lg"
         >
           LEADERBOARD
         </Link>
-        <button className="px-8 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition">
+        <button className="px-8 py-3 bg-gray-700/90 text-white rounded-lg hover:bg-gray-600 transition drop-shadow-lg">
           HOW TO PLAY
         </button>
       </div>

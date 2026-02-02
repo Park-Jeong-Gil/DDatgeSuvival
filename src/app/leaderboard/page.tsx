@@ -48,13 +48,23 @@ export default function LeaderboardPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-900 p-6">
+    <main 
+      className="min-h-screen bg-gray-900 p-6"
+      style={{
+        backgroundImage: 'url(/assets/background/main_background.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}
+    >
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold text-white">LEADERBOARD</h1>
+          <h1 className="text-3xl font-bold text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+            LEADERBOARD
+          </h1>
           <Link
             href="/"
-            className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition"
+            className="px-4 py-2 bg-gray-700/90 text-white rounded-lg hover:bg-gray-600 transition drop-shadow-lg"
           >
             BACK
           </Link>
@@ -66,10 +76,10 @@ export default function LeaderboardPage() {
             <button
               key={key}
               onClick={() => setSort(key)}
-              className={`px-4 py-2 rounded-lg font-bold transition ${
+              className={`px-4 py-2 rounded-lg font-bold transition drop-shadow-lg ${
                 sort === key
                   ? "bg-green-600 text-white"
-                  : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                  : "bg-gray-700/80 text-gray-300 hover:bg-gray-600"
               }`}
             >
               {sortLabels[key]}
@@ -78,7 +88,7 @@ export default function LeaderboardPage() {
         </div>
 
         {userRank && (
-          <div className="bg-green-900/30 border border-green-700 rounded-lg p-3 mb-4 text-green-400 font-bold">
+          <div className="bg-green-900/40 border border-green-700 rounded-lg p-3 mb-4 text-green-400 font-bold drop-shadow-lg">
             Your Rank: #{userRank}
           </div>
         )}
@@ -94,10 +104,10 @@ export default function LeaderboardPage() {
             {scores.map((record, index) => (
               <div
                 key={record.id}
-                className={`flex items-center gap-3 p-3 rounded-lg ${
+                className={`flex items-center gap-3 p-3 rounded-lg drop-shadow-md ${
                   index < 3
-                    ? "bg-gray-800 border border-yellow-600/30"
-                    : "bg-gray-800/50"
+                    ? "bg-gray-800/80 border border-yellow-600/30"
+                    : "bg-gray-800/60"
                 }`}
               >
                 <span className="w-10 text-center font-bold text-lg">
