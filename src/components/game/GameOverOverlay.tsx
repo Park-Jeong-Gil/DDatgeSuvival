@@ -1,9 +1,10 @@
 "use client";
 
 import { useGameStore } from "@/store/gameStore";
-import { useRef } from "react";
+import { useRef, useEffect, useState } from "react";
 import { getNpcNameKo } from "@/lib/npcNames";
 import { useRouter } from "next/navigation";
+import { getOrCreateUserId, getUserNickname } from "@/lib/userId";
 
 function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -31,7 +32,51 @@ export default function GameOverOverlay() {
   if (predatorName && predatorNameRef.current !== predatorName) {
     predatorNameRef.current = predatorName;
   }
+  const currentSkinId = useGameStore((s) => s.currentSkinId);
+  const nickname = useGameStore((s) => s.nickname);
   const resetGame = useGameStore((s) => s.resetGame);
+
+  const [rank, setRank] = useState<number | null>(null);
+  const [submitError, setSubmitError] = useState(false);
+  const submitted = useRef(false);
+
+  useEffect(() => {
+    if (submitted.current) return;
+    submitted.current = true;
+
+    const submitScore = async () => {
+      try {
+        const userId = getOrCreateUserId();
+        const displayName = nickname || getUserNickname() || "Anonymous";
+
+        const res = await fetch("/api/scores", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId,
+            nickname: displayName,
+            score,
+            maxLevel: level,
+            survivalTime,
+            killsCount,
+            deathReason: deathReason ?? "hunger",
+            skinId: currentSkinId,
+          }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          setRank(data.rank);
+        } else {
+          setSubmitError(true);
+        }
+      } catch {
+        setSubmitError(true);
+      }
+    };
+
+    submitScore();
+  }, [score, level, survivalTime, killsCount, deathReason, currentSkinId, nickname]);
 
   const npcName = getNpcNameKo(level);
 
@@ -116,6 +161,15 @@ export default function GameOverOverlay() {
               </div>
             </div>
           </div>
+        )}
+
+        {rank !== null && (
+          <div className="mb-4 px-4 py-2 bg-yellow-900/60 border border-yellow-600 rounded-lg">
+            <span className="text-yellow-300 font-bold text-lg">Rank #{rank}</span>
+          </div>
+        )}
+        {submitError && (
+          <p className="mb-4 text-sm text-red-400">Score submission failed.</p>
         )}
 
         <div className="flex gap-3">
