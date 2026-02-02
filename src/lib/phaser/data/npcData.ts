@@ -6,7 +6,7 @@ export const npcDatabase: NPCData[] = [
     name: "Ant",
     nameKo: "개미",
     baseSpeed: 107,
-    baseSize: 32,
+    baseSize: 20, // 플레이어 Lv1(36px)보다 작은 먹이
     scoreValue: 5,
     hungerRestore: 10,
     spriteKey: "npc_0",
@@ -16,7 +16,7 @@ export const npcDatabase: NPCData[] = [
     name: "Horned Caterpillar",
     nameKo: "뿔 송충이",
     baseSpeed: 113,
-    baseSize: 36,
+    baseSize: 28, // 플레이어 Lv0 크기
     scoreValue: 10,
     hungerRestore: 15,
     spriteKey: "npc_1",
@@ -26,7 +26,7 @@ export const npcDatabase: NPCData[] = [
     name: "Mantis",
     nameKo: "사마귀",
     baseSpeed: 120,
-    baseSize: 40,
+    baseSize: 50, // 플레이어 Lv1 크기
     scoreValue: 15,
     hungerRestore: 20,
     spriteKey: "npc_2",
@@ -36,7 +36,7 @@ export const npcDatabase: NPCData[] = [
     name: "Spider",
     nameKo: "거미",
     baseSpeed: 127,
-    baseSize: 44,
+    baseSize: 50, // 플레이어 Lv2 크기
     scoreValue: 20,
     hungerRestore: 25,
     spriteKey: "npc_3",
@@ -46,7 +46,7 @@ export const npcDatabase: NPCData[] = [
     name: "Lizard",
     nameKo: "도마뱀",
     baseSpeed: 133,
-    baseSize: 48,
+    baseSize: 38, // 플레이어 Lv3 크기
     scoreValue: 25,
     hungerRestore: 30,
     spriteKey: "npc_4",
@@ -56,7 +56,7 @@ export const npcDatabase: NPCData[] = [
     name: "Sparrow",
     nameKo: "참새",
     baseSpeed: 140,
-    baseSize: 52,
+    baseSize: 45, // 플레이어 Lv4 크기
     scoreValue: 30,
     hungerRestore: 35,
     spriteKey: "npc_5",
@@ -66,7 +66,7 @@ export const npcDatabase: NPCData[] = [
     name: "Poison Toad",
     nameKo: "독 두꺼비",
     baseSpeed: 147,
-    baseSize: 56,
+    baseSize: 52, // 플레이어 Lv5 크기
     scoreValue: 35,
     hungerRestore: 40,
     spriteKey: "npc_6",
@@ -76,7 +76,7 @@ export const npcDatabase: NPCData[] = [
     name: "Snake",
     nameKo: "뱀",
     baseSpeed: 153,
-    baseSize: 60,
+    baseSize: 75, // 플레이어 Lv6 크기
     scoreValue: 40,
     hungerRestore: 45,
     spriteKey: "npc_7",
@@ -86,7 +86,7 @@ export const npcDatabase: NPCData[] = [
     name: "Crow",
     nameKo: "까마귀",
     baseSpeed: 160,
-    baseSize: 64,
+    baseSize: 60, // 플레이어 Lv7 크기
     scoreValue: 45,
     hungerRestore: 50,
     spriteKey: "npc_8",
@@ -96,7 +96,7 @@ export const npcDatabase: NPCData[] = [
     name: "Cat",
     nameKo: "고양이",
     baseSpeed: 167,
-    baseSize: 68,
+    baseSize: 64, // 플레이어 Lv8 크기
     scoreValue: 50,
     hungerRestore: 55,
     spriteKey: "npc_9",
@@ -106,7 +106,7 @@ export const npcDatabase: NPCData[] = [
     name: "Weasel",
     nameKo: "족제비",
     baseSpeed: 173,
-    baseSize: 72,
+    baseSize: 68, // 플레이어 Lv9 크기
     scoreValue: 55,
     hungerRestore: 60,
     spriteKey: "npc_10",
@@ -116,7 +116,7 @@ export const npcDatabase: NPCData[] = [
     name: "Owl",
     nameKo: "부엉이",
     baseSpeed: 180,
-    baseSize: 76,
+    baseSize: 72, // 플레이어 Lv10 크기
     scoreValue: 60,
     hungerRestore: 65,
     spriteKey: "npc_11",
@@ -126,7 +126,7 @@ export const npcDatabase: NPCData[] = [
     name: "Fox",
     nameKo: "여우",
     baseSpeed: 187,
-    baseSize: 80,
+    baseSize: 76, // 플레이어 Lv11 크기
     scoreValue: 65,
     hungerRestore: 70,
     spriteKey: "npc_12",
@@ -136,7 +136,7 @@ export const npcDatabase: NPCData[] = [
     name: "King Komodo",
     nameKo: "킹 코모도",
     baseSpeed: 193,
-    baseSize: 84,
+    baseSize: 80, // 플레이어 Lv12 크기
     scoreValue: 70,
     hungerRestore: 75,
     spriteKey: "npc_13",
@@ -146,7 +146,7 @@ export const npcDatabase: NPCData[] = [
     name: "Eagle",
     nameKo: "독수리",
     baseSpeed: 200,
-    baseSize: 88,
+    baseSize: 84, // 플레이어 Lv13 크기
     scoreValue: 75,
     hungerRestore: 80,
     spriteKey: "npc_14",
@@ -156,7 +156,7 @@ export const npcDatabase: NPCData[] = [
     name: "Boar",
     nameKo: "멧돼지",
     baseSpeed: 207,
-    baseSize: 92,
+    baseSize: 88, // 플레이어 Lv14 크기
     scoreValue: 80,
     hungerRestore: 85,
     spriteKey: "npc_15",
@@ -166,7 +166,7 @@ export const npcDatabase: NPCData[] = [
     name: "Wolf",
     nameKo: "늑대",
     baseSpeed: 213,
-    baseSize: 96,
+    baseSize: 92, // 플레이어 Lv15 크기
     scoreValue: 85,
     hungerRestore: 90,
     spriteKey: "npc_16",
@@ -176,7 +176,7 @@ export const npcDatabase: NPCData[] = [
     name: "Moon Bear",
     nameKo: "반달곰",
     baseSpeed: 220,
-    baseSize: 100,
+    baseSize: 96, // 플레이어 Lv16 크기
     scoreValue: 90,
     hungerRestore: 95,
     spriteKey: "npc_17",
@@ -186,7 +186,7 @@ export const npcDatabase: NPCData[] = [
     name: "Tiger",
     nameKo: "호랑이",
     baseSpeed: 227,
-    baseSize: 104,
+    baseSize: 100, // 플레이어 Lv17 크기
     scoreValue: 95,
     hungerRestore: 100,
     spriteKey: "npc_18",
@@ -197,7 +197,7 @@ export const npcDatabase: NPCData[] = [
     name: "Dinosaur",
     nameKo: "공룡",
     baseSpeed: 133,
-    baseSize: 256,
+    baseSize: 180, // 보스, 매우 큼
     scoreValue: 0,
     hungerRestore: 0,
     spriteKey: "npc_99",

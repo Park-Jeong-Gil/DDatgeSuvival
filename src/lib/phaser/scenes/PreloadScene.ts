@@ -20,6 +20,35 @@ export class PreloadScene extends Phaser.Scene {
     this.load.image("tree_tile", "assets/tiles/tree.png");
     this.load.image("rock_tile", "assets/tiles/rock.png");
 
+    // NPC sprites (walk and chase)
+    const npcNames = [
+      "Ant",
+      "Horned_Caterpillar",
+      "Mantis",
+      "Spider",
+      "Lizard",
+      "Sparrow",
+      "Poison_Toad",
+      "Snake",
+      "Crow",
+      "Cat",
+      "Weasel",
+      "Owl",
+      "Fox",
+      "King_Komodo",
+      "Eagle",
+      "Boar",
+      "Wolf",
+      "Moon_Bear",
+      "Tiger",
+      "Dinosaur",
+    ];
+
+    npcNames.forEach((name) => {
+      this.load.image(`${name}_walk`, `assets/sprites/npcs/${name}_1.png`);
+      this.load.image(`${name}_chase`, `assets/sprites/npcs/${name}_2.png`);
+    });
+
     this.createPlaceholderTextures();
   }
 
@@ -28,6 +57,43 @@ export class PreloadScene extends Phaser.Scene {
     // NEAREST 대신 LINEAR 필터를 적용하여 이동 시 떨림 방지
     ["player_idle", "player_run", "player_eat"].forEach((key) => {
       this.textures.get(key).setFilter(Phaser.Textures.FilterMode.LINEAR);
+    });
+
+    // NPC 스프라이트도 LINEAR 필터 적용
+    const npcNames = [
+      "Ant",
+      "Horned_Caterpillar",
+      "Mantis",
+      "Spider",
+      "Lizard",
+      "Sparrow",
+      "Poison_Toad",
+      "Snake",
+      "Crow",
+      "Cat",
+      "Weasel",
+      "Owl",
+      "Fox",
+      "King_Komodo",
+      "Eagle",
+      "Boar",
+      "Wolf",
+      "Moon_Bear",
+      "Tiger",
+      "Dinosaur",
+    ];
+
+    npcNames.forEach((name) => {
+      if (this.textures.exists(`${name}_walk`)) {
+        this.textures
+          .get(`${name}_walk`)
+          .setFilter(Phaser.Textures.FilterMode.LINEAR);
+      }
+      if (this.textures.exists(`${name}_chase`)) {
+        this.textures
+          .get(`${name}_chase`)
+          .setFilter(Phaser.Textures.FilterMode.LINEAR);
+      }
     });
 
     EventBus.emit("current-scene-ready", this);

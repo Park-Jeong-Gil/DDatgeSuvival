@@ -23,18 +23,21 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
   private lastRenderCheckAt: number = 0;
   private lastRecoverAt: number = 0;
   private renderableNow: boolean = true;
+  private lastFlipTime: number = 0; // 마지막 좌우 반전 시간
+  private readonly FLIP_COOLDOWN = 200; // 최소 200ms 간격
 
   constructor(scene: Phaser.Scene, x: number, y: number, data: NPCData) {
-    const textureKey = data.spriteKey;
-    const textureExists = scene.textures.exists(textureKey);
+    // walk 이미지를 기본으로 사용
+    const walkKey = `${data.name.replace(/ /g, "_")}_walk`;
+    const textureExists = scene.textures.exists(walkKey);
 
     if (!textureExists) {
-      console.error(
-        `[NPC] Texture "${textureKey}" not found for Lv${data.level} ${data.nameKo}`,
+      console.warn(
+        `[NPC] Texture "${walkKey}" not found for Lv${data.level} ${data.nameKo}, using placeholder`,
       );
     }
 
-    super(scene, x, y, textureExists ? textureKey : "npc_0");
+    super(scene, x, y, textureExists ? walkKey : data.spriteKey);
 
     this.npcData = data;
     this.level = data.level;
@@ -49,8 +52,15 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     this.setDepth(11);
 
     this.setCollideWorldBounds(true);
-    const scale = data.baseSize / (data.level === 99 ? 128 : 32);
-    this.setScale(scale);
+
+    // 이미지의 원본 비율을 유지하면서 높이를 baseSize로 설정
+    const textureFrame = this.texture.get();
+    const aspectRatio = textureFrame.width / textureFrame.height;
+    const displayWidth = data.baseSize * aspectRatio;
+    const displayHeight = data.baseSize;
+
+    this.setDisplaySize(displayWidth, displayHeight);
+
     this.setActive(true);
     this.setVisible(true);
     this.setAlpha(1);
@@ -58,7 +68,9 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     const body = this.body as Phaser.Physics.Arcade.Body;
     body.setBounce(0.2);
     body.setCollideWorldBounds(true); // 물리 바디에서도 월드 경계 충돌 활성화
-    body.setSize(this.displayWidth, this.displayHeight, true);
+    // 물리 바디 크기를 표시 크기와 동일하게 설정
+    body.setSize(displayWidth, displayHeight);
+    body.setOffset(0, 0);
 
     // Name label
     this.nameLabel = scene.add.text(x, y, `Lv${data.level} ${data.nameKo}`, {
@@ -153,6 +165,32 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       }
     }
     this.syncPhysicsWithRenderState(cam, time, this.renderableNow);
+  }
+
+  private updateTexture(state: "walk" | "chase") {
+    const baseName = this.npcData.name.replace(/ /g, "_");
+    const textureKey = `${baseName}_${state}`;
+
+    if (this.scene.textures.exists(textureKey)) {
+      this.setTexture(textureKey);
+    }
+  }
+
+  // 좌우 반전을 부드럽게 처리
+  private safeSetFlipX(directionX: number) {
+    const now = Date.now();
+
+    // 방향이 분명하지 않으면 변경하지 않음
+    if (Math.abs(directionX) < 0.1) return;
+
+    // 쿨다운 중이면 변경하지 않음
+    if (now - this.lastFlipTime < this.FLIP_COOLDOWN) return;
+
+    const shouldFlip = directionX < 0;
+    if (this.flipX !== shouldFlip) {
+      this.setFlipX(shouldFlip);
+      this.lastFlipTime = now;
+    }
   }
 
   private ensureRenderable() {
@@ -309,6 +347,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       this.chaseStartTime = 0;
       this.chaseLabel.setVisible(false);
       this.clearChaseBar();
+      this.updateTexture("walk");
       this.wander(delta);
       return;
     }
@@ -320,6 +359,8 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
         this.chaseStartTime = Date.now();
         // 추격 시 depth를 12로 올려 다른 NPC 위에 표시
         this.setDepth(12);
+        // chase 텍스처로 변경
+        this.updateTexture("chase");
       }
 
       // Chase duration limit
@@ -330,6 +371,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
         this.chaseLabel.setVisible(false);
         this.clearChaseBar();
         this.setDepth(11);
+        this.updateTexture("walk");
         return;
       }
       this.updateChaseBar(now, true, false);
@@ -339,6 +381,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       // NPC is prey - flee
       if (this.aiState === NPCState.CHASE) {
         this.setDepth(11);
+        this.updateTexture("walk");
       }
       this.aiState = NPCState.FLEE;
       this.chaseStartTime = 0;
@@ -349,6 +392,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       // Same level - wander
       if (this.aiState === NPCState.CHASE) {
         this.setDepth(11);
+        this.updateTexture("walk");
       }
       this.aiState = NPCState.WANDER;
       this.chaseStartTime = 0;
@@ -418,8 +462,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
 
     this.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
 
-    if (Math.cos(angle) < 0) this.setFlipX(true);
-    else this.setFlipX(false);
+    this.safeSetFlipX(Math.cos(angle));
   }
 
   private flee(targetX: number, targetY: number, playerSpeed: number) {
@@ -498,8 +541,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     const speed = playerSpeed * 0.3;
     this.setVelocity(Math.cos(fleeAngle) * speed, Math.sin(fleeAngle) * speed);
 
-    if (Math.cos(fleeAngle) < 0) this.setFlipX(true);
-    else this.setFlipX(false);
+    this.safeSetFlipX(Math.cos(fleeAngle));
   }
 
   private wander(delta: number) {
@@ -517,8 +559,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       this.wanderDirection.y * speed,
     );
 
-    if (this.wanderDirection.x < 0) this.setFlipX(true);
-    else if (this.wanderDirection.x > 0) this.setFlipX(false);
+    this.safeSetFlipX(this.wanderDirection.x);
   }
 
   private updateChaseBar(now: number, isChasing: boolean, isStunned: boolean) {
