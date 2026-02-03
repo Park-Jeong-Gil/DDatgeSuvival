@@ -903,7 +903,7 @@ async function getMyRank(): Promise<number | null> {
 CREATE TABLE scores (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL,               -- 고유 사용자 ID
-  nickname VARCHAR(12) NOT NULL,        -- 닉네임 (중복 가능)
+  nickname VARCHAR(10) NOT NULL,        -- 닉네임 (중복 가능)
   score INTEGER NOT NULL,
   max_level INTEGER NOT NULL,
   survival_time INTEGER NOT NULL,

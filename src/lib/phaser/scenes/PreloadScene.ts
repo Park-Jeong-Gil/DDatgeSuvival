@@ -199,11 +199,8 @@ export class PreloadScene extends Phaser.Scene {
           alpha: { from: 1, to: 0 },
           duration: 1000,
           ease: "Linear",
-          onUpdate: (tween) => {
-            console.log("Fade progress:", tween.progress);
-          },
+          onUpdate: (tween) => {},
           onComplete: () => {
-            console.log("Fade complete, starting GameScene");
             this.loadingContainer.destroy();
             this.scene.start("GameScene");
           },

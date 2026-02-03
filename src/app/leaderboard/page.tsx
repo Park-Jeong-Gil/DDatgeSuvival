@@ -37,8 +37,11 @@ export default function LeaderboardPage() {
   const [sort, setSort] = useState<SortType>("score");
   const [userRank, setUserRank] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<string>("");
 
   useEffect(() => {
+    const userId = getOrCreateUserId();
+    setCurrentUserId(userId);
     fetchScores();
   }, [sort]);
 
@@ -115,14 +118,17 @@ export default function LeaderboardPage() {
             {scores.map((record, index) => {
               const skin = getSkinById(record.skin_id);
               const items = record.collected_items;
+              const isCurrentUser = record.user_id === currentUserId;
 
               return (
                 <div
                   key={record.id}
                   className={`flex items-center gap-3 p-3 rounded-lg drop-shadow-md ${
-                    index < 3
-                      ? "bg-gray-800/80 border border-yellow-600/30"
-                      : "bg-gray-800/60"
+                    isCurrentUser
+                      ? "bg-green-900/50 border-2 border-green-500 ring-2 ring-green-500/30"
+                      : index < 3
+                        ? "bg-gray-800/80 border border-yellow-600/30"
+                        : "bg-gray-800/60"
                   }`}
                 >
                   <span className="w-10 text-center font-bold text-lg shrink-0">
@@ -137,9 +143,10 @@ export default function LeaderboardPage() {
 
                   <div className="w-10 h-10 shrink-0 rounded-full bg-gray-700 overflow-hidden flex items-center justify-center">
                     <Image
-                      src={record.costume 
-                        ? `/assets/sprites/player/costume/${record.costume}_idle.png`
-                        : "/assets/sprites/player/idle.png"
+                      src={
+                        record.costume
+                          ? `/assets/sprites/player/costume/${record.costume}_idle.png`
+                          : "/assets/sprites/player/idle.png"
                       }
                       alt="player"
                       width={32}
@@ -154,14 +161,16 @@ export default function LeaderboardPage() {
                         {record.nickname || "Anonymous"}
                       </span>
                       {skin && (
-                        <span className={`text-xs ${rarityColors[skin.rarity] ?? "text-gray-400"}`}>
+                        <span
+                          className={`text-xs ${rarityColors[skin.rarity] ?? "text-gray-400"}`}
+                        >
                           {skin.name}
                         </span>
                       )}
                     </div>
                     <div className="text-xs text-gray-400">
-                      Lv {record.max_level} | {formatTime(record.survival_time)} |{" "}
-                      {record.kills_count} kills
+                      Lv {record.max_level} | {formatTime(record.survival_time)}{" "}
+                      | {record.kills_count} kills
                     </div>
                     {items && Object.keys(items).length > 0 && (
                       <div className="flex gap-1 mt-1 flex-wrap">

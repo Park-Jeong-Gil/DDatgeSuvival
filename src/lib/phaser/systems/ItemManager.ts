@@ -40,7 +40,8 @@ export class ItemManager {
   private applyCostumeChange(rarity: Rarity) {
     if (!this.player) return;
 
-    const costumeName = getRandomCostumeByRarity(rarity);
+    const currentCostume = this.player.getCurrentCostume();
+    const costumeName = getRandomCostumeByRarity(rarity, currentCostume);
     if (costumeName) {
       this.player.changeCostume(costumeName);
       useGameStore.getState().setCurrentCostume(costumeName);

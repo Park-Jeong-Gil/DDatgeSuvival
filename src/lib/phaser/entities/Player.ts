@@ -51,7 +51,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.setTexture(textureKey);
     }
   }
-
+  // 현재 코스튼 가져오기
+  getCurrentCostume(): string | null {
+    return this.currentCostume;
+  }
   // 코스튬 제거 (기본 외형으로)
   removeCostume() {
     this.currentCostume = null;

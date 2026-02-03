@@ -69,9 +69,22 @@ export const costumesByRarity: Record<Rarity, string[]> = {
   legendary: ["cosmic"],
 };
 
-export function getRandomCostumeByRarity(rarity: Rarity): string | null {
-  const costumes = costumesByRarity[rarity];
+export function getRandomCostumeByRarity(
+  rarity: Rarity,
+  currentCostume?: string | null,
+): string | null {
+  let costumes = costumesByRarity[rarity];
   if (!costumes || costumes.length === 0) return null;
+
+  // 현재 코스튬이 있으면 제외
+  if (currentCostume) {
+    costumes = costumes.filter((c) => c !== currentCostume);
+    // 제외 후 남은 코스튬이 없으면 원본 목록 사용
+    if (costumes.length === 0) {
+      costumes = costumesByRarity[rarity];
+    }
+  }
+
   return costumes[Math.floor(Math.random() * costumes.length)];
 }
 

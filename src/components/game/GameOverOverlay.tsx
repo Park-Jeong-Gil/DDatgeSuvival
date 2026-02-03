@@ -49,7 +49,7 @@ export default function GameOverOverlay() {
     const submitScore = async () => {
       try {
         const userId = getOrCreateUserId();
-        const displayName = nickname || getUserNickname() || "Anonymous";
+        const displayName = nickname || getUserNickname();
 
         const res = await fetch("/api/scores", {
           method: "POST",

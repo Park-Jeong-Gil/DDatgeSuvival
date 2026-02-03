@@ -59,7 +59,7 @@ export default function HomePage() {
         value={nickname}
         onChange={(e) => handleNicknameChange(e.target.value)}
         placeholder="Enter nickname..."
-        maxLength={12}
+        maxLength={10}
         className="pixel-ui px-4 py-2 bg-gray-800/90 text-white text-center text-lg w-64"
       />
 
