@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import HowToPlayModal from "@/components/ui/HowToPlayModal";
 
 export default function HomePage() {
   const [nickname, setNickname] = useState("");
+  const [howToPlayOpen, setHowToPlayOpen] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("mole_user_id");
@@ -58,26 +60,34 @@ export default function HomePage() {
         onChange={(e) => handleNicknameChange(e.target.value)}
         placeholder="Enter nickname..."
         maxLength={12}
-        className="px-4 py-2 bg-gray-800/90 border border-gray-600 rounded-lg text-white text-center text-lg w-64 focus:outline-none focus:border-green-500 drop-shadow-lg"
+        className="pixel-ui px-4 py-2 bg-gray-800/90 text-white text-center text-lg w-64"
       />
 
-      <div className="flex flex-col gap-3 w-64">
+      <div className="flex flex-col gap-4 w-64">
         <Link
           href="/game"
-          className="px-8 py-4 bg-green-600 text-white rounded-lg text-xl font-bold text-center hover:bg-green-500 transition drop-shadow-lg"
+          className="pixel-ui w-full py-3 text-white text-xl font-bold text-center bg-[#548ced] transition-colors hover:bg-[#3a6fc1]"
         >
           START GAME
         </Link>
         <Link
           href="/leaderboard"
-          className="px-8 py-3 bg-gray-700/90 text-white rounded-lg text-center hover:bg-gray-600 transition drop-shadow-lg"
+          className="pixel-ui w-full py-3 text-white text-center font-semibold bg-[#3bc6d8] transition-colors hover:bg-[#33b0c7]"
         >
           LEADERBOARD
         </Link>
-        <button className="px-8 py-3 bg-gray-700/90 text-white rounded-lg hover:bg-gray-600 transition drop-shadow-lg">
+        <button
+          onClick={() => setHowToPlayOpen(true)}
+          className="pixel-ui w-full py-3 text-white font-semibold bg-[#939393] transition-colors hover:bg-[#7a7a7a]"
+        >
           HOW TO PLAY
         </button>
       </div>
+
+      <HowToPlayModal
+        isOpen={howToPlayOpen}
+        onClose={() => setHowToPlayOpen(false)}
+      />
     </main>
   );
 }

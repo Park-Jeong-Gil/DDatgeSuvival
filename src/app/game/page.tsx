@@ -1,11 +1,13 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useGameStore } from "@/store/gameStore";
+import { EventBus } from "@/lib/phaser/EventBus";
 import HUD from "@/components/game/HUD";
 import LevelUpNotice from "@/components/game/LevelUpNotice";
 import GameOverOverlay from "@/components/game/GameOverOverlay";
+import GameSettingsModal from "@/components/ui/GameSettingsModal";
 
 const GameCanvas = dynamic(() => import("@/components/game/GameCanvas"), {
   ssr: false,
@@ -21,7 +23,9 @@ const GameCanvas = dynamic(() => import("@/components/game/GameCanvas"), {
 });
 
 export default function GamePage() {
+  const isPlaying = useGameStore((s) => s.isPlaying);
   const isGameOver = useGameStore((s) => s.isGameOver);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("mole_user_id");
@@ -36,11 +40,37 @@ export default function GamePage() {
     }
   }, []);
 
+  useEffect(() => {
+    if (isGameOver) setSettingsOpen(false);
+  }, [isGameOver]);
+
+  useEffect(() => {
+    if (settingsOpen) {
+      EventBus.emit("pause-game");
+    } else {
+      EventBus.emit("resume-game");
+    }
+  }, [settingsOpen]);
+
   return (
     <div className="relative w-screen h-dvh bg-black">
       <GameCanvas />
       <HUD />
       <LevelUpNotice />
+
+      {isPlaying && !isGameOver && !settingsOpen && (
+        <button
+          onClick={() => setSettingsOpen(true)}
+          className="pixel-ui absolute top-4 right-4 z-40 bg-[#555] hover:bg-[#444] transition-colors px-3 py-2 text-base"
+        >
+          SETTING
+        </button>
+      )}
+
+      {settingsOpen && (
+        <GameSettingsModal onClose={() => setSettingsOpen(false)} />
+      )}
+
       {isGameOver && <GameOverOverlay />}
     </div>
   );

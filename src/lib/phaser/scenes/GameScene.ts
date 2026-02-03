@@ -49,6 +49,8 @@ export class GameScene extends Phaser.Scene {
   private onLevelUpHandler = this.onLevelUp.bind(this);
   private onJoystickUpdateHandler = this.onJoystickUpdate.bind(this);
   private onPostUpdateHandler = this.onPostUpdate.bind(this);
+  private onPauseGameHandler = this.onPauseGame.bind(this);
+  private onResumeGameHandler = this.onResumeGame.bind(this);
 
   constructor() {
     super({ key: "GameScene" });
@@ -149,6 +151,9 @@ export class GameScene extends Phaser.Scene {
     this.time.delayedCall(100, () => {
       useGameStore.getState().setIsPlaying(true);
     });
+
+    EventBus.on("pause-game", this.onPauseGameHandler);
+    EventBus.on("resume-game", this.onResumeGameHandler);
 
     EventBus.emit("current-scene-ready", this);
   }
@@ -825,6 +830,8 @@ export class GameScene extends Phaser.Scene {
     this.events.off("postupdate", this.onPostUpdateHandler);
     EventBus.off("level-up", this.onLevelUpHandler);
     EventBus.off("joystick-update", this.onJoystickUpdateHandler, this);
+    EventBus.off("pause-game", this.onPauseGameHandler);
+    EventBus.off("resume-game", this.onResumeGameHandler);
     this.npcManager.destroy();
     this.itemManager.destroy();
   }
@@ -837,5 +844,14 @@ export class GameScene extends Phaser.Scene {
   private onJoystickUpdate(...args: unknown[]) {
     const direction = args[0] as { x: number; y: number };
     this.joystickDirection = direction;
+  }
+
+  private onPauseGame() {
+    this.player?.setVelocity(0, 0);
+    this.scene.pause();
+  }
+
+  private onResumeGame() {
+    this.scene.resume();
   }
 }

@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Calculate rank
-    const finalScore = updated ? score : existing?.score ?? score;
+    const finalScore = updated ? score : (existing?.score ?? score);
     const { count } = await supabase
       .from("scores")
       .select("*", { count: "exact", head: true })
@@ -71,12 +71,14 @@ export async function POST(request: NextRequest) {
       success: true,
       updated,
       rank: (count ?? 0) + 1,
+      previousScore: existing?.score ?? null,
+      currentScore: score,
     });
   } catch (error) {
     console.error("Score save error:", error);
     return NextResponse.json(
       { error: "Failed to save score" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -132,7 +134,7 @@ export async function GET(request: NextRequest) {
     console.error("Leaderboard fetch error:", error);
     return NextResponse.json(
       { error: "Failed to fetch leaderboard" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

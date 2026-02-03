@@ -50,3 +50,159 @@ body {
   margin: 0;
   padding: 0;
 }
+
+/* Pixel UI Button/Link Style */
+button.pixel-ui,
+a.pixel-ui {
+  color: #fff;
+  letter-spacing: 1px;
+  padding: 12px 20px;
+  border: 0;
+  display: inline-block;
+  text-decoration: none;
+  box-shadow:
+    0px 4px #333,
+    0px -4px #333,
+    4px 0px #333,
+    -4px 0px #333,
+    0px 8px #00000038,
+    4px 4px #00000038,
+    -4px 4px #00000038,
+    inset 0px 4px #ffffff36;
+  cursor: pointer;
+}
+button.pixel-ui:active,
+a.pixel-ui:active {
+  transform: translateY(4px);
+  box-shadow:
+    0px 4px #333,
+    0px -4px #333,
+    4px 0px #333,
+    -4px 0px #333,
+    inset 0px 4px #00000038;
+}
+
+/* Pixel UI Input Style */
+input.pixel-ui {
+  border: 0;
+  box-shadow:
+    0px 4px #555,
+    0px -4px #555,
+    4px 0px #555,
+    -4px 0px #555,
+    0px 8px #0000001d,
+    4px 4px #0000001d,
+    -4px 4px #0000001d,
+    inset 0px 4px #bdbdbd60;
+  outline: none;
+}
+
+/* Pixel UI Panel Style (modal cards) */
+.pixel-panel {
+  box-shadow:
+    0px 4px #555,
+    0px -4px #555,
+    4px 0px #555,
+    -4px 0px #555,
+    0px 8px #00000038,
+    4px 4px #00000038,
+    -4px 4px #00000038,
+    inset 0px 4px #ffffff10;
+}
+
+/* Pixel Volume Slider */
+input[type="range"].pixel-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 12px;
+  background: #2a2a2a;
+  outline: none;
+  border: none;
+  box-shadow:
+    0px 2px #444,
+    0px -2px #444,
+    2px 0px #444,
+    -2px 0px #444;
+}
+input[type="range"].pixel-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 22px;
+  background: #ffffff;
+  cursor: pointer;
+  box-shadow:
+    0px 2px #333,
+    0px -2px #333,
+    2px 0px #333,
+    -2px 0px #333;
+}
+input[type="range"].pixel-slider::-moz-range-thumb {
+  width: 18px;
+  height: 22px;
+  background: #ffffff;
+  cursor: pointer;
+  border: none;
+  border-radius: 0;
+  box-shadow:
+    0px 2px #333,
+    0px -2px #333,
+    2px 0px #333,
+    -2px 0px #333;
+}
+input[type="range"].pixel-slider:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Pixel Toggle Switch */
+.pixel-toggle {
+  position: relative;
+  width: 52px;
+  height: 24px;
+  background: #555;
+  cursor: pointer;
+  box-shadow:
+    0px 2px #333,
+    0px -2px #333,
+    2px 0px #333,
+    -2px 0px #333,
+    inset 0px 2px #00000040;
+  transition: background 0.15s;
+}
+.pixel-toggle::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: #999;
+  box-shadow:
+    0px 2px #666,
+    0px -2px #bbb,
+    2px 0px #888,
+    -2px 0px #888;
+  transition:
+    left 0.15s,
+    background 0.15s,
+    box-shadow 0.15s;
+}
+.pixel-toggle.active {
+  background: #3b82f6;
+  box-shadow:
+    0px 2px #1e40af,
+    0px -2px #1e40af,
+    2px 0px #1e40af,
+    -2px 0px #1e40af,
+    inset 0px 2px #00000030;
+}
+.pixel-toggle.active::after {
+  left: 30px;
+  background: #fff;
+  box-shadow:
+    0px 2px #ccc,
+    0px -2px #fff,
+    2px 0px #ddd,
+    -2px 0px #ddd;
+}

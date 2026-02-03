@@ -38,6 +38,7 @@ export default function GameOverOverlay() {
 
   const [rank, setRank] = useState<number | null>(null);
   const [submitError, setSubmitError] = useState(false);
+  const [isNewRecord, setIsNewRecord] = useState<boolean | null>(null);
   const submitted = useRef(false);
 
   useEffect(() => {
@@ -74,6 +75,8 @@ export default function GameOverOverlay() {
         if (res.ok) {
           const data = await res.json();
           setRank(data.rank);
+          // 이전 기록이 없거나(null) 현재 점수가 더 높으면 새로운 기록
+          setIsNewRecord(data.previousScore === null || data.updated);
         } else {
           setSubmitError(true);
         }
@@ -83,7 +86,15 @@ export default function GameOverOverlay() {
     };
 
     submitScore();
-  }, [score, level, survivalTime, killsCount, deathReason, currentSkinId, nickname]);
+  }, [
+    score,
+    level,
+    survivalTime,
+    killsCount,
+    deathReason,
+    currentSkinId,
+    nickname,
+  ]);
 
   const npcName = getNpcNameKo(level);
 
@@ -118,7 +129,7 @@ export default function GameOverOverlay() {
         {deathReason === "predator" && predatorNameRef.current && (
           <div className="mb-4">
             <span className="inline-block px-3 py-2 bg-red-900/80 rounded-lg text-lg font-bold text-red-200 border border-red-500 shadow">
-              포식자: {predatorNameRef.current}
+              {predatorNameRef.current}
             </span>
           </div>
         )}
@@ -134,9 +145,7 @@ export default function GameOverOverlay() {
           </div>
           <div className="flex justify-between text-white">
             <span className="text-gray-400">Max Level</span>
-            <span className="font-bold">
-              Lv {level} ({npcName})
-            </span>
+            <span className="font-bold">Lv {level}</span>
           </div>
           <div className="flex justify-between text-white">
             <span className="text-gray-400">Kills</span>
@@ -170,9 +179,20 @@ export default function GameOverOverlay() {
           </div>
         )}
 
+        {isNewRecord !== null && (
+          <div className="mb-4 px-4 py-3 bg-gradient-to-r from-emerald-900/70 to-green-900/70 border border-emerald-500 rounded-lg">
+            <p className="text-emerald-300 font-bold text-lg">
+              {isNewRecord
+                ? "🎉 새로운 스코어를 갱신 했습니다!"
+                : "📊 이전 기록이 있습니다!"}
+            </p>
+          </div>
+        )}
         {rank !== null && (
           <div className="mb-4 px-4 py-2 bg-yellow-900/60 border border-yellow-600 rounded-lg">
-            <span className="text-yellow-300 font-bold text-lg">Rank #{rank}</span>
+            <span className="text-yellow-300 font-bold text-lg">
+              Rank #{rank}
+            </span>
           </div>
         )}
         {submitError && (
