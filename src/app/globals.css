@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #111827;
+  --background: #000000;
   --foreground: #f9fafb;
 }
 
@@ -18,6 +18,13 @@
   font-display: swap;
 }
 
+html {
+  margin: 0;
+  padding: 0;
+  height: 100dvh;
+  overflow: hidden;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
@@ -26,6 +33,10 @@ body {
   margin: 0;
   padding: 0;
   height: 100dvh;
+  width: 100vw;
+  position: fixed;
+  top: 0;
+  left: 0;
 }
 
 #game-container canvas {
@@ -33,4 +44,9 @@ body {
   width: 100% !important;
   height: 100% !important;
   outline: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 0;
+  padding: 0;
 }

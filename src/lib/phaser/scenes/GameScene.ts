@@ -145,8 +145,10 @@ export class GameScene extends Phaser.Scene {
     this.warningGraphics.setScrollFactor(0);
     this.warningGraphics.setDepth(100);
 
-    // Mark playing
-    useGameStore.getState().setIsPlaying(true);
+    // Mark playing after first frame renders
+    this.time.delayedCall(100, () => {
+      useGameStore.getState().setIsPlaying(true);
+    });
 
     EventBus.emit("current-scene-ready", this);
   }

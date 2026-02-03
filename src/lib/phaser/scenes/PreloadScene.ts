@@ -2,11 +2,21 @@ import * as Phaser from "phaser";
 import { EventBus } from "../EventBus";
 
 export class PreloadScene extends Phaser.Scene {
+  private loadingBar!: Phaser.GameObjects.Graphics;
+  private loadingBox!: Phaser.GameObjects.Graphics;
+  private loadingText!: Phaser.GameObjects.Text;
+  private loadingBg!: Phaser.GameObjects.Rectangle;
+  private loadingContainer!: Phaser.GameObjects.Container;
+  private loadStartTime: number = 0;
+
   constructor() {
     super({ key: "PreloadScene" });
   }
 
   preload() {
+    this.loadStartTime = Date.now();
+    this.createLoadingScreen();
+
     // Player sprites
     this.load.image("player_idle", "assets/sprites/player/idle.png");
     this.load.image("player_run", "assets/sprites/player/run.png");
@@ -78,6 +88,90 @@ export class PreloadScene extends Phaser.Scene {
     this.createPlaceholderTextures();
   }
 
+  private createLoadingScreen() {
+    const width = this.cameras.main.width;
+    const height = this.cameras.main.height;
+
+    // 컨테이너 생성
+    this.loadingContainer = this.add.container(0, 0);
+    this.loadingContainer.setScrollFactor(0);
+
+    // 검은 배경 (여유있게 크게)
+    this.loadingBg = this.add.rectangle(
+      -10,
+      -10,
+      width + 20,
+      height + 20,
+      0x000000,
+    );
+    this.loadingBg.setOrigin(0, 0);
+    this.loadingContainer.add(this.loadingBg);
+
+    // 명언 텍스트 (로딩 바 위에)
+    this.loadingText = this.add.text(
+      width / 2,
+      height / 2 - 70,
+      "A Shrewmouse's life is simply to run and eat.",
+      {
+        fontSize: "20px",
+        color: "#cccccc",
+        fontStyle: "italic",
+        align: "center",
+      },
+    );
+    this.loadingText.setOrigin(0.5);
+    this.loadingContainer.add(this.loadingText);
+
+    // 로딩 바 배경 (어두운 회색 테두리)
+    this.loadingBox = this.add.graphics();
+    this.loadingBox.fillStyle(0x222222, 1);
+    this.loadingBox.fillRect(width / 2 - 160, height / 2 - 25, 320, 50);
+    this.loadingContainer.add(this.loadingBox);
+
+    // 로딩 바 (밝은 회색)
+    this.loadingBar = this.add.graphics();
+    this.loadingContainer.add(this.loadingBar);
+
+    // 로딩 진행률 이벤트
+    this.load.on("progress", (value: number) => {
+      this.loadingBar.clear();
+      this.loadingBar.fillStyle(0xcccccc, 1);
+      this.loadingBar.fillRect(
+        width / 2 - 150,
+        height / 2 - 15,
+        300 * value,
+        30,
+      );
+    });
+
+    // 로딩 완료 이벤트
+    this.load.on("complete", () => {
+      const elapsed = Date.now() - this.loadStartTime;
+      const remaining = Math.max(0, 1000 - elapsed);
+
+      console.log(`Loading took ${elapsed}ms, waiting ${remaining}ms more`);
+
+      this.time.delayedCall(remaining, () => {
+        console.log("Starting fade out");
+        // 컨테이너 페이드 아웃 애니메이션
+        this.tweens.add({
+          targets: this.loadingContainer,
+          alpha: { from: 1, to: 0 },
+          duration: 1000,
+          ease: "Linear",
+          onUpdate: (tween) => {
+            console.log("Fade progress:", tween.progress);
+          },
+          onComplete: () => {
+            console.log("Fade complete, starting GameScene");
+            this.loadingContainer.destroy();
+            this.scene.start("GameScene");
+          },
+        });
+      });
+    });
+  }
+
   create() {
     // 플레이어 스프라이트는 고해상도(370x262)를 축소 렌더링하므로
     // NEAREST 대신 LINEAR 필터를 적용하여 이동 시 떨림 방지
@@ -139,7 +233,8 @@ export class PreloadScene extends Phaser.Scene {
     });
 
     EventBus.emit("current-scene-ready", this);
-    this.scene.start("GameScene");
+
+    // GameScene 시작은 로딩 화면 페이드 아웃 후에 실행됨
   }
 
   private createPlaceholderTextures() {

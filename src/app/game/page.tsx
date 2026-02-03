@@ -10,8 +10,12 @@ import GameOverOverlay from "@/components/game/GameOverOverlay";
 const GameCanvas = dynamic(() => import("@/components/game/GameCanvas"), {
   ssr: false,
   loading: () => (
-    <div className="flex items-center justify-center h-dvh bg-gray-900">
-      <p className="text-white text-xl">Loading game...</p>
+    <div className="flex items-center justify-center h-dvh bg-black">
+      <div className="relative w-80 h-12 bg-[#222222] rounded-sm">
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-[300px] h-[30px] bg-[#cccccc] animate-pulse" />
+        </div>
+      </div>
     </div>
   ),
 });
@@ -33,7 +37,7 @@ export default function GamePage() {
   }, []);
 
   return (
-    <div className="relative w-screen h-dvh bg-gray-900">
+    <div className="relative w-screen h-dvh bg-black">
       <GameCanvas />
       <HUD />
       <LevelUpNotice />

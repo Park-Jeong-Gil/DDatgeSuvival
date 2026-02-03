@@ -46,5 +46,5 @@ export default function GameCanvas() {
     };
   }, []);
 
-  return <div id="game-container" className="w-full h-full" />;
+  return <div id="game-container" className="w-full h-full relative" />;
 }
