@@ -47,38 +47,39 @@ export default function HomePage() {
         backgroundRepeat: "no-repeat",
       }}
     >
-      <h1 className="text-5xl font-bold text-white tracking-wider drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
-        DDatge Survival
-      </h1>
-      <p className="text-gray-200 text-lg drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-        Eat or Be Eaten
-      </p>
+      <header>
+        <h1 className="title">
+          <span className="mo_br">DDatge</span>
+          <span className="mo_br">Survival</span>
+        </h1>
+        <p className="subtitle">Eat or Be Eaten</p>
+      </header>
 
       <input
         type="text"
         value={nickname}
         onChange={(e) => handleNicknameChange(e.target.value)}
-        placeholder="Enter nickname..."
+        placeholder="Enter nickname!"
         maxLength={10}
-        className="pixel-ui px-4 py-2 bg-gray-800/90 text-white text-center text-lg w-64"
+        className="pixel-ui nicnameInput px-4 py-2 text-white text-center text-lg w-68"
       />
 
-      <div className="flex flex-col gap-4 w-64">
+      <div className="flex flex-col gap-4 w-68">
         <Link
           href="/game"
-          className="pixel-ui w-full py-3 text-white text-xl font-bold text-center bg-[#548ced] transition-colors hover:bg-[#3a6fc1]"
+          className="pixel-ui w-full py-3 text-white text-xl font-bold text-center bg-[#ff7127] transition-colors hover:bg-[#cc5a1f]"
         >
           START GAME
         </Link>
         <Link
           href="/leaderboard"
-          className="pixel-ui w-full py-3 text-white text-center font-semibold bg-[#3bc6d8] transition-colors hover:bg-[#33b0c7]"
+          className="pixel-ui w-full py-3 text-white text-center font-semibold bg-[#ffbd30] transition-colors hover:bg-[#cc9a27]"
         >
           LEADERBOARD
         </Link>
         <button
           onClick={() => setHowToPlayOpen(true)}
-          className="pixel-ui w-full py-3 text-white font-semibold bg-[#939393] transition-colors hover:bg-[#7a7a7a]"
+          className="pixel-ui w-full py-3 text-white font-semibold bg-[#a9a9a9] transition-colors hover:bg-[#888888]"
         >
           HOW TO PLAY
         </button>

@@ -51,6 +51,38 @@ body {
   padding: 0;
 }
 
+header {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  transform: matrix3d(1, 0, 0, 0, 0, 1.1, 0, -0.00055, 0, 0, 1, 0, 0, 0, 0, 1);
+}
+
+h1.title {
+  font-weight: 900;
+  letter-spacing: -0.1vw;
+  font-size: clamp(4.4rem, 6.5vw, 8.2rem);
+  text-align: center;
+  line-height: 1;
+  display: flex;
+  gap: 1vw;
+  filter: drop-shadow(0px 8px 0px #b5730a) drop-shadow(0px 8px 0px #00000079);
+}
+
+h1.title .mo_br {
+  color: transparent;
+  background: linear-gradient(180deg, #fffc32 60%, rgb(250, 255, 196) 40%);
+  /* background: linear-gradient(180deg, #ff654d 60%, rgb(255, 162, 162) 40%); */
+  background-clip: text;
+  -webkit-background-clip: text;
+}
+
+.subtitle {
+  font-weight: 900;
+  font-size: clamp(14px, 5vw, 32px);
+  filter: drop-shadow(0px 3px 0px #80593a);
+}
+
 /* Pixel UI Button/Link Style */
 button.pixel-ui,
 a.pixel-ui {
@@ -61,10 +93,10 @@ a.pixel-ui {
   display: inline-block;
   text-decoration: none;
   box-shadow:
-    0px 4px #333,
-    0px -4px #333,
-    4px 0px #333,
-    -4px 0px #333,
+    0px 4px #6e5949,
+    0px -4px #6e5949,
+    4px 0px #6e5949,
+    -4px 0px #6e5949,
     0px 8px #00000038,
     4px 4px #00000038,
     -4px 4px #00000038,
@@ -75,10 +107,10 @@ button.pixel-ui:active,
 a.pixel-ui:active {
   transform: translateY(4px);
   box-shadow:
-    0px 4px #333,
-    0px -4px #333,
-    4px 0px #333,
-    -4px 0px #333,
+    0px 4px #6e5949,
+    0px -4px #6e5949,
+    4px 0px #6e5949,
+    -4px 0px #6e5949,
     inset 0px 4px #00000038;
 }
 
@@ -86,15 +118,21 @@ a.pixel-ui:active {
 input.pixel-ui {
   border: 0;
   box-shadow:
-    0px 4px #555,
-    0px -4px #555,
-    4px 0px #555,
-    -4px 0px #555,
+    0px 4px #7b6b5c,
+    0px -4px #7b6b5c,
+    4px 0px #7b6b5c,
+    -4px 0px #7b6b5c,
     0px 8px #0000001d,
     4px 4px #0000001d,
     -4px 4px #0000001d,
-    inset 0px 4px #bdbdbd60;
+    inset 0px 4px #989898bd;
   outline: none;
+}
+
+.nicnameInput {
+  background-color: #ffffffc9;
+  color: #333;
+  margin: 32px auto;
 }
 
 /* Pixel UI Panel Style (modal cards) */
@@ -205,4 +243,11 @@ input[type="range"].pixel-slider:disabled {
     0px -2px #fff,
     2px 0px #ddd,
     -2px 0px #ddd;
+}
+
+@media screen and (max-width: 960px) {
+  h1.title {
+    flex-direction: column;
+    gap: 0;
+  }
 }
