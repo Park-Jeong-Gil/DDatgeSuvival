@@ -599,8 +599,6 @@ export class GameScene extends Phaser.Scene {
     const npcLevel = npc.level;
 
     if (FoodChain.isBoss(npcLevel)) {
-      // 보스도 50% 이상 겹쳐야 잡힘
-      if (this.getOverlapRatio(npc) < 0.5) return;
       this.handleGameOver("boss");
       return;
     }
@@ -612,8 +610,6 @@ export class GameScene extends Phaser.Scene {
         this.itemManager.canEatSameLevel());
 
     if (canEatNPC) {
-      // NPC를 먹으려면 50% 이상 겹쳐야 함
-      if (this.getOverlapRatio(npc) < 0.5) return;
       this.handleEat(npc);
     } else if (FoodChain.sameLevel(playerLevel, npcLevel)) {
       // 같은 레벨은 장애물처럼 단순 충돌만 처리 (넉백 없음)

@@ -67,7 +67,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     const body = this.body as Phaser.Physics.Arcade.Body;
     body.setBounce(0.2);
     body.setCollideWorldBounds(true); // 물리 바디에서도 월드 경계 충돌 활성화
-    // 물리 바디 크기를 표시 크기와 동일하게 설정
+    // 물리 바디를 표시 크기와 동일하게 설정
     body.setSize(displayWidth, displayHeight);
     body.setOffset(0, 0);
 
@@ -429,7 +429,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     bushData?: { x: number; y: number; r2: number }[],
   ) {
     const angle = Phaser.Math.Angle.Between(this.x, this.y, targetX, targetY);
-    let speed = playerSpeed * 1.001;
+    let speed = playerSpeed * 0.95;
 
     // 추격 중인 포식자가 풀숲에 있으면 속도 감소 (cached data, squared distance)
     if (bushData) {
