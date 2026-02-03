@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { ScoreRecord, LeaderboardResponse } from "@/types/supabase";
 import { getOrCreateUserId } from "@/lib/userId";
-import { getSkinById } from "@/lib/phaser/data/skinData";
+import { getSkinById, getCostumeById } from "@/lib/phaser/data/skinData";
 import { getItemById } from "@/lib/phaser/data/itemData";
 
 type SortType = "score" | "survival_time" | "max_level";
@@ -117,8 +117,23 @@ export default function LeaderboardPage() {
           <div className="flex flex-col gap-2">
             {scores.map((record, index) => {
               const skin = getSkinById(record.skin_id);
+              const costume = record.costume
+                ? getCostumeById(record.costume)
+                : null;
               const items = record.collected_items;
               const isCurrentUser = record.user_id === currentUserId;
+
+              // 코스튬이 있으면 코스튬 정보 사용, 없으면 기본 스킨 사용
+              const displayName = costume
+                ? costume.name
+                : skin
+                  ? skin.name
+                  : "기본 땃쥐";
+              const displayRarity = costume
+                ? costume.rarity
+                : skin
+                  ? skin.rarity
+                  : "common";
 
               return (
                 <div
@@ -160,13 +175,11 @@ export default function LeaderboardPage() {
                       <span className="text-white font-bold truncate">
                         {record.nickname || "Anonymous"}
                       </span>
-                      {skin && (
-                        <span
-                          className={`text-xs ${rarityColors[skin.rarity] ?? "text-gray-400"}`}
-                        >
-                          {skin.name}
-                        </span>
-                      )}
+                      <span
+                        className={`text-xs ${rarityColors[displayRarity] ?? "text-gray-400"}`}
+                      >
+                        {displayName}
+                      </span>
                     </div>
                     <div className="text-xs text-gray-400">
                       Lv {record.max_level} | {formatTime(record.survival_time)}{" "}

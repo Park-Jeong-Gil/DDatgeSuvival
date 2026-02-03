@@ -60,7 +60,32 @@ export const skins: SkinData[] = [
   },
 ];
 
-// 코스튬별 레어리티 매핑
+// 코스튬 데이터 정의
+export interface CostumeData {
+  id: string;
+  name: string;
+  rarity: Rarity;
+}
+
+export const costumesData: CostumeData[] = [
+  { id: "fighter", name: "검투사 땃쥐", rarity: "common" },
+  { id: "pierrot", name: "광대 땃쥐", rarity: "common" },
+  { id: "golden", name: "황금 땃쥐", rarity: "uncommon" },
+  { id: "magic", name: "마법사 땃쥐", rarity: "uncommon" },
+  { id: "rainbow", name: "무지개 땃쥐", rarity: "rare" },
+  { id: "ghost", name: "유령 땃쥐", rarity: "rare" },
+  { id: "robot", name: "로봇 땃쥐", rarity: "rare" },
+  { id: "fire", name: "불꽃 땃쥐", rarity: "epic" },
+  { id: "ice", name: "얼음 땃쥐", rarity: "epic" },
+  { id: "angel", name: "천사 땃쥐", rarity: "epic" },
+  { id: "cosmic", name: "우주 땃쥐", rarity: "legendary" },
+];
+
+export function getCostumeById(costumeId: string): CostumeData | undefined {
+  return costumesData.find((c) => c.id === costumeId);
+}
+
+// 코스튼별 레어리티 매핑
 export const costumesByRarity: Record<Rarity, string[]> = {
   common: ["fighter", "pierrot"],
   uncommon: ["golden", "magic"],
