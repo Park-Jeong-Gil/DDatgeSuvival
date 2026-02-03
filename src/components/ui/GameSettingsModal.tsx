@@ -46,7 +46,7 @@ export default function GameSettingsModal({ onClose }: GameSettingsModalProps) {
           <>
             <div className="flex justify-between items-center mb-10">
               <div className="w-9" />
-              <h2 className="text-2xl font-bold text-white">SETTINGS</h2>
+              <h2 className="text-2xl font-bold text-white">▪︎ SETTINGS ▪︎</h2>
               <button
                 onClick={onClose}
                 className="pixel-ui bg-[#555] px-2 py-1.5 text-white text-lg hover:bg-[#444] transition-colors"
@@ -69,7 +69,7 @@ export default function GameSettingsModal({ onClose }: GameSettingsModalProps) {
               </button>
               <button
                 onClick={handleBackToMain}
-                className="pixel-ui w-full py-3 text-white text-lg font-semibold bg-[#48260c] transition-colors hover:bg-[#3a1e09]"
+                className="pixel-ui w-full py-3 text-white text-lg font-semibold bg-gray-700 transition-colors hover:bg-gray-600"
               >
                 BACK TO MAIN
               </button>

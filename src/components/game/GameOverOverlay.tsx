@@ -110,8 +110,8 @@ export default function GameOverOverlay() {
 
   return (
     <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-50">
-      <div className="bg-gray-900 border border-gray-700 rounded-2xl p-8 max-w-md w-full mx-4 text-center">
-        <h2 className="text-4xl font-bold text-red-500 mb-6">YOU DIED</h2>
+      <div className="pixel-panel bg-[#221813] p-8 max-w-md w-full mx-4 text-center">
+        <h2 className="text-4xl font-bold text-red-500 mb-6">▪︎ YOU DIED ▪︎</h2>
 
         <p className="text-gray-400 mb-4">
           {deathReasonText[deathReason ?? "hunger"]}
@@ -189,16 +189,16 @@ export default function GameOverOverlay() {
           <p className="mb-4 text-sm text-red-400">Score submission failed.</p>
         )}
 
-        <div className="flex gap-3">
+        <div className="flex gap-6">
           <button
             onClick={handleRetry}
-            className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-500 transition"
+            className="pixel-ui flex-1 px-6 py-3 bg-[#1a963e] text-white font-bold hover:bg-[#178032] transition"
           >
             RETRY
           </button>
           <button
             onClick={handleMenu}
-            className="flex-1 px-6 py-3 bg-gray-700 text-white rounded-lg font-bold hover:bg-gray-600 transition"
+            className="pixel-ui flex-1 px-6 py-3 bg-gray-700 text-white font-bold hover:bg-gray-600 transition"
           >
             MENU
           </button>

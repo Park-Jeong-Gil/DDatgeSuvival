@@ -67,7 +67,7 @@ export default function HomePage() {
       <div className="flex flex-col gap-4 w-68">
         <Link
           href="/game"
-          className="pixel-ui w-full py-3 text-white text-xl font-bold text-center bg-[#ff7127] transition-colors hover:bg-[#cc5a1f]"
+          className="pixel-ui w-full py-3 text-white text-xl font-bold text-center bg-[#1a963e] transition-colors hover:bg-[#178032]"
         >
           START GAME
         </Link>
