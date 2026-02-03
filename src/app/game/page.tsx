@@ -58,7 +58,7 @@ export default function GamePage() {
       {isPlaying && !isGameOver && !settingsOpen && (
         <button
           onClick={() => setSettingsOpen(true)}
-          className="pixel-ui absolute top-4 right-4 z-40 bg-[#555] hover:bg-[#444] transition-colors px-3 py-2 text-base"
+          className="inGameSettings pixel-ui absolute top-4 right-4 z-40 bg-[#555] hover:bg-[#444] transition-colors px-3 py-2 text-base"
         >
           SETTING
         </button>

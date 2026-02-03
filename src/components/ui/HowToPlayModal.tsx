@@ -19,12 +19,12 @@ export default function HowToPlayModal({
       onClick={onClose}
     >
       <div
-        className="pixel-panel bg-[#1a1a2e] p-6 w-full max-w-sm mx-4 text-center"
+        className="pixel-panel bg-[#221813] backdrop-blur p-6 w-full max-w-sm mx-4 text-center"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-2xl font-bold text-white mb-4">HOW TO PLAY</h2>
+        <h2 className="text-3xl font-bold mb-8 text-[#fff]">HOW TO PLAY</h2>
 
-        <div className="max-h-[60vh] overflow-y-auto pr-1 mb-5">
+        <div className="max-h-[60vh] overflow-y-auto pr-1 mb-10">
           <HowToPlayContent />
         </div>
 

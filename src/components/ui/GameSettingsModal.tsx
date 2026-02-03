@@ -38,38 +38,38 @@ export default function GameSettingsModal({ onClose }: GameSettingsModalProps) {
       onClick={onClose}
     >
       <div
-        className="pixel-panel bg-[#1a1a2e] p-6 w-full max-w-sm mx-4"
+        className="pixel-panel bg-[#221813] p-6 w-full max-w-sm mx-4"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Settings Menu */}
         {view === "menu" && (
           <>
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex justify-between items-center mb-10">
               <div className="w-9" />
               <h2 className="text-2xl font-bold text-white">SETTINGS</h2>
               <button
                 onClick={onClose}
-                className="pixel-ui bg-[#555] px-2.5 py-1 text-white text-lg hover:bg-[#444] transition-colors"
+                className="pixel-ui bg-[#555] px-2 py-1.5 text-white text-lg hover:bg-[#444] transition-colors"
               >
                 x
               </button>
             </div>
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-6">
               <button
                 onClick={() => setView("howToPlay")}
-                className="pixel-ui w-full py-3 text-white text-lg font-semibold bg-[#548ced] transition-colors hover:bg-[#3a6fc1]"
+                className="pixel-ui w-full py-3 text-white text-lg font-semibold bg-[#808080] transition-colors hover:bg-[#6e6e6e]"
               >
                 HOW TO PLAY
               </button>
               <button
                 onClick={() => setView("volume")}
-                className="pixel-ui w-full py-3 text-white text-lg font-semibold bg-[#939393] transition-colors hover:bg-[#7a7a7a]"
+                className="pixel-ui w-full py-3 text-white text-lg font-semibold bg-[#3f65af] transition-colors hover:bg-[#35548c]"
               >
                 VOLUME
               </button>
               <button
                 onClick={handleBackToMain}
-                className="pixel-ui w-full py-3 text-white text-lg font-semibold bg-[#c0392b] transition-colors hover:bg-[#a93226]"
+                className="pixel-ui w-full py-3 text-white text-lg font-semibold bg-[#48260c] transition-colors hover:bg-[#3a1e09]"
               >
                 BACK TO MAIN
               </button>
@@ -80,12 +80,12 @@ export default function GameSettingsModal({ onClose }: GameSettingsModalProps) {
         {/* HOW TO PLAY */}
         {view === "howToPlay" && (
           <>
-            <div className="flex items-center mb-4">
+            <div className="flex items-center mb-8">
               <button
                 onClick={() => setView("menu")}
                 className="pixel-ui bg-[#555] px-3 py-1.5 text-white text-sm hover:bg-[#444] transition-colors"
               >
-                BACK
+                &lt;
               </button>
               <h2 className="text-2xl font-bold text-white flex-1 text-center">
                 HOW TO PLAY
@@ -101,12 +101,12 @@ export default function GameSettingsModal({ onClose }: GameSettingsModalProps) {
         {/* VOLUME */}
         {view === "volume" && (
           <>
-            <div className="flex items-center mb-4">
+            <div className="flex items-center mb-8">
               <button
                 onClick={() => setView("menu")}
                 className="pixel-ui bg-[#555] px-3 py-1.5 text-white text-sm hover:bg-[#444] transition-colors"
               >
-                BACK
+                &lt;
               </button>
               <h2 className="text-2xl font-bold text-white flex-1 text-center">
                 VOLUME

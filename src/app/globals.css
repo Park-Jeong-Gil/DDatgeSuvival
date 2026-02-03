@@ -88,7 +88,7 @@ button.pixel-ui,
 a.pixel-ui {
   color: #fff;
   letter-spacing: 1px;
-  padding: 12px 20px;
+  /* padding: 12px 20px; */
   border: 0;
   display: inline-block;
   text-decoration: none;
@@ -249,5 +249,9 @@ input[type="range"].pixel-slider:disabled {
   h1.title {
     flex-direction: column;
     gap: 0;
+  }
+
+  .inGameSettings {
+    font-size: 10px;
   }
 }

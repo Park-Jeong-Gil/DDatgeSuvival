@@ -79,7 +79,7 @@ export default function HomePage() {
         </Link>
         <button
           onClick={() => setHowToPlayOpen(true)}
-          className="pixel-ui w-full py-3 text-white font-semibold bg-[#a9a9a9] transition-colors hover:bg-[#888888]"
+          className="pixel-ui w-full py-3 text-white font-semibold bg-[#808080] transition-colors hover:bg-[#6e6e6e]"
         >
           HOW TO PLAY
         </button>
