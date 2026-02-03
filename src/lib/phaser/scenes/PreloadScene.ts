@@ -85,6 +85,15 @@ export class PreloadScene extends Phaser.Scene {
       "assets/sprites/items/item_giant_power.png",
     );
 
+    // Sound effects
+    this.load.audio("bite", "assets/sounds/player/bite.wav");
+    this.load.audio("death", "assets/sounds/player/death.wav");
+    this.load.audio("levelup", "assets/sounds/player/levelup.wav");
+    this.load.audio("pickup", "assets/sounds/player/pickup.wav");
+
+    // Background music
+    this.load.audio("bgm", "assets/sounds/music/background_music.mp3");
+
     this.createPlaceholderTextures();
   }
 

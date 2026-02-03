@@ -55,6 +55,9 @@ export class ItemManager {
     this.applyEffect(data);
     EventBus.emit("item-collected", { item: data });
 
+    // Play pickup sound
+    EventBus.emit("play-sound", "pickup");
+
     // 아이템 수집 기록
     useGameStore.getState().addCollectedItem(data);
 

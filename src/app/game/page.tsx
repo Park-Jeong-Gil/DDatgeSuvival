@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import { useGameStore } from "@/store/gameStore";
+import { useAudioStore } from "@/store/audioStore";
 import { EventBus } from "@/lib/phaser/EventBus";
 import HUD from "@/components/game/HUD";
 import LevelUpNotice from "@/components/game/LevelUpNotice";
@@ -29,6 +30,8 @@ export default function GamePage() {
   const hasOpenedSettings = useRef(false);
 
   useEffect(() => {
+    useAudioStore.getState().initFromStorage();
+
     const stored = localStorage.getItem("mole_user_id");
     if (!stored) return;
     try {

@@ -14,6 +14,7 @@ import {
   MOBILE_GAME_HEIGHT,
 } from "../constants";
 import { useGameStore } from "@/store/gameStore";
+import { useAudioStore } from "@/store/audioStore";
 import { FoodChain } from "../systems/FoodChain";
 import { HungerSystem } from "../systems/HungerSystem";
 import { LevelSystem } from "../systems/LevelSystem";
@@ -53,6 +54,20 @@ export class GameScene extends Phaser.Scene {
   private onPostUpdateHandler = this.onPostUpdate.bind(this);
   private onPauseGameHandler = this.onPauseGame.bind(this);
   private onResumeGameHandler = this.onResumeGame.bind(this);
+  private onAudioSettingsChangedHandler = (...args: unknown[]) => {
+    const settings = args[0] as {
+      bgmVolume: number;
+      sfxVolume: number;
+      bgmMuted: boolean;
+      sfxMuted: boolean;
+    };
+    this.applyAudioSettings(settings);
+  };
+  private bgm?: Phaser.Sound.BaseSound;
+  private biteSound?: Phaser.Sound.BaseSound;
+  private deathSound?: Phaser.Sound.BaseSound;
+  private levelupSound?: Phaser.Sound.BaseSound;
+  private pickupSound?: Phaser.Sound.BaseSound;
 
   constructor() {
     super({ key: "GameScene" });
@@ -148,6 +163,9 @@ export class GameScene extends Phaser.Scene {
     this.warningGraphics = this.add.graphics();
     this.warningGraphics.setScrollFactor(0);
     this.warningGraphics.setDepth(100);
+
+    // Initialize sounds
+    this.initializeSounds();
 
     // Mark playing after first frame renders
     this.time.delayedCall(100, () => {
@@ -299,7 +317,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   private createPlayerOverlay() {
-    const labelFontSize = this.isMobile ? "20px" : "12px";
+    // Check mobile status directly based on screen width
+    const isMobile = this.scale.width <= MOBILE_BREAKPOINT;
+    const labelFontSize = isMobile ? "20px" : "12px";
     this.playerLabelText = this.add.text(this.player.x, this.player.y, "", {
       fontSize: labelFontSize,
       fontFamily: "Mulmaru",
@@ -636,6 +656,9 @@ export class GameScene extends Phaser.Scene {
     // 먹기 애니메이션
     this.player.playEatAnimation();
 
+    // Play bite sound
+    this.playSound("bite");
+
     // NPCManager의 완전한 제거 메서드 사용
     this.npcManager.removeNPC(npc);
 
@@ -717,6 +740,10 @@ export class GameScene extends Phaser.Scene {
     if (this.isGameOver) return;
     this.isGameOver = true;
 
+    // Stop BGM and play death sound
+    this.stopBGM();
+    this.playSound("death");
+
     useGameStore.getState().setGameOver(reason, predatorName);
     EventBus.emit("game-over", { reason, predatorName });
 
@@ -746,6 +773,9 @@ export class GameScene extends Phaser.Scene {
 
   private onLevelUp(...args: unknown[]) {
     const data = args[0] as { level: number };
+
+    // Play levelup sound
+    this.playSound("levelup");
 
     if (!this.hungerSystem) return;
     if (!this.cameras || !this.cameras.main) return;
@@ -794,6 +824,12 @@ export class GameScene extends Phaser.Scene {
     EventBus.off("joystick-update", this.onJoystickUpdateHandler, this);
     EventBus.off("pause-game", this.onPauseGameHandler);
     EventBus.off("resume-game", this.onResumeGameHandler);
+    EventBus.off("play-sound", this.onPlaySoundHandler);
+    EventBus.off(
+      "audio-settings-changed",
+      this.onAudioSettingsChangedHandler,
+    );
+    this.stopBGM();
     this.npcManager.destroy();
     this.itemManager.destroy();
   }
@@ -811,11 +847,107 @@ export class GameScene extends Phaser.Scene {
   private onPauseGame() {
     if (!this.scene?.manager) return;
     this.player?.setVelocity(0, 0);
+    this.pauseBGM();
     this.scene.pause();
   }
 
   private onResumeGame() {
     if (!this.scene?.manager) return;
+    this.resumeBGM();
     this.scene.resume();
+  }
+
+  // Sound system methods
+  private initializeSounds() {
+    const { bgmVolume, sfxVolume, bgmMuted, sfxMuted } =
+      useAudioStore.getState();
+    const bgmVol = bgmMuted ? 0 : bgmVolume;
+    const sfxVol = sfxMuted ? 0 : sfxVolume;
+
+    // Initialize sound effects
+    this.biteSound = this.sound.add("bite", { volume: sfxVol });
+    this.deathSound = this.sound.add("death", { volume: sfxVol });
+    this.levelupSound = this.sound.add("levelup", { volume: sfxVol });
+    this.pickupSound = this.sound.add("pickup", { volume: sfxVol });
+
+    // Initialize and play background music
+    this.bgm = this.sound.add("bgm", {
+      volume: bgmVol,
+      loop: true,
+    });
+    this.bgm.play();
+
+    // Listen for sound play events and audio settings changes
+    EventBus.on("play-sound", this.onPlaySoundHandler, this);
+    EventBus.on(
+      "audio-settings-changed",
+      this.onAudioSettingsChangedHandler,
+      this,
+    );
+  }
+
+  private applyAudioSettings(settings: {
+    bgmVolume: number;
+    sfxVolume: number;
+    bgmMuted: boolean;
+    sfxMuted: boolean;
+  }) {
+    const bgmVol = settings.bgmMuted ? 0 : settings.bgmVolume;
+    const sfxVol = settings.sfxMuted ? 0 : settings.sfxVolume;
+
+    this.setSoundVolume(this.bgm, bgmVol);
+    this.setSoundVolume(this.biteSound, sfxVol);
+    this.setSoundVolume(this.deathSound, sfxVol);
+    this.setSoundVolume(this.levelupSound, sfxVol);
+    this.setSoundVolume(this.pickupSound, sfxVol);
+  }
+
+  private setSoundVolume(
+    sound: Phaser.Sound.BaseSound | undefined,
+    volume: number,
+  ) {
+    if (sound && "setVolume" in sound) {
+      (sound as Phaser.Sound.WebAudioSound).setVolume(volume);
+    }
+  }
+
+  private onPlaySoundHandler = (...args: unknown[]) => {
+    const soundKey = args[0] as string;
+    this.playSound(soundKey);
+  };
+
+  private playSound(soundKey: string) {
+    switch (soundKey) {
+      case "bite":
+        this.biteSound?.play();
+        break;
+      case "death":
+        this.deathSound?.play();
+        break;
+      case "levelup":
+        this.levelupSound?.play();
+        break;
+      case "pickup":
+        this.pickupSound?.play();
+        break;
+    }
+  }
+
+  private stopBGM() {
+    if (this.bgm && this.bgm.isPlaying) {
+      this.bgm.stop();
+    }
+  }
+
+  private pauseBGM() {
+    if (this.bgm && this.bgm.isPlaying) {
+      this.bgm.pause();
+    }
+  }
+
+  private resumeBGM() {
+    if (this.bgm && this.bgm.isPaused) {
+      this.bgm.resume();
+    }
   }
 }

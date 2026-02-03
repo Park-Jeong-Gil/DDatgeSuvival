@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useGameStore } from "@/store/gameStore";
+import { useAudioStore } from "@/store/audioStore";
 import HowToPlayContent from "./HowToPlayContent";
 
 type View = "menu" | "howToPlay" | "volume";
@@ -15,6 +16,16 @@ export default function GameSettingsModal({ onClose }: GameSettingsModalProps) {
   const [view, setView] = useState<View>("menu");
   const router = useRouter();
   const resetGame = useGameStore((s) => s.resetGame);
+  const {
+    bgmVolume,
+    sfxVolume,
+    bgmMuted,
+    sfxMuted,
+    setBgmVolume,
+    setSfxVolume,
+    toggleBgmMute,
+    toggleSfxMute,
+  } = useAudioStore();
 
   const handleBackToMain = () => {
     resetGame();
@@ -102,11 +113,68 @@ export default function GameSettingsModal({ onClose }: GameSettingsModalProps) {
               </h2>
               <div className="w-[62px]" />
             </div>
-            <div className="py-8 text-center">
-              <p className="text-gray-400 text-sm">
-                사운드 에셋 준비 중입니다
-              </p>
-              <p className="text-gray-500 text-xs mt-1">Coming Soon</p>
+            {/* BGM */}
+            <div className="mb-5 text-left">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-bold text-white">BGM</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-gray-400">
+                    {bgmMuted ? "OFF" : "ON"}
+                  </span>
+                  <button
+                    onClick={toggleBgmMute}
+                    className={`pixel-toggle ${!bgmMuted ? "active" : ""}`}
+                    aria-label={bgmMuted ? "BGM 켜기" : "BGM 끄기"}
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <input
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  value={bgmMuted ? 0 : bgmVolume}
+                  onChange={(e) => setBgmVolume(parseFloat(e.target.value))}
+                  disabled={bgmMuted}
+                  className="pixel-slider w-full"
+                />
+                <span className="text-sm font-bold text-gray-400 w-10 text-right">
+                  {bgmMuted ? 0 : Math.round(bgmVolume * 100)}%
+                </span>
+              </div>
+            </div>
+
+            {/* SFX */}
+            <div className="mb-2 text-left">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-bold text-white">Effect</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-gray-400">
+                    {sfxMuted ? "OFF" : "ON"}
+                  </span>
+                  <button
+                    onClick={toggleSfxMute}
+                    className={`pixel-toggle ${!sfxMuted ? "active" : ""}`}
+                    aria-label={sfxMuted ? "효과음 켜기" : "효과음 끄기"}
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <input
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  value={sfxMuted ? 0 : sfxVolume}
+                  onChange={(e) => setSfxVolume(parseFloat(e.target.value))}
+                  disabled={sfxMuted}
+                  className="pixel-slider w-full"
+                />
+                <span className="text-sm font-bold text-gray-400 w-10 text-right">
+                  {sfxMuted ? 0 : Math.round(sfxVolume * 100)}%
+                </span>
+              </div>
             </div>
           </>
         )}
