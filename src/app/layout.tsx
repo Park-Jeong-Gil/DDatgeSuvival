@@ -4,13 +4,13 @@ import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: "DDatge Survival",
-  description: "Top-down survival growth game - eat or be eaten!",
+  description: "survival growth game - eat or be eaten!",
   icons: {
     icon: "/favicon.ico",
   },
   openGraph: {
     title: "DDatge Survival",
-    description: "Top-down survival growth game - eat or be eaten!",
+    description: "survival growth game - eat or be eaten!",
     images: [
       {
         url: "/thumb.jpg",
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "DDatge Survival",
-    description: "Top-down survival growth game - eat or be eaten!",
+    description: "survival growth game - eat or be eaten!",
     images: ["/thumb.jpg"],
   },
 };
