@@ -9,13 +9,16 @@ export class Item extends Phaser.Physics.Arcade.Sprite {
   private isCollecting: boolean = false; // 수집 중복 방지
 
   constructor(scene: Phaser.Scene, x: number, y: number, data: ItemData) {
-    // 텍스처가 로드되었는지 확인
-    if (!scene.textures.exists(data.spriteKey)) {
+    // 텍스처가 로드되었는지 확인하고 적절한 키 선택
+    const textureKey = scene.textures.exists(data.spriteKey)
+      ? data.spriteKey
+      : "__DEFAULT";
+
+    if (textureKey === "__DEFAULT") {
       console.warn(`Texture not found: ${data.spriteKey}, using default`);
-      super(scene, x, y, "__DEFAULT");
-    } else {
-      super(scene, x, y, data.spriteKey);
     }
+
+    super(scene, x, y, textureKey);
 
     this.itemData = data;
 
