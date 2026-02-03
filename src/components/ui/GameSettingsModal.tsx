@@ -88,9 +88,9 @@ export default function GameSettingsModal({ onClose }: GameSettingsModalProps) {
                 &lt;
               </button>
               <h2 className="text-2xl font-bold text-white flex-1 text-center">
-                HOW TO PLAY
+                ▪︎ HOW TO PLAY ▪︎
               </h2>
-              <div className="w-[62px]" />
+              <div className="w-[32px]" />
             </div>
             <div className="max-h-[60vh] overflow-y-auto pr-1">
               <HowToPlayContent />
@@ -109,9 +109,9 @@ export default function GameSettingsModal({ onClose }: GameSettingsModalProps) {
                 &lt;
               </button>
               <h2 className="text-2xl font-bold text-white flex-1 text-center">
-                VOLUME
+                ▪︎ VOLUME ▪︎
               </h2>
-              <div className="w-[62px]" />
+              <div className="w-[32px]" />
             </div>
             {/* BGM */}
             <div className="mb-5 text-left">

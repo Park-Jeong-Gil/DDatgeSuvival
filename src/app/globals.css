@@ -102,6 +102,8 @@ a.pixel-ui {
     -4px 4px #00000038,
     inset 0px 4px #ffffff36;
   cursor: pointer;
+  padding-top: 10px;
+  z-index: 1;
 }
 button.pixel-ui:active,
 a.pixel-ui:active {
@@ -243,6 +245,18 @@ input[type="range"].pixel-slider:disabled {
     0px -2px #fff,
     2px 0px #ddd,
     -2px 0px #ddd;
+}
+
+.leaderboardPage:before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+  z-index: 0;
 }
 
 @media screen and (max-width: 960px) {

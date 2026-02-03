@@ -1,3 +1,5 @@
+import { costumesData } from "@/lib/phaser/data/skinData";
+
 const rarityColor: Record<string, string> = {
   common: "text-gray-400",
   uncommon: "text-green-400",
@@ -5,17 +7,6 @@ const rarityColor: Record<string, string> = {
   epic: "text-purple-400",
   legendary: "text-amber-400",
 };
-
-const skins = [
-  { name: "기본 땃쥐", rarity: "common" },
-  { name: "황금 땃쥐", rarity: "uncommon" },
-  { name: "무지개 땃쥐", rarity: "rare" },
-  { name: "유령 땃쥐", rarity: "rare" },
-  { name: "로봇 땃쥐", rarity: "epic" },
-  { name: "불꽃 땃쥐", rarity: "epic" },
-  { name: "얼음 땃쥐", rarity: "legendary" },
-  { name: "우주 땃쥐", rarity: "legendary" },
-];
 
 export default function HowToPlayContent() {
   return (
@@ -89,11 +80,16 @@ export default function HowToPlayContent() {
       <section>
         <h3 className="font-bold text-white mb-2 text-base">코스튬</h3>
         <div className="space-y-1">
-          {skins.map((skin) => (
-            <div key={skin.name} className="flex justify-between text-gray-300">
-              <span>{skin.name}</span>
-              <span className={`text-xs font-bold ${rarityColor[skin.rarity]}`}>
-                {skin.rarity.toUpperCase()}
+          {costumesData.map((costume) => (
+            <div
+              key={costume.id}
+              className="flex justify-between text-gray-300"
+            >
+              <span>{costume.name}</span>
+              <span
+                className={`text-xs font-bold ${rarityColor[costume.rarity]}`}
+              >
+                {costume.rarity.toUpperCase()}
               </span>
             </div>
           ))}

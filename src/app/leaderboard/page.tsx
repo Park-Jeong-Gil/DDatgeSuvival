@@ -22,7 +22,7 @@ function formatTime(seconds: number): string {
   return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 }
 
-const rankIcons = ["", "1st", "2nd", "3rd"];
+const rankIcons = ["", "🥇1st", "🥈2nd", "🥉3rd"];
 
 const rarityColors: Record<string, string> = {
   common: "text-gray-400",
@@ -63,7 +63,7 @@ export default function LeaderboardPage() {
 
   return (
     <main
-      className="min-h-screen bg-gray-900 p-6"
+      className="leaderboardPage min-h-screen bg-gray-900 p-6"
       style={{
         backgroundImage: "url(/assets/background/main_background.png)",
         backgroundSize: "cover",
@@ -71,29 +71,29 @@ export default function LeaderboardPage() {
         backgroundRepeat: "no-repeat",
       }}
     >
-      <div className="max-w-2xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
+      <div className="max-w-2xl mx-auto z-2">
+        <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
             LEADERBOARD
           </h1>
           <Link
             href="/"
-            className="px-4 py-2 bg-gray-700/90 text-white rounded-lg hover:bg-gray-600 transition drop-shadow-lg"
+            className="pixel-ui bg-[#555] px-3 py-1.5 text-white text-lg hover:bg-[#444] transition-colors"
           >
             BACK
           </Link>
         </div>
 
         {/* Sort tabs */}
-        <div className="flex gap-2 mb-4">
+        <div className="flex gap-5 mb-8">
           {(Object.keys(sortLabels) as SortType[]).map((key) => (
             <button
               key={key}
               onClick={() => setSort(key)}
-              className={`px-4 py-2 rounded-lg font-bold transition drop-shadow-lg ${
+              className={`pixel-ui bg-[#555] px-2.5 py-1.5 text-white text-lg hover:bg-[#444] transition-colors ${
                 sort === key
-                  ? "bg-green-600 text-white"
-                  : "bg-gray-700/80 text-gray-300 hover:bg-gray-600"
+                  ? "bg-[#ffbd30] transition-colors hover:bg-[#cc9a27]"
+                  : "bg-[#808080] transition-colors hover:bg-[#6e6e6e]"
               }`}
             >
               {sortLabels[key]}
@@ -102,7 +102,7 @@ export default function LeaderboardPage() {
         </div>
 
         {userRank && (
-          <div className="bg-green-900/40 border border-green-700 rounded-lg p-3 mb-4 text-green-400 font-bold drop-shadow-lg">
+          <div className="bg-yellow-700/70 border border-yellow-700 rounded-lg p-3 mb-4 text-yellow-300 font-bold drop-shadow-lg">
             Your Rank: #{userRank}
           </div>
         )}
@@ -140,10 +140,10 @@ export default function LeaderboardPage() {
                   key={record.id}
                   className={`flex items-center gap-3 p-3 rounded-lg drop-shadow-md ${
                     isCurrentUser
-                      ? "bg-green-900/50 border-2 border-green-500 ring-2 ring-green-500/30"
+                      ? "bg-yellow-900/70 border border-yellow-700 ring-2 ring-green-500/30"
                       : index < 3
-                        ? "bg-gray-800/80 border border-yellow-600/30"
-                        : "bg-gray-800/60"
+                        ? "bg-[#221813] border border-yellow-600/30"
+                        : "bg-[#221813]/50"
                   }`}
                 >
                   <span className="w-10 text-center font-bold text-lg shrink-0">
