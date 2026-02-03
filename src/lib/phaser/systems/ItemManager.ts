@@ -1,13 +1,15 @@
 import * as Phaser from "phaser";
 import { Item } from "../entities/Item";
 import { allItems, rarityWeights } from "../data/itemData";
-import { rollSkinDrop } from "../data/skinData";
+import { rollSkinDrop, getRandomCostumeByRarity } from "../data/skinData";
 import { MAP_WIDTH, MAP_HEIGHT } from "../constants";
 import { useGameStore } from "@/store/gameStore";
 import { EventBus } from "../EventBus";
 import type { ItemData } from "@/types/item";
 import type { ActiveBuff } from "@/types/game";
 import type { MapElements } from "../utils/mapGenerator";
+import type { Rarity } from "@/types/item";
+import type { Player } from "../entities/Player";
 
 export class ItemManager {
   private scene: Phaser.Scene;
@@ -17,6 +19,7 @@ export class ItemManager {
   private readonly SPAWN_INTERVAL = 10000;
   private readonly MAX_ITEMS = 15;
   private mapElements: MapElements;
+  private player: Player | null = null;
 
   // Active buff tracking
   private activeBuffs: Map<
@@ -28,6 +31,21 @@ export class ItemManager {
     this.scene = scene;
     this.itemGroup = scene.physics.add.group();
     this.mapElements = mapElements;
+  }
+
+  setPlayer(player: Player) {
+    this.player = player;
+  }
+
+  private applyCostumeChange(rarity: Rarity) {
+    if (!this.player) return;
+
+    const costumeName = getRandomCostumeByRarity(rarity);
+    if (costumeName) {
+      this.player.changeCostume(costumeName);
+      useGameStore.getState().setCurrentCostume(costumeName);
+      EventBus.emit("costume-changed", { costume: costumeName, rarity });
+    }
   }
 
   update(delta: number) {
@@ -86,6 +104,9 @@ export class ItemManager {
         break;
       case "eat_same_level":
         this.addBuff(data.id, data.effect, data.duration * 1000);
+        break;
+      case "costume_change":
+        this.applyCostumeChange(data.rarity);
         break;
     }
   }

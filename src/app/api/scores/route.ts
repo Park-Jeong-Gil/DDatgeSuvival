@@ -13,6 +13,7 @@ export async function POST(request: NextRequest) {
       killsCount,
       deathReason,
       skinId,
+      costume,
       collectedItems,
     } = await request.json();
 
@@ -37,6 +38,7 @@ export async function POST(request: NextRequest) {
             kills_count: killsCount,
             death_reason: deathReason,
             skin_id: skinId,
+            costume: costume ?? null,
             collected_items: collectedItems ?? null,
             updated_at: new Date().toISOString(),
           })
@@ -54,6 +56,7 @@ export async function POST(request: NextRequest) {
         kills_count: killsCount,
         death_reason: deathReason,
         skin_id: skinId,
+        costume: costume ?? null,
         collected_items: collectedItems ?? null,
       });
 

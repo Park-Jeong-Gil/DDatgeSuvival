@@ -8,6 +8,7 @@ export interface ScoreRecord {
   kills_count: number;
   death_reason: string;
   skin_id: string;
+  costume: string | null;
   collected_items: Record<string, number> | null;
   created_at: string;
   updated_at: string;
@@ -22,6 +23,7 @@ export interface ScoreSubmitRequest {
   killsCount: number;
   deathReason: "hunger" | "predator" | "boss";
   skinId: string;
+  costume: string | null;
 }
 
 export interface ScoreSubmitResponse {

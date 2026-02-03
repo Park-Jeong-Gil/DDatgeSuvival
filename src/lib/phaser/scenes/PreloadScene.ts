@@ -84,6 +84,37 @@ export class PreloadScene extends Phaser.Scene {
       "item_giant_power",
       "assets/sprites/items/item_giant_power.png",
     );
+    this.load.image("item_costume", "assets/sprites/items/item_costume.png");
+
+    // Costume sprites
+    const costumeNames = [
+      "angel",
+      "cosmic",
+      "fighter",
+      "fire",
+      "ghost",
+      "golden",
+      "ice",
+      "magic",
+      "pierrot",
+      "rainbow",
+      "robot",
+    ];
+
+    costumeNames.forEach((costume) => {
+      this.load.image(
+        `costume_${costume}_idle`,
+        `assets/sprites/player/costume/${costume}_idle.png`,
+      );
+      this.load.image(
+        `costume_${costume}_run`,
+        `assets/sprites/player/costume/${costume}_run.png`,
+      );
+      this.load.image(
+        `costume_${costume}_eat`,
+        `assets/sprites/player/costume/${costume}_eat.png`,
+      );
+    });
 
     // Sound effects
     this.load.audio("bite", "assets/sounds/player/bite.wav");
@@ -233,12 +264,37 @@ export class PreloadScene extends Phaser.Scene {
       "item_wing_feather",
       "item_invisible_cloak",
       "item_giant_power",
+      "item_costume",
     ];
 
     itemKeys.forEach((key) => {
       if (this.textures.exists(key)) {
         this.textures.get(key).setFilter(Phaser.Textures.FilterMode.LINEAR);
       }
+    });
+
+    // Costume sprites - LINEAR 필터 적용
+    const costumeNames = [
+      "angel",
+      "cosmic",
+      "fighter",
+      "fire",
+      "ghost",
+      "golden",
+      "ice",
+      "magic",
+      "pierrot",
+      "rainbow",
+      "robot",
+    ];
+
+    costumeNames.forEach((costume) => {
+      ["idle", "run", "eat"].forEach((state) => {
+        const key = `costume_${costume}_${state}`;
+        if (this.textures.exists(key)) {
+          this.textures.get(key).setFilter(Phaser.Textures.FilterMode.LINEAR);
+        }
+      });
     });
 
     EventBus.emit("current-scene-ready", this);

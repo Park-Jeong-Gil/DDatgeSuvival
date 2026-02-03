@@ -12,15 +12,7 @@ import GameSettingsModal from "@/components/ui/GameSettingsModal";
 
 const GameCanvas = dynamic(() => import("@/components/game/GameCanvas"), {
   ssr: false,
-  loading: () => (
-    <div className="flex items-center justify-center h-dvh bg-black">
-      <div className="relative w-80 h-12 bg-[#222222] rounded-sm">
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-[300px] h-[30px] bg-[#cccccc] animate-pulse" />
-        </div>
-      </div>
-    </div>
-  ),
+  loading: () => <div className="w-full h-dvh bg-black" />,
 });
 
 export default function GamePage() {

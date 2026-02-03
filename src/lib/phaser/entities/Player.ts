@@ -7,6 +7,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   currentSpeed: number = 113;
   private currentState: PlayerState = "idle";
   private eatTimer?: Phaser.Time.TimerEvent;
+  private currentCostume: string | null = null; // 현재 착용 중인 코스튬
 
   // 스프라이트 원본 크기 (370x262)
   private static readonly TEX_W = 370;
@@ -32,7 +33,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (this.currentState === state) return;
     this.currentState = state;
 
-    const textureKey = `player_${state}`;
+    const textureKey = this.getTextureKey(state);
     if (this.scene.textures.exists(textureKey)) {
       this.setTexture(textureKey);
     }
@@ -40,6 +41,32 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   getPlayerState(): PlayerState {
     return this.currentState;
+  }
+
+  // 코스튬 변경
+  changeCostume(costumeName: string) {
+    this.currentCostume = costumeName;
+    const textureKey = this.getTextureKey(this.currentState);
+    if (this.scene.textures.exists(textureKey)) {
+      this.setTexture(textureKey);
+    }
+  }
+
+  // 코스튬 제거 (기본 외형으로)
+  removeCostume() {
+    this.currentCostume = null;
+    const textureKey = this.getTextureKey(this.currentState);
+    if (this.scene.textures.exists(textureKey)) {
+      this.setTexture(textureKey);
+    }
+  }
+
+  // 현재 코스튬에 맞는 텍스처 키 반환
+  private getTextureKey(state: PlayerState): string {
+    if (this.currentCostume) {
+      return `costume_${this.currentCostume}_${state}`;
+    }
+    return `player_${state}`;
   }
 
   playEatAnimation() {

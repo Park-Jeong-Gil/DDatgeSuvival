@@ -146,6 +146,7 @@ export class GameScene extends Phaser.Scene {
     this.levelSystem = new LevelSystem();
     this.npcManager = new NPCManager(this, this.mapElements, this.isMobile);
     this.itemManager = new ItemManager(this, this.mapElements);
+    this.itemManager.setPlayer(this.player);
 
     // Initial NPC spawn
     this.npcManager.initialSpawn(1, MAP_WIDTH / 2, MAP_HEIGHT / 2);
@@ -825,10 +826,7 @@ export class GameScene extends Phaser.Scene {
     EventBus.off("pause-game", this.onPauseGameHandler);
     EventBus.off("resume-game", this.onResumeGameHandler);
     EventBus.off("play-sound", this.onPlaySoundHandler);
-    EventBus.off(
-      "audio-settings-changed",
-      this.onAudioSettingsChangedHandler,
-    );
+    EventBus.off("audio-settings-changed", this.onAudioSettingsChangedHandler);
     this.stopBGM();
     this.npcManager.destroy();
     this.itemManager.destroy();

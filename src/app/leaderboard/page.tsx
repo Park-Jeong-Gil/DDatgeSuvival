@@ -137,7 +137,10 @@ export default function LeaderboardPage() {
 
                   <div className="w-10 h-10 shrink-0 rounded-full bg-gray-700 overflow-hidden flex items-center justify-center">
                     <Image
-                      src="/assets/sprites/player/idle.png"
+                      src={record.costume 
+                        ? `/assets/sprites/player/costume/${record.costume}_idle.png`
+                        : "/assets/sprites/player/idle.png"
+                      }
                       alt="player"
                       width={32}
                       height={32}

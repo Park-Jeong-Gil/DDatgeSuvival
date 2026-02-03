@@ -1,15 +1,79 @@
 import type { SkinData } from "@/types/item";
+import type { Rarity } from "@/types/item";
 
 export const skins: SkinData[] = [
-  { id: "custom_1", name: "기본 땃쥐", rarity: "common", dropRate: 0, spriteKey: "mole_basic_side" },
-  { id: "custom_2", name: "황금 땃쥐", rarity: "uncommon", dropRate: 20, spriteKey: "mole_golden_side" },
-  { id: "custom_3", name: "무지개 땃쥐", rarity: "rare", dropRate: 10, spriteKey: "mole_rainbow_side" },
-  { id: "custom_4", name: "유령 땃쥐", rarity: "rare", dropRate: 10, spriteKey: "mole_ghost_side" },
-  { id: "custom_5", name: "로봇 땃쥐", rarity: "epic", dropRate: 5, spriteKey: "mole_robot_side" },
-  { id: "custom_6", name: "불꽃 땃쥐", rarity: "epic", dropRate: 5, spriteKey: "mole_fire_side" },
-  { id: "custom_7", name: "얼음 땃쥐", rarity: "legendary", dropRate: 2, spriteKey: "mole_ice_side" },
-  { id: "custom_8", name: "우주 땃쥐", rarity: "legendary", dropRate: 1, spriteKey: "mole_cosmic_side" },
+  {
+    id: "custom_1",
+    name: "기본 땃쥐",
+    rarity: "common",
+    dropRate: 0,
+    spriteKey: "mole_basic_side",
+  },
+  {
+    id: "custom_2",
+    name: "황금 땃쥐",
+    rarity: "uncommon",
+    dropRate: 20,
+    spriteKey: "mole_golden_side",
+  },
+  {
+    id: "custom_3",
+    name: "무지개 땃쥐",
+    rarity: "rare",
+    dropRate: 10,
+    spriteKey: "mole_rainbow_side",
+  },
+  {
+    id: "custom_4",
+    name: "유령 땃쥐",
+    rarity: "rare",
+    dropRate: 10,
+    spriteKey: "mole_ghost_side",
+  },
+  {
+    id: "custom_5",
+    name: "로봇 땃쥐",
+    rarity: "epic",
+    dropRate: 5,
+    spriteKey: "mole_robot_side",
+  },
+  {
+    id: "custom_6",
+    name: "불꽃 땃쥐",
+    rarity: "epic",
+    dropRate: 5,
+    spriteKey: "mole_fire_side",
+  },
+  {
+    id: "custom_7",
+    name: "얼음 땃쥐",
+    rarity: "legendary",
+    dropRate: 2,
+    spriteKey: "mole_ice_side",
+  },
+  {
+    id: "custom_8",
+    name: "우주 땃쥐",
+    rarity: "legendary",
+    dropRate: 1,
+    spriteKey: "mole_cosmic_side",
+  },
 ];
+
+// 코스튬별 레어리티 매핑
+export const costumesByRarity: Record<Rarity, string[]> = {
+  common: ["fighter", "pierrot"],
+  uncommon: ["golden", "magic"],
+  rare: ["rainbow", "ghost", "robot"],
+  epic: ["fire", "ice", "angel"],
+  legendary: ["cosmic"],
+};
+
+export function getRandomCostumeByRarity(rarity: Rarity): string | null {
+  const costumes = costumesByRarity[rarity];
+  if (!costumes || costumes.length === 0) return null;
+  return costumes[Math.floor(Math.random() * costumes.length)];
+}
 
 export function rollSkinDrop(): SkinData | null {
   const roll = Math.random() * 100;

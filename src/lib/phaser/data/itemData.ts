@@ -60,13 +60,66 @@ export const buffItems: ItemData[] = [
   },
 ];
 
-export const allItems: ItemData[] = [...survivalItems, ...buffItems];
+export const cosmeticItems: ItemData[] = [
+  {
+    id: "costume_common",
+    name: "코스튬 (일반)",
+    category: "cosmetic",
+    effect: "costume_change",
+    duration: 0,
+    rarity: "common",
+    spriteKey: "item_costume",
+  },
+  {
+    id: "costume_uncommon",
+    name: "코스튬 (고급)",
+    category: "cosmetic",
+    effect: "costume_change",
+    duration: 0,
+    rarity: "uncommon",
+    spriteKey: "item_costume",
+  },
+  {
+    id: "costume_rare",
+    name: "코스튬 (희귀)",
+    category: "cosmetic",
+    effect: "costume_change",
+    duration: 0,
+    rarity: "rare",
+    spriteKey: "item_costume",
+  },
+  {
+    id: "costume_epic",
+    name: "코스튬 (영웅)",
+    category: "cosmetic",
+    effect: "costume_change",
+    duration: 0,
+    rarity: "epic",
+    spriteKey: "item_costume",
+  },
+  {
+    id: "costume_legendary",
+    name: "코스튬 (전설)",
+    category: "cosmetic",
+    effect: "costume_change",
+    duration: 0,
+    rarity: "legendary",
+    spriteKey: "item_costume",
+  },
+];
+
+export const allItems: ItemData[] = [
+  ...survivalItems,
+  ...buffItems,
+  ...cosmeticItems,
+];
 
 export const rarityWeights: Record<string, number> = {
   common: 60,
   uncommon: 25,
   rare: 12,
   epic: 3,
+  legendary: 1,
 };
 
 export function getItemById(id: string): ItemData | undefined {

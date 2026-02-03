@@ -33,6 +33,7 @@ export default function GameOverOverlay() {
     predatorNameRef.current = predatorName;
   }
   const currentSkinId = useGameStore((s) => s.currentSkinId);
+  const currentCostume = useGameStore((s) => s.currentCostume);
   const nickname = useGameStore((s) => s.nickname);
   const resetGame = useGameStore((s) => s.resetGame);
 
@@ -62,6 +63,7 @@ export default function GameOverOverlay() {
             killsCount,
             deathReason: deathReason ?? "hunger",
             skinId: currentSkinId,
+            costume: currentCostume,
             collectedItems: collectedItems.reduce(
               (acc, item) => {
                 acc[item.id] = (acc[item.id] || 0) + 1;
@@ -93,7 +95,9 @@ export default function GameOverOverlay() {
     killsCount,
     deathReason,
     currentSkinId,
+    currentCostume,
     nickname,
+    collectedItems,
   ]);
 
   const npcName = getNpcNameKo(level);

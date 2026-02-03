@@ -15,6 +15,7 @@ interface GameStore {
   deathReason: "hunger" | "predator" | "boss" | null;
   predatorName: string | null;
   currentSkinId: string;
+  currentCostume: string | null;
   activeBuffs: ActiveBuff[];
   nickname: string;
   npcPositions: NPCPosition[];
@@ -37,6 +38,7 @@ interface GameStore {
   setSurvivalTime: (time: number) => void;
   incrementKills: () => void;
   setCurrentSkin: (skinId: string) => void;
+  setCurrentCostume: (costume: string | null) => void;
   setActiveBuffs: (buffs: ActiveBuff[]) => void;
   setNickname: (nickname: string) => void;
   setNpcPositions: (positions: NPCPosition[]) => void;
@@ -59,6 +61,7 @@ const initialState = {
   deathReason: null as "hunger" | "predator" | "boss" | null,
   predatorName: null as string | null,
   currentSkinId: "custom_1",
+  currentCostume: null as string | null,
   activeBuffs: [] as ActiveBuff[],
   nickname: "",
   npcPositions: [] as NPCPosition[],
@@ -90,6 +93,7 @@ export const useGameStore = create<GameStore>((set) => ({
   setSurvivalTime: (survivalTime) => set({ survivalTime }),
   incrementKills: () => set((state) => ({ killsCount: state.killsCount + 1 })),
   setCurrentSkin: (currentSkinId) => set({ currentSkinId }),
+  setCurrentCostume: (currentCostume) => set({ currentCostume }),
   setActiveBuffs: (activeBuffs) => set({ activeBuffs }),
   setNickname: (nickname) => set({ nickname }),
   setNpcPositions: (npcPositions) => set({ npcPositions }),
