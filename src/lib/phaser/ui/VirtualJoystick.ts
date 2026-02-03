@@ -21,6 +21,8 @@ export class VirtualJoystick {
   private activePointerId: number | null = null;
   private isActive = false;
   private visible = true;
+  private lastDrawTime: number = 0;
+  private readonly DRAW_THROTTLE = 33; // ~30fps max for joystick redraw
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
@@ -227,7 +229,12 @@ export class VirtualJoystick {
       };
     }
 
-    this.draw();
+    // Throttle draw to ~30fps (touch events can fire at 120Hz on iOS)
+    const now = performance.now();
+    if (now - this.lastDrawTime >= this.DRAW_THROTTLE) {
+      this.lastDrawTime = now;
+      this.draw();
+    }
   }
 
   getDirection(): { x: number; y: number } {

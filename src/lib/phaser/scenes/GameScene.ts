@@ -46,6 +46,8 @@ export class GameScene extends Phaser.Scene {
   private inputReady: boolean = false;
   private isMobile: boolean = false;
   private joystickDirection = { x: 0, y: 0 };
+  private warningUpdateTimer: number = 0;
+  private storeUpdateTimer: number = 0;
   private onLevelUpHandler = this.onLevelUp.bind(this);
   private onJoystickUpdateHandler = this.onJoystickUpdate.bind(this);
   private onPostUpdateHandler = this.onPostUpdate.bind(this);
@@ -127,7 +129,7 @@ export class GameScene extends Phaser.Scene {
     // Systems
     this.hungerSystem = new HungerSystem();
     this.levelSystem = new LevelSystem();
-    this.npcManager = new NPCManager(this, this.mapElements);
+    this.npcManager = new NPCManager(this, this.mapElements, this.isMobile);
     this.itemManager = new ItemManager(this, this.mapElements);
 
     // Initial NPC spawn
@@ -255,6 +257,7 @@ export class GameScene extends Phaser.Scene {
       this.itemManager.isPlayerInvisible(),
       this.isMobile,
     );
+    this.npcManager.drawBars();
     this.itemManager.update(delta);
 
     // Update player alpha based on invisible buff
@@ -264,9 +267,6 @@ export class GameScene extends Phaser.Scene {
       this.player.setAlpha(1.0);
     }
 
-    // 플레이어와 겹치는 모든 먹을 수 있는 NPC 동시 처리
-    this.checkMultipleNPCEating();
-
     // Survival time
     this.survivalTimer += delta;
     if (this.survivalTimer >= 1000) {
@@ -274,20 +274,28 @@ export class GameScene extends Phaser.Scene {
       store.setSurvivalTime(store.survivalTime + 1);
     }
 
-    // Warning indicators for off-screen predators
-    this.updateWarningIndicators();
+    // Warning indicators - throttle to ~10fps (every 100ms)
+    this.warningUpdateTimer += delta;
+    if (this.warningUpdateTimer >= 100) {
+      this.warningUpdateTimer = 0;
+      this.updateWarningIndicators();
+    }
 
-    // Update store
-    store.setPlayerPosition(this.player.x, this.player.y);
-    store.setPlayerDisplaySize(
-      this.player.displayWidth,
-      this.player.displayHeight,
-    );
-    store.setCameraScroll(
-      this.cameras.main.scrollX,
-      this.cameras.main.scrollY,
-      this.cameras.main.zoom,
-    );
+    // Store updates - throttle to ~10fps (every 100ms, avoids React re-render per frame)
+    this.storeUpdateTimer += delta;
+    if (this.storeUpdateTimer >= 100) {
+      this.storeUpdateTimer = 0;
+      store.setPlayerPosition(this.player.x, this.player.y);
+      store.setPlayerDisplaySize(
+        this.player.displayWidth,
+        this.player.displayHeight,
+      );
+      store.setCameraScroll(
+        this.cameras.main.scrollX,
+        this.cameras.main.scrollY,
+        this.cameras.main.zoom,
+      );
+    }
   }
 
   private createPlayerOverlay() {
@@ -623,53 +631,6 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  private checkMultipleNPCEating() {
-    if (this.isGameOver || !this.player.active) return;
-
-    // 무적 상태 체크
-    const isInvincible =
-      this.time.now < this.invincibleUntil ||
-      this.itemManager.isPlayerInvincible();
-
-    const playerBody = this.player.body as Phaser.Physics.Arcade.Body;
-    if (!playerBody) return;
-
-    const eatableNPCs: NPC[] = [];
-    const playerLevel = useGameStore.getState().level;
-
-    // 모든 NPC를 순회하며 먹을 수 있는 것들만 수집
-    this.npcManager.npcGroup.children.iterate((npcObj) => {
-      const npc = npcObj as NPC;
-      if (!npc.active || npc.destroyed || !npc.body) return true;
-
-      const npcBody = npc.body as Phaser.Physics.Arcade.Body;
-      if (!npcBody.enable) return true;
-
-      // Phaser의 overlap 함수로 정확한 충돌 검사
-      const overlaps = this.physics.overlap(this.player, npc);
-      if (!overlaps) return true;
-
-      // 먹을 수 있는지 체크
-      const canEat =
-        FoodChain.canEat(playerLevel, npc.level) ||
-        (FoodChain.sameLevel(playerLevel, npc.level) &&
-          this.itemManager.canEatSameLevel());
-
-      if (canEat) {
-        eatableNPCs.push(npc);
-      }
-
-      return true;
-    });
-
-    // 먹을 수 있는 NPC들을 모두 동시에 처리
-    if (eatableNPCs.length > 0) {
-      eatableNPCs.forEach((npc) => {
-        this.handleEat(npc);
-      });
-    }
-  }
-
   private handleEat(npc: NPC) {
     // 먹기 애니메이션
     this.player.playEatAnimation();
@@ -847,11 +808,13 @@ export class GameScene extends Phaser.Scene {
   }
 
   private onPauseGame() {
+    if (!this.scene?.manager) return;
     this.player?.setVelocity(0, 0);
     this.scene.pause();
   }
 
   private onResumeGame() {
+    if (!this.scene?.manager) return;
     this.scene.resume();
   }
 }

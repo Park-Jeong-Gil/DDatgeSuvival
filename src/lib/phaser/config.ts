@@ -27,6 +27,9 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
   scale: {
     mode: Phaser.Scale.RESIZE,
   },
-  pixelArt: true,
+  render: {
+    powerPreference: "high-performance",
+  },
   roundPixels: true,
+  banner: false,
 };

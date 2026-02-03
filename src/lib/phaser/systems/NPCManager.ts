@@ -1,6 +1,6 @@
 import * as Phaser from "phaser";
 import { NPC } from "../entities/NPC";
-import { npcDatabase, getNPCDataByLevel } from "../data/npcData";
+import { getNPCDataByLevel } from "../data/npcData";
 import { MAP_WIDTH, MAP_HEIGHT, GAME_WIDTH, GAME_HEIGHT } from "../constants";
 import { useGameStore } from "@/store/gameStore";
 import type { NPCPosition } from "@/types/game";
@@ -14,15 +14,32 @@ export class NPCManager {
   private readonly SPAWN_INTERVAL = 3000;
   private positionUpdateTimer: number = 0;
   private readonly POSITION_UPDATE_INTERVAL = 100; // 10fps for minimap
-  private bushes?: Phaser.Physics.Arcade.StaticGroup;
+  private isMobile: boolean = false;
+  // Cached bush positions + squared radii (avoids iterating StaticGroup every frame)
+  private bushData: { x: number; y: number; r2: number }[] = [];
+  // Single shared Graphics for all NPC chase/stun bars (saves 1 Graphics per NPC)
+  private barGraphics: Phaser.GameObjects.Graphics;
 
-  constructor(scene: Phaser.Scene, mapElements?: MapElements) {
+  constructor(scene: Phaser.Scene, mapElements?: MapElements, isMobile?: boolean) {
     this.scene = scene;
+    this.isMobile = isMobile ?? false;
     this.npcGroup = scene.physics.add.group({
       classType: NPC,
       runChildUpdate: false,
     });
-    this.bushes = mapElements?.bushes;
+
+    // Cache bush positions and squared radii at init (bushes are static, never move)
+    if (mapElements?.bushes) {
+      mapElements.bushes.children.iterate((obj) => {
+        const bush = obj as Phaser.Physics.Arcade.Sprite;
+        const radius = (bush.displayWidth / 2) * 0.9;
+        this.bushData.push({ x: bush.x, y: bush.y, r2: radius * radius });
+        return true;
+      });
+    }
+
+    this.barGraphics = scene.add.graphics();
+    this.barGraphics.setDepth(15);
   }
 
   update(
@@ -41,7 +58,8 @@ export class NPCManager {
       this.updateSpawns(playerLevel, playerX, playerY);
     }
 
-    // Update NPC AI
+    // Update NPC AI (pass cached bushData instead of StaticGroup)
+    const bushData = this.bushData;
     for (const npc of this.npcs) {
       if (npc.active) {
         npc.updateAI(
@@ -51,7 +69,7 @@ export class NPCManager {
           playerLevel,
           playerSpeed,
           isPlayerInvisible,
-          this.bushes,
+          bushData,
           isMobile,
         );
       }
@@ -188,38 +206,36 @@ export class NPCManager {
   private getTargetCount(npcLevel: number, playerLevel: number): number {
     const diff = npcLevel - playerLevel;
     const absDiff = Math.abs(diff);
+    let count = 0;
+
     // 개체수 조절 로직
     // Prey (lower level) gets higher counts than predators
     if (diff < 0) {
       // Edible NPCs - spawn more
-      let baseCount = 0;
       if (absDiff === 1)
-        baseCount = 20; // 약한 먹이 NPC는 더 많이 스폰
+        count = 20; // 약한 먹이 NPC는 더 많이 스폰
       else if (absDiff === 2)
-        baseCount = 20; // 중간 먹이 NPC는 적당히 스폰
-      else if (absDiff === 3) baseCount = 10; // 강한 먹이 NPC는 덜 스폰
+        count = 20; // 중간 먹이 NPC는 적당히 스폰
+      else if (absDiff === 3) count = 10; // 강한 먹이 NPC는 덜 스폰
 
-      // 플레이어 레벨 1일 때만 1.5배 (초반 생존율 향상)
+      // 플레이어 레벨 1일 때만 2배 (초반 생존율 향상)
       if (playerLevel === 1) {
-        return Math.round(baseCount * 2);
+        count = Math.round(count * 2);
+      } else if (playerLevel >= 3) {
+        // 플레이어 레벨 3 이상일 때 15% 감소 (후반 난이도 조정)
+        count = Math.round(count * 0.85);
       }
-
-      // 플레이어 레벨 3 이상일 때 15% 감소 (후반 난이도 조정)
-      if (playerLevel >= 3) {
-        return Math.round(baseCount * 0.85);
-      }
-
-      return baseCount;
     } else if (diff === 0) {
       // Same level
-      return 20;
+      count = 20;
     } else {
       // Predators - spawn fewer
-      if (absDiff === 1) return 5;
-      if (absDiff === 2) return 4;
-      if (absDiff === 3) return 1;
+      if (absDiff === 1) count = 5;
+      else if (absDiff === 2) count = 4;
+      else if (absDiff === 3) count = 1;
     }
-    return 0;
+
+    return count;
   }
 
   private countByLevel(level: number): number {
@@ -263,6 +279,50 @@ export class NPCManager {
     useGameStore.getState().setNpcPositions(positions);
   }
 
+  /** Draw all NPC chase/stun bars in a single Graphics pass (1 draw call total) */
+  drawBars() {
+    this.barGraphics.clear();
+    const cam = this.scene.cameras.main;
+    if (!cam) return;
+    const wv = cam.worldView;
+
+    for (const npc of this.npcs) {
+      if (!npc.active) continue;
+      // Skip off-screen NPCs
+      const hw = npc.displayWidth / 2;
+      const hh = npc.displayHeight / 2;
+      if (
+        npc.x + hw < wv.x ||
+        npc.x - hw > wv.right ||
+        npc.y + hh < wv.y ||
+        npc.y - hh > wv.bottom
+      )
+        continue;
+
+      const barState = npc.getBarState();
+      if (!barState) continue;
+
+      const barWidth = Math.max(32, npc.displayWidth * 1.6);
+      const barHeight = 4;
+      const barX = npc.x - barWidth / 2;
+      const barY = npc.y + npc.displayHeight / 2 + 6;
+
+      // Background
+      this.barGraphics.fillStyle(0x374151, 1);
+      this.barGraphics.fillRect(barX, barY, barWidth, barHeight);
+
+      // Fill (use fillRect instead of fillRoundedRect to reduce vertex count)
+      const fillColor = barState.type === "stun" ? 0x22c55e : 0xef4444;
+      this.barGraphics.fillStyle(fillColor, 1);
+      this.barGraphics.fillRect(
+        barX,
+        barY,
+        Math.max(2, barWidth * barState.ratio),
+        barHeight,
+      );
+    }
+  }
+
   onLevelUp(newLevel: number, playerX: number, playerY: number) {
     this.updateSpawns(newLevel, playerX, playerY);
   }
@@ -272,5 +332,6 @@ export class NPCManager {
       if (npc.active) npc.destroy();
     }
     this.npcs = [];
+    this.barGraphics?.destroy();
   }
 }

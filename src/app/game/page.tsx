@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useGameStore } from "@/store/gameStore";
 import { EventBus } from "@/lib/phaser/EventBus";
 import HUD from "@/components/game/HUD";
@@ -26,6 +26,7 @@ export default function GamePage() {
   const isPlaying = useGameStore((s) => s.isPlaying);
   const isGameOver = useGameStore((s) => s.isGameOver);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const hasOpenedSettings = useRef(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("mole_user_id");
@@ -46,8 +47,9 @@ export default function GamePage() {
 
   useEffect(() => {
     if (settingsOpen) {
+      hasOpenedSettings.current = true;
       EventBus.emit("pause-game");
-    } else {
+    } else if (hasOpenedSettings.current) {
       EventBus.emit("resume-game");
     }
   }, [settingsOpen]);

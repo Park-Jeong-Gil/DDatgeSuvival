@@ -17,8 +17,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
   private readonly MAX_CHASE_DURATION = 8000;
   private _stunUntil: number = 0;
   private nameLabel: Phaser.GameObjects.Text;
-  private chaseLabel: Phaser.GameObjects.Text;
-  private chaseBarGraphics?: Phaser.GameObjects.Graphics;
+  private currentLabelColor: string = "";
   private lastSeenAt: number = -Infinity;
   private lastRenderCheckAt: number = 0;
   private lastRecoverAt: number = 0;
@@ -83,20 +82,6 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     this.nameLabel.setOrigin(0.5, 1);
     this.nameLabel.setDepth(15);
 
-    // Chase indicator (hidden by default)
-    this.chaseLabel = scene.add.text(x, y, "", {
-      fontSize: "10px",
-      fontFamily: "monospace",
-      color: "#ff4444",
-      stroke: "#000000",
-      strokeThickness: 2,
-    });
-    this.chaseLabel.setOrigin(0.5, 1);
-    this.chaseLabel.setDepth(15);
-    this.chaseLabel.setVisible(false);
-
-    this.chaseBarGraphics = scene.add.graphics();
-    this.chaseBarGraphics.setDepth(15);
   }
 
   public getNameLabelText(): string {
@@ -134,10 +119,15 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     if (!this.isTextureReady()) return false;
     if (!this.scene.sys.displayList.exists(this)) return false;
 
-    const bounds = this.getBounds();
-    return Phaser.Geom.Intersects.RectangleToRectangle(
-      camera.worldView,
-      bounds,
+    // Manual AABB check (avoids getBounds() object allocation)
+    const hw = this.displayWidth / 2;
+    const hh = this.displayHeight / 2;
+    const wv = camera.worldView;
+    return (
+      this.x + hw > wv.x &&
+      this.x - hw < wv.right &&
+      this.y + hh > wv.y &&
+      this.y - hh < wv.bottom
     );
   }
 
@@ -258,7 +248,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     playerLevel: number,
     playerSpeed: number,
     isPlayerInvisible: boolean,
-    bushes?: Phaser.Physics.Arcade.StaticGroup,
+    bushData?: { x: number; y: number; r2: number }[],
     isMobile?: boolean,
   ) {
     if (!this.active) return;
@@ -315,7 +305,6 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       const offsetY = this.displayHeight / 2 + 5;
       this.nameLabel.setPosition(this.x, this.y - offsetY);
       this.nameLabel.setVisible(true);
-      this.updateChaseBar(now, false, true);
       return;
     }
 
@@ -345,8 +334,6 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     if (isPlayerInvisible || distance > detectionRange) {
       this.aiState = NPCState.WANDER;
       this.chaseStartTime = 0;
-      this.chaseLabel.setVisible(false);
-      this.clearChaseBar();
       this.updateTexture("walk");
       this.wander(delta);
       return;
@@ -368,15 +355,11 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
         this._stunUntil = Date.now() + 5000;
         this.aiState = NPCState.WANDER;
         this.chaseStartTime = 0;
-        this.chaseLabel.setVisible(false);
-        this.clearChaseBar();
         this.setDepth(11);
         this.updateTexture("walk");
         return;
       }
-      this.updateChaseBar(now, true, false);
-
-      this.chase(playerX, playerY, playerSpeed, bushes);
+      this.chase(playerX, playerY, playerSpeed, bushData);
     } else if (levelDiff > 0) {
       // NPC is prey - flee
       if (this.aiState === NPCState.CHASE) {
@@ -385,8 +368,6 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       }
       this.aiState = NPCState.FLEE;
       this.chaseStartTime = 0;
-      this.chaseLabel.setVisible(false);
-      this.clearChaseBar();
       this.flee(playerX, playerY, playerSpeed);
     } else {
       // Same level - wander
@@ -396,8 +377,6 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       }
       this.aiState = NPCState.WANDER;
       this.chaseStartTime = 0;
-      this.chaseLabel.setVisible(false);
-      this.clearChaseBar();
       this.wander(delta);
     }
   }
@@ -413,8 +392,6 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
 
     if (!inView) {
       this.nameLabel.setVisible(false);
-      this.chaseLabel.setVisible(false);
-      this.clearChaseBar();
       return;
     }
 
@@ -422,12 +399,16 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     this.nameLabel.setPosition(this.x, this.y - offsetY);
     this.nameLabel.setVisible(true);
 
-    if (this.level === 99 || this.level > playerLevel) {
-      this.nameLabel.setColor("#ff4444");
-    } else if (this.level === playerLevel) {
-      this.nameLabel.setColor("#aaaaaa");
-    } else {
-      this.nameLabel.setColor("#44ff44");
+    // Only call setColor when color actually changes (avoids Canvas2D re-render per frame)
+    const newColor =
+      this.level === 99 || this.level > playerLevel
+        ? "#ff4444"
+        : this.level === playerLevel
+          ? "#aaaaaa"
+          : "#44ff44";
+    if (this.currentLabelColor !== newColor) {
+      this.currentLabelColor = newColor;
+      this.nameLabel.setColor(newColor);
     }
   }
 
@@ -435,28 +416,23 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     targetX: number,
     targetY: number,
     playerSpeed: number,
-    bushes?: Phaser.Physics.Arcade.StaticGroup,
+    bushData?: { x: number; y: number; r2: number }[],
   ) {
     const angle = Phaser.Math.Angle.Between(this.x, this.y, targetX, targetY);
     let speed = playerSpeed * 1.01;
 
-    // 추격 중인 포식자가 풀숲에 있으면 속도 감소
-    if (bushes) {
-      const inBush = bushes.children.entries.some((bush) => {
-        const bushSprite = bush as Phaser.Physics.Arcade.Sprite;
-        const distance = Phaser.Math.Distance.Between(
-          this.x,
-          this.y,
-          bushSprite.x,
-          bushSprite.y,
-        );
-        // 풀숲의 반경 내에 있는지 체크 (scale 9.0 적용)
-        const bushRadius = (bushSprite.displayWidth / 2) * 0.9;
-        return distance < bushRadius;
-      });
-
-      if (inBush) {
-        speed *= 0.5;
+    // 추격 중인 포식자가 풀숲에 있으면 속도 감소 (cached data, squared distance)
+    if (bushData) {
+      const nx = this.x;
+      const ny = this.y;
+      for (let i = 0; i < bushData.length; i++) {
+        const b = bushData[i];
+        const dx = nx - b.x;
+        const dy = ny - b.y;
+        if (dx * dx + dy * dy < b.r2) {
+          speed *= 0.5;
+          break;
+        }
       }
     }
 
@@ -562,45 +538,31 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     this.safeSetFlipX(this.wanderDirection.x);
   }
 
-  private updateChaseBar(now: number, isChasing: boolean, isStunned: boolean) {
-    if (!this.chaseBarGraphics) return;
-
-    const barWidth = Math.max(32, this.displayWidth * 1.6);
-    const barHeight = 4;
-    const barX = this.x - barWidth / 2;
-    const barY = this.y + this.displayHeight / 2 + 6;
-
-    let ratio = 0;
-    if (isChasing) {
-      const elapsed = now - this.chaseStartTime;
-      ratio = Phaser.Math.Clamp(
-        (this.MAX_CHASE_DURATION - elapsed) / this.MAX_CHASE_DURATION,
-        0,
-        1,
-      );
-    } else if (isStunned) {
+  /** Returns bar state for shared rendering (NPCManager draws all bars in one pass) */
+  public getBarState(): {
+    type: "chase" | "stun";
+    ratio: number;
+  } | null {
+    const now = Date.now();
+    if (now < this._stunUntil) {
       const remaining = this._stunUntil - now;
-      const total = 5000;
-      ratio = Phaser.Math.Clamp(1 - remaining / total, 0, 1);
+      return {
+        type: "stun",
+        ratio: Phaser.Math.Clamp(1 - remaining / 5000, 0, 1),
+      };
     }
-
-    this.chaseBarGraphics.clear();
-    this.chaseBarGraphics.fillStyle(0x374151, 1);
-    this.chaseBarGraphics.fillRoundedRect(barX, barY, barWidth, barHeight, 2);
-
-    const fillColor = isStunned ? 0x22c55e : 0xef4444;
-    this.chaseBarGraphics.fillStyle(fillColor, 1);
-    this.chaseBarGraphics.fillRoundedRect(
-      barX,
-      barY,
-      Math.max(2, barWidth * ratio),
-      barHeight,
-      2,
-    );
-  }
-
-  private clearChaseBar() {
-    this.chaseBarGraphics?.clear();
+    if (this.aiState === NPCState.CHASE && this.chaseStartTime > 0) {
+      const elapsed = now - this.chaseStartTime;
+      return {
+        type: "chase",
+        ratio: Phaser.Math.Clamp(
+          (this.MAX_CHASE_DURATION - elapsed) / this.MAX_CHASE_DURATION,
+          0,
+          1,
+        ),
+      };
+    }
+    return null;
   }
 
   destroy(fromScene?: boolean) {
@@ -622,8 +584,6 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     }
 
     this.nameLabel?.destroy();
-    this.chaseLabel?.destroy();
-    this.chaseBarGraphics?.destroy();
 
     super.destroy(fromScene);
   }
