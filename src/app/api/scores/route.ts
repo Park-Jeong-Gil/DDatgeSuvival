@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
 
     if (existing) {
       if (score > existing.score) {
+        // Update all fields including costume when score is higher
         await supabase
           .from("scores")
           .update({
@@ -45,6 +46,16 @@ export async function POST(request: NextRequest) {
           .eq("id", existing.id);
 
         updated = true;
+      } else {
+        // Even if score is not higher, always update costume
+        await supabase
+          .from("scores")
+          .update({
+            skin_id: skinId,
+            costume: costume ?? null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", existing.id);
       }
     } else {
       await supabase.from("scores").insert({
