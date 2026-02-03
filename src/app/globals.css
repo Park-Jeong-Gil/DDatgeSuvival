@@ -93,10 +93,10 @@ a.pixel-ui {
   display: inline-block;
   text-decoration: none;
   box-shadow:
-    0px 4px #6d6560,
-    0px -4px #6d6560,
-    4px 0px #6d6560,
-    -4px 0px #6d6560,
+    0px 4px #231e1a,
+    0px -4px #231e1a,
+    4px 0px #231e1a,
+    -4px 0px #231e1a,
     0px 8px #00000038,
     4px 4px #00000038,
     -4px 4px #00000038,
@@ -109,10 +109,10 @@ button.pixel-ui:active,
 a.pixel-ui:active {
   transform: translateY(4px);
   box-shadow:
-    0px 4px #6d6560,
-    0px -4px #6d6560,
-    4px 0px #6d6560,
-    -4px 0px #6d6560,
+    0px 4px #231e1a,
+    0px -4px #231e1a,
+    4px 0px #231e1a,
+    -4px 0px #231e1a,
     inset 0px 4px #00000038;
 }
 
