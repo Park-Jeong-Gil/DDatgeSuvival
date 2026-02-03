@@ -802,8 +802,8 @@ export class GameScene extends Phaser.Scene {
     const screenH = this.scale.height;
     this.isMobile = screenW <= MOBILE_BREAKPOINT;
 
-    // 모바일: 상단 75%만 게임 화면, 하단 25%는 컨트롤 영역
-    const viewportH = this.isMobile ? Math.floor(screenH * 0.75) : screenH;
+    // 모바일/데스크탑 모두 전체 화면 사용
+    const viewportH = screenH;
     this.cameras.main.setViewport(0, 0, screenW, viewportH);
 
     const baseW = this.isMobile ? MOBILE_GAME_WIDTH : GAME_WIDTH;

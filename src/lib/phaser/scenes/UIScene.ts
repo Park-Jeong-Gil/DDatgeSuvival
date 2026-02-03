@@ -1,7 +1,7 @@
 import * as Phaser from "phaser";
 import { VirtualJoystick } from "../ui/VirtualJoystick";
 import { EventBus } from "../EventBus";
-import { MOBILE_BREAKPOINT } from "../constants";
+
 
 export class UIScene extends Phaser.Scene {
   private joystick!: VirtualJoystick;
@@ -45,22 +45,7 @@ export class UIScene extends Phaser.Scene {
 
   private drawBottomArea() {
     this.bottomBg.clear();
-
-    const screenW = this.scale.width;
-    const screenH = this.scale.height;
-    const isMobile = screenW <= MOBILE_BREAKPOINT;
-
-    if (isMobile) {
-      const topY = Math.floor(screenH * 0.75);
-      // 하단 25% 어두운 배경
-      this.bottomBg.fillStyle(0x111827, 1);
-      this.bottomBg.fillRect(0, topY, screenW, screenH - topY);
-      // 구분선
-      this.bottomBg.lineStyle(1, 0x374151, 0.8);
-      this.bottomBg.lineBetween(0, topY, screenW, topY);
-    }
-
-    this.bottomBg.setVisible(isMobile);
+    this.bottomBg.setVisible(false);
   }
 
   private onResize() {

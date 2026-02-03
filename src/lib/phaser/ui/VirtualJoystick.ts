@@ -3,7 +3,6 @@ import * as Phaser from "phaser";
 const BASE_RADIUS = 60;
 const KNOB_RADIUS = 25;
 const DEAD_ZONE = 0.15;
-const ALPHA_IDLE = 0.45;
 const ALPHA_ACTIVE = 0.7;
 
 export class VirtualJoystick {
@@ -20,7 +19,7 @@ export class VirtualJoystick {
   private direction = { x: 0, y: 0 };
   private activePointerId: number | null = null;
   private isActive = false;
-  private visible = true;
+  private enabled = false;
   private lastDrawTime: number = 0;
   private readonly DRAW_THROTTLE = 33; // ~30fps max for joystick redraw
 
@@ -36,8 +35,8 @@ export class VirtualJoystick {
     this.arrowGraphics.setScrollFactor(0).setDepth(1001);
     this.knobGraphics.setScrollFactor(0).setDepth(1002);
 
-    this.updatePosition();
-    this.draw();
+    // 초기 상태: 그래픽 숨김 (터치 시에만 표시)
+    this.showGraphics(false);
 
     // Pointer events
     scene.input.on("pointerdown", this.onPointerDown, this);
@@ -45,24 +44,10 @@ export class VirtualJoystick {
     scene.input.on("pointerup", this.onPointerUp, this);
   }
 
-  updatePosition() {
-    const screenW = this.scene.scale.width;
-    const screenH = this.scene.scale.height;
-
-    // UIScene의 camera zoom=1이므로 순수 화면 픽셀 좌표 사용
-    const isMobile = screenW <= 960;
-    if (isMobile) {
-      // 하단 25% 컨트롤 영역의 중앙에 배치
-      this.baseX = screenW * 0.5;
-      this.baseY = screenH * 0.875; // 75% + 12.5% = 하단 영역 중앙
-    } else {
-      this.baseX = screenW * 0.5;
-      this.baseY = screenH - 180;
-    }
-
-    this.knobX = this.baseX;
-    this.knobY = this.baseY;
-    this.draw();
+  private showGraphics(show: boolean) {
+    this.baseGraphics.setVisible(show);
+    this.arrowGraphics.setVisible(show);
+    this.knobGraphics.setVisible(show);
   }
 
   private draw() {
@@ -73,27 +58,24 @@ export class VirtualJoystick {
 
   private drawBase() {
     const g = this.baseGraphics;
-    const alpha = this.isActive ? ALPHA_ACTIVE : ALPHA_IDLE;
 
     g.clear();
 
-    // Draw at baseX, baseY with FIXED radius (screen pixels)
     // Outer ring
-    g.lineStyle(2, 0x88ccee, alpha * 0.8);
+    g.lineStyle(2, 0x88ccee, ALPHA_ACTIVE * 0.8);
     g.strokeCircle(this.baseX, this.baseY, BASE_RADIUS);
 
     // Inner dark fill
-    g.fillStyle(0x111820, alpha * 0.7);
+    g.fillStyle(0x111820, ALPHA_ACTIVE * 0.7);
     g.fillCircle(this.baseX, this.baseY, BASE_RADIUS);
 
     // Subtle inner ring
-    g.lineStyle(1, 0x446688, alpha * 0.5);
+    g.lineStyle(1, 0x446688, ALPHA_ACTIVE * 0.5);
     g.strokeCircle(this.baseX, this.baseY, BASE_RADIUS * 0.6);
   }
 
   private drawArrows() {
     const g = this.arrowGraphics;
-    const alpha = this.isActive ? ALPHA_ACTIVE : ALPHA_IDLE;
 
     g.clear();
 
@@ -114,7 +96,7 @@ export class VirtualJoystick {
 
       // Highlight active direction
       const dirActive = this.isArrowActive(arrow.dx, arrow.dy);
-      const arrowAlpha = dirActive ? alpha * 1.2 : alpha * 0.6;
+      const arrowAlpha = dirActive ? ALPHA_ACTIVE * 1.2 : ALPHA_ACTIVE * 0.6;
       const color = dirActive ? 0x66ddff : 0x88bbcc;
 
       g.fillStyle(color, Math.min(arrowAlpha, 1));
@@ -141,43 +123,40 @@ export class VirtualJoystick {
 
   private drawKnob() {
     const g = this.knobGraphics;
-    const alpha = this.isActive ? ALPHA_ACTIVE : ALPHA_IDLE;
 
     g.clear();
 
     // Knob outer glow
-    g.fillStyle(0x66ccee, alpha * 0.3);
+    g.fillStyle(0x66ccee, ALPHA_ACTIVE * 0.3);
     g.fillCircle(this.knobX, this.knobY, KNOB_RADIUS + 3);
 
     // Knob body
-    g.fillStyle(0x223344, alpha * 0.9);
+    g.fillStyle(0x223344, ALPHA_ACTIVE * 0.9);
     g.fillCircle(this.knobX, this.knobY, KNOB_RADIUS);
 
     // Knob highlight ring
-    g.lineStyle(2, 0x88ddff, alpha * 0.8);
+    g.lineStyle(2, 0x88ddff, ALPHA_ACTIVE * 0.8);
     g.strokeCircle(this.knobX, this.knobY, KNOB_RADIUS);
 
     // Center dot
-    g.fillStyle(0x99eeff, alpha * 0.6);
+    g.fillStyle(0x99eeff, ALPHA_ACTIVE * 0.6);
     g.fillCircle(this.knobX, this.knobY, 4);
   }
 
   private onPointerDown(pointer: Phaser.Input.Pointer) {
-    if (!this.visible) return;
+    if (!this.enabled) return;
     if (this.activePointerId !== null) return;
 
-    // UIScene의 camera zoom=1이므로 pointer와 UI 좌표가 완벽히 일치
-    const dx = pointer.x - this.baseX;
-    const dy = pointer.y - this.baseY;
-    const dist = Math.sqrt(dx * dx + dy * dy);
+    // 터치 위치를 조이스틱 base 위치로 설정
+    this.baseX = pointer.x;
+    this.baseY = pointer.y;
+    this.knobX = pointer.x;
+    this.knobY = pointer.y;
 
-    const touchRadius = BASE_RADIUS * 1.8;
-
-    if (dist <= touchRadius) {
-      this.activePointerId = pointer.id;
-      this.isActive = true;
-      this.updateKnob(pointer.x, pointer.y);
-    }
+    this.activePointerId = pointer.id;
+    this.isActive = true;
+    this.showGraphics(true);
+    this.draw();
   }
 
   private onPointerMove(pointer: Phaser.Input.Pointer) {
@@ -197,10 +176,8 @@ export class VirtualJoystick {
   private release() {
     this.activePointerId = null;
     this.isActive = false;
-    this.knobX = this.baseX;
-    this.knobY = this.baseY;
     this.direction = { x: 0, y: 0 };
-    this.draw();
+    this.showGraphics(false);
   }
 
   private updateKnob(px: number, py: number) {
@@ -242,11 +219,16 @@ export class VirtualJoystick {
   }
 
   setVisible(v: boolean) {
-    this.visible = v;
-    this.baseGraphics.setVisible(v);
-    this.arrowGraphics.setVisible(v);
-    this.knobGraphics.setVisible(v);
+    this.enabled = v;
     if (!v) {
+      this.release();
+      this.showGraphics(false);
+    }
+  }
+
+  // 리사이즈 시 활성 조이스틱 해제
+  updatePosition() {
+    if (this.isActive) {
       this.release();
     }
   }
