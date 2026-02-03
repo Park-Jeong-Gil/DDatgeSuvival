@@ -109,21 +109,16 @@ export class PreloadScene extends Phaser.Scene {
 
     // 명언 텍스트 (로딩 바 위에) - 모바일에서는 2줄로 표시
     const isMobile = width <= 960;
-    const quoteText = isMobile 
+    const quoteText = isMobile
       ? "A Shrewmouse's life is simply\nto run and eat."
       : "A Shrewmouse's life is simply to run and eat.";
-    
-    this.loadingText = this.add.text(
-      width / 2,
-      height / 2 - 70,
-      quoteText,
-      {
-        fontSize: "20px",
-        color: "#cccccc",
-        fontStyle: "italic",
-        align: "center",
-      },
-    );
+
+    this.loadingText = this.add.text(width / 2, height / 2 - 70, quoteText, {
+      fontSize: "20px",
+      color: "#cccccc",
+      fontStyle: "italic",
+      align: "center",
+    });
     this.loadingText.setOrigin(0.5);
     this.loadingContainer.add(this.loadingText);
 
