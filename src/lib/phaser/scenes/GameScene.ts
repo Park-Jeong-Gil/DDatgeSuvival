@@ -299,9 +299,10 @@ export class GameScene extends Phaser.Scene {
   }
 
   private createPlayerOverlay() {
+    const labelFontSize = this.isMobile ? "20px" : "12px";
     this.playerLabelText = this.add.text(this.player.x, this.player.y, "", {
-      fontSize: "10px",
-      fontFamily: "monospace",
+      fontSize: labelFontSize,
+      fontFamily: "Mulmaru",
       color: "#ffffff",
       stroke: "#000000",
       strokeThickness: 2,
@@ -318,7 +319,7 @@ export class GameScene extends Phaser.Scene {
 
     const store = useGameStore.getState();
     const nickname = store.nickname || "플레이어";
-    const label = `Lv ${store.level} ${nickname}`;
+    const label = `Lv${store.level} ${nickname}`;
 
     const labelOffset = Math.round(this.player.displayHeight / 2 + 8);
     this.playerLabelText.setText(label);

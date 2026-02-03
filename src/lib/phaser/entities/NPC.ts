@@ -71,17 +71,18 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     body.setSize(displayWidth, displayHeight);
     body.setOffset(0, 0);
 
-    // Name label
+    // Name label - 모바일에서는 폰트 사이즈 2배
+    const isMobile = typeof window !== "undefined" && window.innerWidth <= 960;
+    const labelFontSize = isMobile ? "20px" : "12px";
     this.nameLabel = scene.add.text(x, y, `Lv${data.level} ${data.nameKo}`, {
-      fontSize: "10px",
-      fontFamily: "monospace",
+      fontSize: labelFontSize,
+      fontFamily: "Mulmaru",
       color: "#ffffff",
       stroke: "#000000",
       strokeThickness: 2,
     });
     this.nameLabel.setOrigin(0.5, 1);
     this.nameLabel.setDepth(15);
-
   }
 
   public getNameLabelText(): string {
@@ -404,8 +405,8 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       this.level === 99 || this.level > playerLevel
         ? "#ff4444"
         : this.level === playerLevel
-          ? "#aaaaaa"
-          : "#44ff44";
+          ? "#c3c3c3"
+          : "#fff42a";
     if (this.currentLabelColor !== newColor) {
       this.currentLabelColor = newColor;
       this.nameLabel.setColor(newColor);
