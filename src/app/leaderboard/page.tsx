@@ -85,14 +85,14 @@ export default function LeaderboardPage() {
         </div>
 
         {/* Sort tabs */}
-        <div className="flex gap-5 mb-8">
+        <div className="flex gap-5 mb-8 z-2">
           {(Object.keys(sortLabels) as SortType[]).map((key) => (
             <button
               key={key}
               onClick={() => setSort(key)}
               className={`pixel-ui bg-[#555] px-2.5 py-1.5 text-white text-lg hover:bg-[#444] transition-colors ${
                 sort === key
-                  ? "bg-[#ffbd30] transition-colors hover:bg-[#cc9a27]"
+                  ? "bg-[#ff9030] transition-colors hover:bg-[#cc7326]"
                   : "bg-[#808080] transition-colors hover:bg-[#6e6e6e]"
               }`}
             >
@@ -102,19 +102,19 @@ export default function LeaderboardPage() {
         </div>
 
         {userRank && (
-          <div className="bg-yellow-700/70 border border-yellow-700 rounded-lg p-3 mb-4 text-yellow-300 font-bold drop-shadow-lg">
+          <div className="pixel-panel_green p-3 mb-4 text-[#00ffe6] bg-[#6dff8769] font-bold">
             Your Rank: #{userRank}
           </div>
         )}
 
         {loading ? (
-          <p className="text-gray-400 text-center py-8">Loading...</p>
+          <p className="text-white text-center py-8">Loading...</p>
         ) : scores.length === 0 ? (
-          <p className="text-gray-400 text-center py-8">
+          <p className="text-white text-center py-8">
             No scores yet. Be the first to play!
           </p>
         ) : (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-4">
             {scores.map((record, index) => {
               const skin = getSkinById(record.skin_id);
               const costume = record.costume
@@ -138,11 +138,11 @@ export default function LeaderboardPage() {
               return (
                 <div
                   key={record.id}
-                  className={`flex items-center gap-3 p-3 rounded-lg drop-shadow-md ${
+                  className={`flex items-center gap-3 p-3 pixel-panel_leaderboard-normal ${
                     isCurrentUser
-                      ? "bg-yellow-900/70 border border-yellow-700 ring-2 ring-green-500/30"
+                      ? "pixel-panel_leaderboard-me"
                       : index < 3
-                        ? "bg-[#221813] border border-yellow-600/30"
+                        ? "pixel-panel_leaderboard-ranked"
                         : "bg-[#221813]/50"
                   }`}
                 >
@@ -152,11 +152,11 @@ export default function LeaderboardPage() {
                         {rankIcons[index + 1]}
                       </span>
                     ) : (
-                      <span className="text-gray-500">{index + 1}</span>
+                      <span className="text-gray-400">{index + 1}</span>
                     )}
                   </span>
 
-                  <div className="w-10 h-10 shrink-0 rounded-full bg-gray-700 overflow-hidden flex items-center justify-center">
+                  <div className="w-10 h-10 shrink-0 rounded-full bg-gray-900 overflow-hidden flex items-center justify-center">
                     <Image
                       src={
                         record.costume
@@ -193,7 +193,7 @@ export default function LeaderboardPage() {
                           return (
                             <div
                               key={itemId}
-                              className="flex items-center gap-0.5 bg-gray-700/60 rounded px-1 py-0.5"
+                              className="flex items-center gap-0.5 bg-gray-900/60 rounded px-1 py-0.5"
                               title={item.name}
                             >
                               <Image
@@ -217,7 +217,7 @@ export default function LeaderboardPage() {
                     <div className="text-white font-bold">
                       {record.score.toLocaleString()}
                     </div>
-                    <div className="text-xs text-gray-500">pts</div>
+                    <div className="text-xs text-gray-400">pts</div>
                   </div>
                 </div>
               );

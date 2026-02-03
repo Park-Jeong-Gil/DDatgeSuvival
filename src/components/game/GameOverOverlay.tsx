@@ -118,7 +118,7 @@ export default function GameOverOverlay() {
         </p>
         {deathReason === "predator" && predatorNameRef.current && (
           <div className="mb-4">
-            <span className="inline-block px-3 py-2 bg-red-900/80 rounded-lg text-lg font-bold text-red-200 border border-red-500 shadow">
+            <span className="inline-block px-3 py-2 pixel-panel_red">
               {predatorNameRef.current}
             </span>
           </div>
@@ -170,7 +170,7 @@ export default function GameOverOverlay() {
         )}
 
         {isNewRecord !== null && (
-          <div className="mb-4 px-4 py-3 bg-gradient-to-r from-emerald-900/70 to-green-900/70 border border-emerald-500 rounded-lg">
+          <div className="mb-4 px-4 py-3 pixel-panel_green">
             <p className="text-emerald-300 font-bold text-lg">
               {isNewRecord
                 ? "🎉 새로운 스코어를 갱신 했습니다!"
@@ -179,7 +179,7 @@ export default function GameOverOverlay() {
           </div>
         )}
         {rank !== null && (
-          <div className="mb-4 px-4 py-2 bg-yellow-900/60 border border-yellow-600 rounded-lg">
+          <div className="mb-4 px-4 py-2 pixel-panel_yellow">
             <span className="text-yellow-300 font-bold text-lg">
               Rank #{rank}
             </span>

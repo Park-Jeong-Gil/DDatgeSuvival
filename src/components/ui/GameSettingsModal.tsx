@@ -49,9 +49,9 @@ export default function GameSettingsModal({ onClose }: GameSettingsModalProps) {
               <h2 className="text-2xl font-bold text-white">▪︎ SETTINGS ▪︎</h2>
               <button
                 onClick={onClose}
-                className="pixel-ui bg-[#555] px-2 py-1.5 text-white text-lg hover:bg-[#444] transition-colors"
+                className="pixel-ui bg-[#555] px-3 py-1.5 text-white text-lg hover:bg-[#444] transition-colors"
               >
-                x
+                ✕
               </button>
             </div>
             <div className="flex flex-col gap-6">

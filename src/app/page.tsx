@@ -67,19 +67,19 @@ export default function HomePage() {
       <div className="flex flex-col gap-4 w-68">
         <Link
           href="/game"
-          className="pixel-ui w-full py-3 text-white text-xl font-bold text-center bg-[#1a963e] transition-colors hover:bg-[#178032]"
+          className="pixel-ui w-full py-3 text-white text-xl font-bold text-center bg-[#2266cc] transition-colors hover:bg-[#1b4f99]"
         >
           START GAME
         </Link>
         <Link
           href="/leaderboard"
-          className="pixel-ui w-full py-3 text-white text-center font-semibold bg-[#ffbd30] transition-colors hover:bg-[#cc9a27]"
+          className="pixel-ui w-full py-3 text-white text-xl text-center font-semibold bg-[#ff9030] transition-colors hover:bg-[#cc7326]"
         >
           LEADERBOARD
         </Link>
         <button
           onClick={() => setHowToPlayOpen(true)}
-          className="pixel-ui w-full py-3 text-white font-semibold bg-[#808080] transition-colors hover:bg-[#6e6e6e]"
+          className="pixel-ui w-full py-3 text-white text-xl font-semibold bg-[#808080] transition-colors hover:bg-[#6e6e6e]"
         >
           HOW TO PLAY
         </button>
