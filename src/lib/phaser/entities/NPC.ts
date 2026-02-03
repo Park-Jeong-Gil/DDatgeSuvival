@@ -302,11 +302,20 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     // 정지 상태 체크
     if (now < this._stunUntil) {
       this.setVelocity(0, 0);
+      // 기절 중에는 어두운 색상 유지
+      if (!this.tintTopLeft || this.tintTopLeft === 0xffffff) {
+        this.setTint(0x888888);
+      }
       // 정지 중에도 라벨 위치 업데이트
       const offsetY = this.displayHeight / 2 + 5;
       this.nameLabel.setPosition(this.x, this.y - offsetY);
       this.nameLabel.setVisible(true);
       return;
+    }
+
+    // 기절이 풀렸으면 원래 색으로 복구
+    if (this.tintTopLeft === 0x888888) {
+      this.clearTint();
     }
 
     this.updateLabels(playerLevel);

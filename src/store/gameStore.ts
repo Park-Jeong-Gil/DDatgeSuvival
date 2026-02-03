@@ -23,7 +23,7 @@ interface GameStore {
   playerDisplaySize: { width: number; height: number };
   cameraScroll: { x: number; y: number };
   cameraZoom: number;
-  collectedItems: ItemData[];
+  collectedItems: Record<string, number>; // itemId -> count
 
   // Actions
   setScore: (score: number) => void;
@@ -45,7 +45,7 @@ interface GameStore {
   setPlayerPosition: (x: number, y: number) => void;
   setPlayerDisplaySize: (width: number, height: number) => void;
   setCameraScroll: (x: number, y: number, zoom: number) => void;
-  addCollectedItem: (item: ItemData) => void;
+  addCollectedItem: (itemId: string) => void;
   resetGame: () => void;
 }
 
@@ -69,7 +69,7 @@ const initialState = {
   playerDisplaySize: { width: 32, height: 32 },
   cameraScroll: { x: 0, y: 0 },
   cameraZoom: 1,
-  collectedItems: [] as ItemData[],
+  collectedItems: {} as Record<string, number>,
 };
 
 export const useGameStore = create<GameStore>((set) => ({
@@ -102,8 +102,13 @@ export const useGameStore = create<GameStore>((set) => ({
     set({ playerDisplaySize: { width, height } }),
   setCameraScroll: (x, y, zoom) =>
     set({ cameraScroll: { x, y }, cameraZoom: zoom }),
-  addCollectedItem: (item) =>
-    set((state) => ({ collectedItems: [...state.collectedItems, item] })),
+  addCollectedItem: (itemId) =>
+    set((state) => ({
+      collectedItems: {
+        ...state.collectedItems,
+        [itemId]: (state.collectedItems[itemId] || 0) + 1,
+      },
+    })),
   resetGame: () =>
     set((state) => ({ ...initialState, nickname: state.nickname })),
 }));

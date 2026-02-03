@@ -5,6 +5,7 @@ import { useRef, useEffect, useState } from "react";
 import { getNpcNameKo } from "@/lib/npcNames";
 import { useRouter } from "next/navigation";
 import { getOrCreateUserId, getUserNickname } from "@/lib/userId";
+import { getItemById } from "@/lib/phaser/data/itemData";
 
 function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -64,13 +65,7 @@ export default function GameOverOverlay() {
             deathReason: deathReason ?? "hunger",
             skinId: currentSkinId,
             costume: currentCostume,
-            collectedItems: collectedItems.reduce(
-              (acc, item) => {
-                acc[item.id] = (acc[item.id] || 0) + 1;
-                return acc;
-              },
-              {} as Record<string, number>,
-            ),
+            collectedItems: collectedItems,
           }),
         });
 
@@ -101,15 +96,6 @@ export default function GameOverOverlay() {
   ]);
 
   const npcName = getNpcNameKo(level);
-
-  // 아이템 개수 집계
-  const itemCounts = collectedItems.reduce(
-    (acc, item) => {
-      acc[item.id] = (acc[item.id] || 0) + 1;
-      return acc;
-    },
-    {} as Record<string, number>,
-  );
 
   const handleRetry = () => {
     resetGame();
@@ -158,15 +144,15 @@ export default function GameOverOverlay() {
         </div>
 
         {/* 수집한 아이템 목록 */}
-        {collectedItems.length > 0 && (
+        {Object.keys(collectedItems).length > 0 && (
           <div className="mb-6">
             <h3 className="text-sm font-bold text-gray-300 mb-2 text-left">
               Collected Items
             </h3>
             <div className="bg-gray-800/50 rounded-lg p-3 max-h-32 overflow-y-auto">
               <div className="flex flex-col gap-1.5 text-left">
-                {Object.entries(itemCounts).map(([itemId, count]) => {
-                  const item = collectedItems.find((i) => i.id === itemId);
+                {Object.entries(collectedItems).map(([itemId, count]) => {
+                  const item = getItemById(itemId);
                   if (!item) return null;
                   return (
                     <div

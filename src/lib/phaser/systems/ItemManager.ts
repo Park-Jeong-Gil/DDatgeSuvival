@@ -77,8 +77,8 @@ export class ItemManager {
     // Play pickup sound
     EventBus.emit("play-sound", "pickup");
 
-    // 아이템 수집 기록
-    useGameStore.getState().addCollectedItem(data);
+    // 아이템 수집 기록 (itemId만 전달)
+    useGameStore.getState().addCollectedItem(data.id);
 
     item.destroy();
     this.items = this.items.filter((i) => i !== item);
