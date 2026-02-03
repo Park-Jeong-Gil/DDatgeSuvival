@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     description: "Top-down survival growth game - eat or be eaten!",
     images: [
       {
-        url: "/thumb.",
+        url: "/thumb.jpg",
         width: 1200,
         height: 630,
         alt: "DDatge Survival",
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "DDatge Survival",
     description: "Top-down survival growth game - eat or be eaten!",
-    images: ["/thumb."],
+    images: ["/thumb.jpg"],
   },
 };
 
