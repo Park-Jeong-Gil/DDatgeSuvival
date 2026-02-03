@@ -16,7 +16,7 @@ export default function HowToPlayContent() {
         <h3 className="font-bold text-white mb-2 text-base">조작법</h3>
         <div className="space-y-1 text-gray-300">
           <p>WASD / 방향키 : 이동</p>
-          <p>모바일 : 가상 조이스틱</p>
+          <p>모바일 : 터치 & 드래그</p>
         </div>
       </section>
 
@@ -24,10 +24,11 @@ export default function HowToPlayContent() {
       <section>
         <h3 className="font-bold text-white mb-2 text-base">목표</h3>
         <div className="space-y-1 text-gray-300">
-          <p>- 나보다 작은 생물을 먹어 점수 획득 & 레벨업</p>
-          <p>- 천적(높은 레벨)에게 잡히면 게임오버</p>
-          <p>- 허기 게이지가 0이 되면 사망</p>
-          <p>- 최대한 오래 생존하세요!</p>
+          <p>- 나보다 작은 생물을 먹어 점수 획득 & 레벨업 (노란색 이름)</p>
+          <p>- 천적(높은 레벨)에게 잡히면 게임오버 (빨간색 이름)</p>
+          <p>- 풀숲에서는 천적의 이동 속도가 반감</p>
+          <p>- 공복 게이지가 0이 되면 사망</p>
+          <p>- 풀숲과 장애물을 활용해서 먹이를 잡아 최대한 오래 생존하세요!</p>
         </div>
       </section>
 
@@ -42,15 +43,15 @@ export default function HowToPlayContent() {
             <div className="space-y-1 text-gray-300">
               <div className="flex justify-between">
                 <span>황금 열매</span>
-                <span className="text-gray-400">허기 완전 회복</span>
+                <span className="text-gray-400">공복 완전 회복</span>
               </div>
               <div className="flex justify-between">
                 <span>포만감 물약</span>
-                <span className="text-gray-400">30초 허기 감소 느려짐</span>
+                <span className="text-gray-400">공복 감소 느려짐 (30초)</span>
               </div>
               <div className="flex justify-between">
                 <span>천적 방어막</span>
-                <span className="text-gray-400">10초 무적</span>
+                <span className="text-gray-400">무적 (10초)</span>
               </div>
             </div>
           </div>
@@ -61,15 +62,15 @@ export default function HowToPlayContent() {
             <div className="space-y-1 text-gray-300">
               <div className="flex justify-between">
                 <span>날개 깃털</span>
-                <span className="text-gray-400">20초 이동속도 증가</span>
+                <span className="text-gray-400">이동속도 증가 (20초)</span>
               </div>
               <div className="flex justify-between">
                 <span>투명 망토</span>
-                <span className="text-gray-400">15초 투명화</span>
+                <span className="text-gray-400">투명화 (15초)</span>
               </div>
               <div className="flex justify-between">
                 <span>거인의 힘</span>
-                <span className="text-gray-400">20초 같은 레벨 먹기</span>
+                <span className="text-gray-400">같은 레벨 먹기 (20초)</span>
               </div>
             </div>
           </div>

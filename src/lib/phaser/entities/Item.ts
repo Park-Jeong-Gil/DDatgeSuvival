@@ -6,9 +6,16 @@ export class Item extends Phaser.Physics.Arcade.Sprite {
   private despawnTimer: number = 0;
   private readonly DESPAWN_TIME = 60000; // 60 seconds
   private shadow?: Phaser.GameObjects.Ellipse;
+  private isCollecting: boolean = false; // 수집 중복 방지
 
   constructor(scene: Phaser.Scene, x: number, y: number, data: ItemData) {
-    super(scene, x, y, data.spriteKey);
+    // 텍스처가 로드되었는지 확인
+    if (!scene.textures.exists(data.spriteKey)) {
+      console.warn(`Texture not found: ${data.spriteKey}, using default`);
+      super(scene, x, y, "__DEFAULT");
+    } else {
+      super(scene, x, y, data.spriteKey);
+    }
 
     this.itemData = data;
 
@@ -32,37 +39,47 @@ export class Item extends Phaser.Physics.Arcade.Sprite {
     this.shadow = scene.add.ellipse(x, y + 2, 24, 12, 0x000000, 0.3);
     this.shadow.setDepth(2);
 
-    // Bobbing animation
-    scene.tweens.add({
-      targets: this,
-      y: y - 5,
-      duration: 800,
-      yoyo: true,
-      repeat: -1,
-      ease: "Sine.easeInOut",
-    });
+    // Bobbing animation - 씬이 준비된 후 안전하게 시작
+    scene.time.delayedCall(10, () => {
+      if (!this.active) return;
+      scene.tweens.add({
+        targets: this,
+        y: y - 5,
+        duration: 800,
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.easeInOut",
+      });
 
-    // 그림자도 함께 움직이도록
-    scene.tweens.add({
-      targets: this.shadow,
-      y: y - 3,
-      scaleX: 0.8,
-      scaleY: 0.8,
-      alpha: 0.2,
-      duration: 800,
-      yoyo: true,
-      repeat: -1,
-      ease: "Sine.easeInOut",
+      // 그림자도 함께 움직이도록
+      if (this.shadow && this.shadow.active) {
+        scene.tweens.add({
+          targets: this.shadow,
+          y: y - 3,
+          scaleX: 0.8,
+          scaleY: 0.8,
+          alpha: 0.2,
+          duration: 800,
+          yoyo: true,
+          repeat: -1,
+          ease: "Sine.easeInOut",
+        });
+      }
     });
   }
 
   update(_time: number, delta: number): boolean {
+    if (this.isCollecting) return false; // 수집 중이면 더 이상 업데이트 안함
     this.despawnTimer += delta;
     if (this.despawnTimer >= this.DESPAWN_TIME) {
       this.destroy();
       return false;
     }
     return true;
+  }
+
+  markAsCollecting() {
+    this.isCollecting = true;
   }
 
   destroy(fromScene?: boolean): void {

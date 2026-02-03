@@ -223,7 +223,13 @@ export class GameScene extends Phaser.Scene {
       (_playerObj, itemObj) => {
         if (this.isGameOver) return;
         const item = itemObj as Item;
+
+        // 유효성 검사 강화
         if (!item || !item.active) return;
+        if (!item.body || !(item.body as Phaser.Physics.Arcade.Body).enable)
+          return;
+        // 이미 수집 중인지 확인
+        if ((item as any).isCollecting) return;
 
         this.itemManager.collectItem(item);
       },
@@ -599,24 +605,20 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    if (
+    // 먹을 수 있는 대상인지 확인
+    const canEatNPC =
       FoodChain.canEat(playerLevel, npcLevel) ||
       (FoodChain.sameLevel(playerLevel, npcLevel) &&
-        this.itemManager.canEatSameLevel())
-    ) {
+        this.itemManager.canEatSameLevel());
+
+    if (canEatNPC) {
+      // NPC를 먹으려면 50% 이상 겹쳐야 함
+      if (this.getOverlapRatio(npc) < 0.5) return;
       this.handleEat(npc);
     } else if (FoodChain.sameLevel(playerLevel, npcLevel)) {
       // 같은 레벨은 장애물처럼 단순 충돌만 처리 (넉백 없음)
       return;
     } else if (FoodChain.mustFlee(playerLevel, npcLevel)) {
-      // giant_power 버프로 포식자도 기절
-      if (this.itemManager.canEatSameLevel()) {
-        npc.stunUntil = Date.now() + 10000;
-        npc.aiState = NPCState.STUNNED;
-        npc.setTint(0x888888);
-        return;
-      }
-
       // 플레이어가 무적 상태면 포식자 즉시 기절
       if (this.itemManager.isPlayerInvincible()) {
         npc.stunUntil = Date.now() + 10000;

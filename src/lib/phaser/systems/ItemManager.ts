@@ -70,18 +70,32 @@ export class ItemManager {
   }
 
   collectItem(item: Item) {
+    // 이미 수집 중이거나 제거된 아이템이면 무시
+    if (!item || !item.active || (item as any).isCollecting) {
+      return;
+    }
+
+    // 중복 수집 방지 플래그 설정
+    item.markAsCollecting();
+
     const data = item.itemData;
-    this.applyEffect(data);
-    EventBus.emit("item-collected", { item: data });
 
-    // Play pickup sound
-    EventBus.emit("play-sound", "pickup");
+    try {
+      this.applyEffect(data);
+      EventBus.emit("item-collected", { item: data });
 
-    // 아이템 수집 기록 (itemId만 전달)
-    useGameStore.getState().addCollectedItem(data.id);
+      // Play pickup sound
+      EventBus.emit("play-sound", "pickup");
 
-    item.destroy();
-    this.items = this.items.filter((i) => i !== item);
+      // 아이템 수집 기록 (itemId만 전달)
+      useGameStore.getState().addCollectedItem(data.id);
+    } catch (error) {
+      console.error("Error collecting item:", error);
+    } finally {
+      // 아이템 제거
+      item.destroy();
+      this.items = this.items.filter((i) => i !== item);
+    }
   }
 
   private applyEffect(data: ItemData) {
