@@ -382,7 +382,12 @@ export class GameScene extends Phaser.Scene {
   }
 
   private updatePlayerOverlay(px: number, py: number) {
-    if (!this.playerLabelText || !this.playerHpGraphics || !this.playerExpGraphics) return;
+    if (
+      !this.playerLabelText ||
+      !this.playerHpGraphics ||
+      !this.playerExpGraphics
+    )
+      return;
 
     const store = useGameStore.getState();
     const nickname = store.nickname || "플레이어";
@@ -423,18 +428,33 @@ export class GameScene extends Phaser.Scene {
     // 경험치 바 (HP 바 바로 아래에 얇게)
     const expBarHeight = 3;
     const expBarY = barY + barHeight + 2;
-    
+
     // 현재 레벨에서의 경험치 진행도 계산
-    const currentLevelTotalScore = LevelSystem.getTotalScoreForLevel(store.level);
-    const nextLevelTotalScore = LevelSystem.getTotalScoreForLevel(store.level + 1);
-    const requiredScoreForThisLevel = nextLevelTotalScore - currentLevelTotalScore;
+    const currentLevelTotalScore = LevelSystem.getTotalScoreForLevel(
+      store.level,
+    );
+    const nextLevelTotalScore = LevelSystem.getTotalScoreForLevel(
+      store.level + 1,
+    );
+    const requiredScoreForThisLevel =
+      nextLevelTotalScore - currentLevelTotalScore;
     const currentScoreInLevel = store.score - currentLevelTotalScore;
-    const expRatio = Phaser.Math.Clamp(currentScoreInLevel / requiredScoreForThisLevel, 0, 1);
+    const expRatio = Phaser.Math.Clamp(
+      currentScoreInLevel / requiredScoreForThisLevel,
+      0,
+      1,
+    );
 
     this.playerExpGraphics.clear();
     // 배경 (어두운 회색)
     this.playerExpGraphics.fillStyle(0x1f2937, 1);
-    this.playerExpGraphics.fillRoundedRect(barX, expBarY, barWidth, expBarHeight, 1.5);
+    this.playerExpGraphics.fillRoundedRect(
+      barX,
+      expBarY,
+      barWidth,
+      expBarHeight,
+      1.5,
+    );
     // 경험치 바 (파란색)
     this.playerExpGraphics.fillStyle(0x3b82f6, 1);
     this.playerExpGraphics.fillRoundedRect(
@@ -446,7 +466,12 @@ export class GameScene extends Phaser.Scene {
     );
     // 테두리
     this.playerExpGraphics.lineStyle(0.5, 0x1e40af, 1);
-    this.playerExpGraphics.strokeRoundedRect(barX, expBarY, barWidth, expBarHeight, 1.5
+    this.playerExpGraphics.strokeRoundedRect(
+      barX,
+      expBarY,
+      barWidth,
+      expBarHeight,
+      1.5,
     );
     this.playerHpGraphics.lineStyle(1, 0x4b5563, 1);
     this.playerHpGraphics.strokeRoundedRect(barX, barY, barWidth, barHeight, 3);
@@ -1086,7 +1111,7 @@ export class GameScene extends Phaser.Scene {
       console.warn("Audio cache not available");
       return;
     }
-    
+
     const soundExists = this.cache.audio.exists(soundKey);
     if (!soundExists) {
       console.warn(`Sound '${soundKey}' not found in cache`);
