@@ -20,6 +20,7 @@ export const npcDatabase: NPCData[] = [
     scoreValue: 10,
     hungerRestore: 15,
     spriteKey: "npc_1",
+    shadowOffsetY: 0.5,
   },
   {
     level: 2,
@@ -30,6 +31,7 @@ export const npcDatabase: NPCData[] = [
     scoreValue: 15,
     hungerRestore: 20,
     spriteKey: "npc_2",
+    shadowOffsetY: 0.5,
   },
   {
     level: 3,
@@ -40,6 +42,7 @@ export const npcDatabase: NPCData[] = [
     scoreValue: 20,
     hungerRestore: 25,
     spriteKey: "npc_3",
+    shadowOffsetY: 0.4,
   },
   {
     level: 4,
@@ -48,6 +51,7 @@ export const npcDatabase: NPCData[] = [
     baseSpeed: 133,
     baseSize: 38, // 플레이어 Lv3 크기
     scoreValue: 25,
+    // shadowOffsetY: 0.5, // 뱀은 이미지 하단에 투명 여백이 있어서 그림자를 더 아래로
     hungerRestore: 30,
     spriteKey: "npc_4",
   },
@@ -60,6 +64,7 @@ export const npcDatabase: NPCData[] = [
     scoreValue: 30,
     hungerRestore: 35,
     spriteKey: "npc_5",
+    shadowOffsetY: 0.5,
   },
   {
     level: 6,
@@ -70,6 +75,7 @@ export const npcDatabase: NPCData[] = [
     scoreValue: 35,
     hungerRestore: 40,
     spriteKey: "npc_6",
+    // shadowOffsetY: 0.55,
   },
   {
     level: 7,
@@ -80,6 +86,7 @@ export const npcDatabase: NPCData[] = [
     scoreValue: 40,
     hungerRestore: 45,
     spriteKey: "npc_7",
+    shadowOffsetY: 0.26, // 뱀은 긴 몸이라 투명 여백 고려
   },
   {
     level: 8,
@@ -90,6 +97,7 @@ export const npcDatabase: NPCData[] = [
     scoreValue: 45,
     hungerRestore: 50,
     spriteKey: "npc_8",
+    shadowOffsetY: 0.5,
   },
   {
     level: 9,
@@ -100,6 +108,7 @@ export const npcDatabase: NPCData[] = [
     scoreValue: 50,
     hungerRestore: 55,
     spriteKey: "npc_9",
+    shadowOffsetY: 0.5,
   },
   {
     level: 10,
@@ -110,6 +119,7 @@ export const npcDatabase: NPCData[] = [
     scoreValue: 55,
     hungerRestore: 60,
     spriteKey: "npc_10",
+    shadowOffsetY: 0.5,
   },
   {
     level: 11,
@@ -120,6 +130,7 @@ export const npcDatabase: NPCData[] = [
     scoreValue: 60,
     hungerRestore: 65,
     spriteKey: "npc_11",
+    shadowOffsetY: 0.5,
   },
   {
     level: 12,
@@ -160,6 +171,7 @@ export const npcDatabase: NPCData[] = [
     scoreValue: 80,
     hungerRestore: 85,
     spriteKey: "npc_15",
+    shadowOffsetY: 0.5,
   },
   {
     level: 16,
@@ -170,6 +182,7 @@ export const npcDatabase: NPCData[] = [
     scoreValue: 85,
     hungerRestore: 90,
     spriteKey: "npc_16",
+    shadowOffsetY: 0.5,
   },
   {
     level: 17,
@@ -180,6 +193,7 @@ export const npcDatabase: NPCData[] = [
     scoreValue: 90,
     hungerRestore: 95,
     spriteKey: "npc_17",
+    shadowOffsetY: 0.5,
   },
   {
     level: 18,
@@ -190,6 +204,7 @@ export const npcDatabase: NPCData[] = [
     scoreValue: 95,
     hungerRestore: 100,
     spriteKey: "npc_18",
+    shadowOffsetY: 0.5,
   },
   // Boss
   {
@@ -201,6 +216,7 @@ export const npcDatabase: NPCData[] = [
     scoreValue: 0,
     hungerRestore: 0,
     spriteKey: "npc_99",
+    shadowOffsetY: 0.52,
   },
 ];
 

@@ -377,6 +377,10 @@ export class NPCManager {
 
     for (const npc of this.npcs) {
       if (!npc.active) continue;
+
+      // Update NPC shadow
+      npc.updateShadow();
+
       // Skip off-screen NPCs
       const hw = npc.displayWidth / 2;
       const hh = npc.displayHeight / 2;

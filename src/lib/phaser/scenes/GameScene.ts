@@ -302,6 +302,18 @@ export class GameScene extends Phaser.Scene {
     this.ensureInput();
     this.handlePlayerMovement();
 
+    // Update player walk animation and apply visual offset
+    this.player.updateWalkAnimation(delta);
+    const walkOffset = this.player.getWalkBounceOffset();
+
+    // displayOriginY를 조정하여 스프라이트의 렌더링 위치만 변경 (물리는 그대로)
+    // 기본 origin은 0.5 (중앙), 픽셀 단위로 변환하여 offset 적용
+    const originYPixels = Player.TEX_H * 0.5 - walkOffset;
+    this.player.setDisplayOrigin(Player.TEX_W * 0.5, originYPixels);
+
+    // Update player shadow
+    this.player.updateShadow();
+
     // Systems update
     this.hungerSystem.update(
       delta,
@@ -660,8 +672,17 @@ export class GameScene extends Phaser.Scene {
     if (this.player.getPlayerState() !== "eat") {
       if (vx !== 0 || vy !== 0) {
         this.player.setPlayerState("run");
+        this.player.startWalking(); // 걷기 애니메이션 시작
       } else {
         this.player.setPlayerState("idle");
+        this.player.stopWalking(); // 걷기 애니메이션 중지
+      }
+    } else {
+      // eat 상태일 때도 이동 중이면 걷기 애니메이션 유지
+      if (vx !== 0 || vy !== 0) {
+        this.player.startWalking();
+      } else {
+        this.player.stopWalking();
       }
     }
   }

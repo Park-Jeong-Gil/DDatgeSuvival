@@ -24,6 +24,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
   private renderableNow: boolean = true;
   private lastFlipTime: number = 0; // 마지막 좌우 반전 시간
   private readonly FLIP_COOLDOWN = 200; // 최소 200ms 간격
+  private shadow?: Phaser.GameObjects.Graphics; // 그림자
 
   constructor(scene: Phaser.Scene, x: number, y: number, data: NPCData) {
     // walk 이미지를 기본으로 사용
@@ -49,6 +50,9 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
 
     // NPC는 항상 플레이어(depth 10) 위에 렌더링
     this.setDepth(11);
+
+    // 그림자 생성
+    this.createShadow();
 
     this.setCollideWorldBounds(true);
 
@@ -655,7 +659,45 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     }
 
     this.nameLabel?.destroy();
+    this.destroyShadow();
 
     super.destroy(fromScene);
+  }
+
+  // 그림자 생성
+  private createShadow() {
+    this.shadow = this.scene.add.graphics();
+    this.shadow.setDepth(5); // NPC(11)보다 아래
+    this.updateShadow();
+  }
+
+  // 그림자 업데이트
+  updateShadow() {
+    if (!this.shadow || !this.active) return;
+
+    this.shadow.clear();
+
+    // 그림자 크기는 캐릭터 크기에 비례
+    const shadowWidth = this.displayWidth * 0.8;
+    const shadowHeight = this.displayHeight * 0.2;
+
+    // 투명한 검은색 타원형 그림자
+    // NPC 데이터에 shadowOffsetY가 있으면 사용, 없으면 기본값 0.45
+    const shadowOffsetY = this.npcData.shadowOffsetY ?? 0.45;
+    this.shadow.fillStyle(0x000000, 0.25);
+    this.shadow.fillEllipse(
+      this.x,
+      this.y + this.displayHeight * shadowOffsetY,
+      shadowWidth,
+      shadowHeight,
+    );
+  }
+
+  // 그림자 제거
+  private destroyShadow() {
+    if (this.shadow) {
+      this.shadow.destroy();
+      this.shadow = undefined;
+    }
   }
 }
