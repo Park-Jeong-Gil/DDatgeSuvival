@@ -390,7 +390,7 @@ export class GameScene extends Phaser.Scene {
     this.playerLabelText.setShadow(0, 0, "#000000", 0, true, true);
 
     // 코스튬 라벨 (더 작은 글씨)
-    const costumeLabelFontSize = isMobile ? "16px" : "9px";
+    const costumeLabelFontSize = isMobile ? "12px" : "9px";
     this.playerCostumeLabelText = this.add.text(
       this.player.x,
       this.player.y,
