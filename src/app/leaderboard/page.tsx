@@ -63,7 +63,7 @@ export default function LeaderboardPage() {
 
   return (
     <main
-      className="leaderboardPage min-h-screen bg-gray-900 p-6"
+      className="leaderboardPage h-dvh bg-gray-900 p-6 overflow-y-auto"
       style={{
         backgroundImage: "url(/assets/background/main_background.png)",
         backgroundSize: "cover",
@@ -114,7 +114,7 @@ export default function LeaderboardPage() {
             No scores yet. Be the first to play!
           </p>
         ) : (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 pb-6">
             {scores.map((record, index) => {
               const skin = getSkinById(record.skin_id);
               const costume = record.costume
