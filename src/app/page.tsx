@@ -107,7 +107,7 @@ export default function HomePage() {
         onClose={() => setHowToPlayOpen(false)}
       />
       {/* 푸터 */}
-      <p className="mt-8 text-sm text-gray-100">
+      <p className="mt-8 text-sm text-gray-100 text-shadow-md">
         © 2026 by{" "}
         <a href="https://girgir.dev" target="_blank" rel="noopener noreferrer">
           girgir
