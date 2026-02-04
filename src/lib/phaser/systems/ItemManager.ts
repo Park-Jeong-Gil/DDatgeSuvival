@@ -103,7 +103,7 @@ export class ItemManager {
 
     switch (data.effect) {
       case "hunger_full":
-        store.setHunger(100);
+        store.setHunger(store.maxHunger);
         break;
       case "hunger_slow":
         this.addBuff(data.id, data.effect, data.duration * 1000);
