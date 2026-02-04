@@ -25,7 +25,7 @@ export default function LevelUpNotice() {
 
   return (
     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-      <div className="animate-bounce">
+      <div className="animate-bounce text-shadow-lg">
         <div className="text-5xl font-bold text-yellow-400 drop-shadow-lg text-center">
           LEVEL UP!
         </div>
