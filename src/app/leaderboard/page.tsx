@@ -63,14 +63,14 @@ export default function LeaderboardPage() {
         `/api/scores?sort=${sort}&limit=10&offset=${currentOffset}&userId=${userId}`,
       );
       const data: LeaderboardResponse = await res.json();
-      
+
       if (isInitial) {
         setScores(data.scores);
         setUserRank(data.userRank?.rank ?? null);
       } else {
-        setScores(prev => [...prev, ...data.scores]);
+        setScores((prev) => [...prev, ...data.scores]);
       }
-      
+
       setHasMore(data.scores.length === 10);
       setOffset(currentOffset + data.scores.length);
     } catch {
@@ -85,20 +85,24 @@ export default function LeaderboardPage() {
     const handleScroll = (e: Event) => {
       const target = e.target as HTMLElement;
       if (!target) return;
-      
+
       const scrollTop = target.scrollTop;
       const scrollHeight = target.scrollHeight;
       const clientHeight = target.clientHeight;
-      
-      if (scrollHeight - scrollTop - clientHeight < 100 && hasMore && !loadingMore) {
+
+      if (
+        scrollHeight - scrollTop - clientHeight < 100 &&
+        hasMore &&
+        !loadingMore
+      ) {
         fetchScores(offset);
       }
     };
 
-    const mainElement = document.querySelector('.leaderboardPage');
+    const mainElement = document.querySelector(".leaderboardPage");
     if (mainElement) {
-      mainElement.addEventListener('scroll', handleScroll);
-      return () => mainElement.removeEventListener('scroll', handleScroll);
+      mainElement.addEventListener("scroll", handleScroll);
+      return () => mainElement.removeEventListener("scroll", handleScroll);
     }
   }, [offset, hasMore, loadingMore]);
 
