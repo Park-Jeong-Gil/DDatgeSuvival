@@ -274,7 +274,7 @@ export default function LeaderboardPage() {
             )}
             {!hasMore && scores.length > 0 && (
               <div className="text-center py-4">
-                <span className="text-gray-400">No more results</span>
+                <span className="text-gray-100">No more results</span>
               </div>
             )}
           </div>
