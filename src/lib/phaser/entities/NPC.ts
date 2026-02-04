@@ -489,7 +489,9 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
   ) {
     const angle = Phaser.Math.Angle.Between(this.x, this.y, targetX, targetY);
     // let speed = playerSpeed * 1.01;
-    let speed = playerSpeed * 1;
+    // let speed = playerSpeed * 1;
+    let speed = playerSpeed * 0.995;
+    // let speed = playerSpeed * 1.0001;
 
     // 추격 중인 포식자가 풀숲에 있으면 속도 감소 (cached data, squared distance)
     if (bushData) {
