@@ -36,6 +36,7 @@ export default function LeaderboardPage() {
   const [scores, setScores] = useState<ScoreRecord[]>([]);
   const [sort, setSort] = useState<SortType>("score");
   const [userRank, setUserRank] = useState<number | null>(null);
+  const [totalCount, setTotalCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -70,6 +71,7 @@ export default function LeaderboardPage() {
       if (isInitial) {
         setScores(data.scores);
         setUserRank(data.userRank?.rank ?? null);
+        setTotalCount(data.total);
       } else {
         // 중복 방지: 기존에 없는 데이터만 추가
         setScores((prev) => {
@@ -155,8 +157,9 @@ export default function LeaderboardPage() {
         </div>
 
         {userRank && (
-          <div className="pixel-panel_green p-3 mb-4 text-[#00ffe6] bg-[#6dff8769] font-bold">
-            Your Rank: #{userRank}
+          <div className="pixel-panel_green p-3 mb-4 text-[#00ffe6] bg-[#6dff8769] font-bold flex justify-between items-center">
+            <span>Your Rank: #{userRank}</span>
+            <span className="text-sm">/ {totalCount.toLocaleString()}</span>
           </div>
         )}
 
