@@ -681,15 +681,37 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     const shadowWidth = this.displayWidth * 0.8;
     const shadowHeight = this.displayHeight * 0.2;
 
-    // 투명한 검은색 타원형 그림자
     // NPC 데이터에 shadowOffsetY가 있으면 사용, 없으면 기본값 0.45
     const shadowOffsetY = this.npcData.shadowOffsetY ?? 0.45;
-    this.shadow.fillStyle(0x000000, 0.25);
+    const centerX = this.x;
+    const centerY = this.y + this.displayHeight * shadowOffsetY;
+
+    // 3단계 타원을 겹쳐서 부드러운 경계 효과 (성능 최적화)
+    // 외부 - 가장 투명하고 큰 타원
+    this.shadow.fillStyle(0x000000, 0.08);
     this.shadow.fillEllipse(
-      this.x,
-      this.y + this.displayHeight * shadowOffsetY,
+      centerX,
+      centerY,
+      shadowWidth * 1.2,
+      shadowHeight * 1.2,
+    );
+
+    // 중간
+    this.shadow.fillStyle(0x000000, 0.15);
+    this.shadow.fillEllipse(
+      centerX,
+      centerY,
       shadowWidth,
       shadowHeight,
+    );
+
+    // 내부 - 가장 진하고 작은 타원
+    this.shadow.fillStyle(0x000000, 0.2);
+    this.shadow.fillEllipse(
+      centerX,
+      centerY,
+      shadowWidth * 0.7,
+      shadowHeight * 0.7,
     );
   }
 

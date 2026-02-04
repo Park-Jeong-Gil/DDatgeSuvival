@@ -189,13 +189,35 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const bounceOffset = Math.abs(this.walkBounceOffset);
     const shadowScale = 1 - bounceOffset * 0.025; // 최대 25% 축소
 
-    // 투명한 검은색 타원형 그림자
-    this.shadow.fillStyle(0x000000, 0.25);
+    const centerX = this.x;
+    const centerY = this.y + this.displayHeight * 0.5;
+
+    // 3단계 타원을 겹쳐서 부드러운 경계 효과 (성능 최적화)
+    // 외부 - 가장 투명하고 큰 타원
+    this.shadow.fillStyle(0x000000, 0.08);
     this.shadow.fillEllipse(
-      this.x,
-      this.y + this.displayHeight * 0.5, // 캐릭터 발 위치 근처
+      centerX,
+      centerY,
+      shadowWidth * shadowScale * 1.2,
+      shadowHeight * shadowScale * 1.2,
+    );
+
+    // 중간
+    this.shadow.fillStyle(0x000000, 0.15);
+    this.shadow.fillEllipse(
+      centerX,
+      centerY,
       shadowWidth * shadowScale,
       shadowHeight * shadowScale,
+    );
+
+    // 내부 - 가장 진하고 작은 타원
+    this.shadow.fillStyle(0x000000, 0.2);
+    this.shadow.fillEllipse(
+      centerX,
+      centerY,
+      shadowWidth * shadowScale * 0.7,
+      shadowHeight * shadowScale * 0.7,
     );
   }
 
