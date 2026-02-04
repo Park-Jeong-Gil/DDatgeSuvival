@@ -47,10 +47,11 @@ export async function POST(request: NextRequest) {
 
         updated = true;
       } else {
-        // Even if score is not higher, always update costume
+        // Even if score is not higher, always update nickname, skin and costume
         await supabase
           .from("scores")
           .update({
+            nickname,
             skin_id: skinId,
             costume: costume ?? null,
             updated_at: new Date().toISOString(),
