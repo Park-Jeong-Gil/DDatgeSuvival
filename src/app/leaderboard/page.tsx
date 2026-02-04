@@ -52,6 +52,9 @@ export default function LeaderboardPage() {
   }, [sort]);
 
   const fetchScores = async (currentOffset: number, isInitial = false) => {
+    // 초기 로딩이 아닌데 이미 로딩 중이면 중복 호출 방지
+    if (!isInitial && (loadingMore || loading)) return;
+    
     if (isInitial) {
       setLoading(true);
     } else {
@@ -68,7 +71,12 @@ export default function LeaderboardPage() {
         setScores(data.scores);
         setUserRank(data.userRank?.rank ?? null);
       } else {
-        setScores((prev) => [...prev, ...data.scores]);
+        // 중복 방지: 기존에 없는 데이터만 추가
+        setScores((prev) => {
+          const existingIds = new Set(prev.map(s => s.id));
+          const newScores = data.scores.filter(s => !existingIds.has(s.id));
+          return [...prev, ...newScores];
+        });
       }
 
       setHasMore(data.scores.length === 10);
