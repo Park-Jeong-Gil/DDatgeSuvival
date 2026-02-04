@@ -451,7 +451,7 @@ export class GameScene extends Phaser.Scene {
         this.playerCostumeLabelText.setColor(color);
         this.playerCostumeLabelText.setText(costumeData.name);
         // 코스튬 라벨 위치 (닉네임 라벨 위에)
-        const costumeLabelOffset = labelOffset + (isMobile ? 18 : 16);
+        const costumeLabelOffset = labelOffset + (isMobile ? 24 : 16);
         this.playerCostumeLabelText.setPosition(px, py - costumeLabelOffset);
         this.playerCostumeLabelText.setVisible(true);
       } else {
