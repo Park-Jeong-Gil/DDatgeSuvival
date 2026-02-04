@@ -20,7 +20,11 @@ export class NPCManager {
   // Single shared Graphics for all NPC chase/stun bars (saves 1 Graphics per NPC)
   private barGraphics: Phaser.GameObjects.Graphics;
 
-  constructor(scene: Phaser.Scene, mapElements?: MapElements, isMobile?: boolean) {
+  constructor(
+    scene: Phaser.Scene,
+    mapElements?: MapElements,
+    isMobile?: boolean,
+  ) {
     this.scene = scene;
     this.isMobile = isMobile ?? false;
     this.npcGroup = scene.physics.add.group({
@@ -85,7 +89,7 @@ export class NPCManager {
 
   initialSpawn(playerLevel: number, playerX: number, playerY: number) {
     const range = this.getSpawnableRange(playerLevel);
-    
+
     // 먼저 화면 밖에 일반 NPC 생성
     for (const level of range) {
       const target = this.getTargetCount(level, playerLevel);
@@ -95,7 +99,7 @@ export class NPCManager {
     }
 
     // 화면 안에 먹이(플레이어보다 낮은 레벨) 3-5마리 추가 생성
-    const preyLevels = range.filter(level => level < playerLevel);
+    const preyLevels = range.filter((level) => level < playerLevel);
     if (preyLevels.length > 0) {
       const numPreyOnScreen = 3 + Math.floor(Math.random() * 3); // 3-5마리
       for (let i = 0; i < numPreyOnScreen; i++) {
