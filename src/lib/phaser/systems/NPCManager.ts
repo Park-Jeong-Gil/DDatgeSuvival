@@ -132,6 +132,17 @@ export class NPCManager {
       if (!npc.active) return false;
       // Boss always stays
       if (npc.level === 99) return true;
+
+      // 플레이어 레벨 19 이상일 때는 호랑이(Lv 18)만 유지
+      if (playerLevel >= 19) {
+        if (npc.level !== 18) {
+          this.npcGroup.remove(npc, true, true);
+          npc.destroy();
+          return false;
+        }
+        return true;
+      }
+
       if (npc.level < minLevel || npc.level > maxLevel) {
         // Group에서도 완전히 제거 (유령 NPC 방지)
         this.npcGroup.remove(npc, true, true);
@@ -141,11 +152,18 @@ export class NPCManager {
       return true;
     });
 
-    // Spawn boss if player is level 18
+    // Spawn boss - 레벨 18부터 시작, 레벨 22부터는 레벨당 1마리씩 추가
     if (playerLevel >= 18) {
-      const hasBoss = this.npcs.some((n) => n.level === 99);
-      if (!hasBoss) {
-        this.spawnNPC(99, playerX, playerY);
+      const targetBossCount = playerLevel >= 22 ? playerLevel - 21 : 1;
+      const currentBossCount = this.npcs.filter(
+        (n) => n.level === 99 && n.active,
+      ).length;
+
+      if (currentBossCount < targetBossCount) {
+        const toSpawn = targetBossCount - currentBossCount;
+        for (let i = 0; i < toSpawn; i++) {
+          this.spawnNPC(99, playerX, playerY);
+        }
       }
     }
   }
@@ -255,6 +273,11 @@ export class NPCManager {
   }
 
   private getSpawnableRange(playerLevel: number): number[] {
+    // 플레이어 레벨 19 이상일 때는 호랑이(Lv 18)만 스폰
+    if (playerLevel >= 19) {
+      return [18]; // 최종 NPC인 호랑이만
+    }
+
     const minLevel = Math.max(0, playerLevel - 3);
     const maxLevel = Math.min(18, playerLevel + 3);
     const levels: number[] = [];
@@ -265,6 +288,11 @@ export class NPCManager {
   }
 
   private getTargetCount(npcLevel: number, playerLevel: number): number {
+    // 플레이어 레벨 19 이상일 때 호랑이(Lv 18) 개체수 고정
+    if (playerLevel >= 19 && npcLevel === 18) {
+      return 8; // 호랑이 8마리 고정
+    }
+
     const diff = npcLevel - playerLevel;
     const absDiff = Math.abs(diff);
     let count = 0;
