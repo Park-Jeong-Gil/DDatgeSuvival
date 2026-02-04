@@ -9,6 +9,23 @@ export default function HomePage() {
   const [howToPlayOpen, setHowToPlayOpen] = useState(false);
 
   useEffect(() => {
+    console.log(
+      `
+%c _____         _         _____                 _
+%c|     | ___  _| | ___   |   __| ___  ___  ___ | |_  ___  ___
+%c|   --|| . || . || -_|  |  |  ||  _|| .'|| . ||   || -_||  _|
+%c|_____||___||___||___|  |_____||_|  |__,||  _||_|_||___||_|
+%c                                         |_|
+📞 010-4468-7412
+📧 wjdrlf5986@naver.com
+`,
+      "color:#22577A",
+      "color:#38A3A5",
+      "color:#57CC99",
+      "color:#80ED99",
+      "color:#99FFED",
+    );
+
     const stored = localStorage.getItem("mole_user_id");
     if (stored) {
       const parsed = JSON.parse(stored);
@@ -89,6 +106,14 @@ export default function HomePage() {
         isOpen={howToPlayOpen}
         onClose={() => setHowToPlayOpen(false)}
       />
+      {/* 푸터 */}
+      <p className="mt-8 text-sm text-gray-100">
+        © 2026 by{" "}
+        <a href="https://girgir.dev" target="_blank" rel="noopener noreferrer">
+          girgir
+        </a>
+        . All rights reserved.
+      </p>
     </main>
   );
 }
