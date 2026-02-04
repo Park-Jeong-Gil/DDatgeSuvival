@@ -183,30 +183,6 @@ export class PreloadScene extends Phaser.Scene {
         30,
       );
     });
-
-    // 로딩 완료 이벤트
-    this.load.on("complete", () => {
-      const elapsed = Date.now() - this.loadStartTime;
-      const remaining = Math.max(0, 1000 - elapsed);
-
-      console.log(`Loading took ${elapsed}ms, waiting ${remaining}ms more`);
-
-      this.time.delayedCall(remaining, () => {
-        console.log("Starting fade out");
-        // 컨테이너 페이드 아웃 애니메이션
-        this.tweens.add({
-          targets: this.loadingContainer,
-          alpha: { from: 1, to: 0 },
-          duration: 1000,
-          ease: "Linear",
-          onUpdate: (tween) => {},
-          onComplete: () => {
-            this.loadingContainer.destroy();
-            this.scene.start("GameScene");
-          },
-        });
-      });
-    });
   }
 
   create() {
@@ -296,7 +272,23 @@ export class PreloadScene extends Phaser.Scene {
 
     EventBus.emit("current-scene-ready", this);
 
-    // GameScene 시작은 로딩 화면 페이드 아웃 후에 실행됨
+    // 로딩 완료 후 최소 1초 대기 후 페이드 아웃
+    const elapsed = Date.now() - this.loadStartTime;
+    const remaining = Math.max(0, 1000 - elapsed);
+
+    this.time.delayedCall(remaining, () => {
+      // 컨테이너 페이드 아웃 애니메이션
+      this.tweens.add({
+        targets: this.loadingContainer,
+        alpha: { from: 1, to: 0 },
+        duration: 1000,
+        ease: "Linear",
+        onComplete: () => {
+          this.loadingContainer.destroy();
+          this.scene.start("GameScene");
+        },
+      });
+    });
   }
 
   private createPlaceholderTextures() {

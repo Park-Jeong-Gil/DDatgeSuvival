@@ -1045,18 +1045,49 @@ export class GameScene extends Phaser.Scene {
   };
 
   private playSound(soundKey: string) {
+    // 사운드가 존재하고 로드되었는지 확인
+    const soundExists = this.cache.audio.exists(soundKey);
+    if (!soundExists) {
+      console.warn(`Sound '${soundKey}' not found in cache`);
+      return;
+    }
+
     switch (soundKey) {
       case "bite":
-        this.biteSound?.play();
+        if (this.biteSound) {
+          try {
+            this.biteSound.play();
+          } catch (e) {
+            console.error("Error playing bite sound:", e);
+          }
+        }
         break;
       case "death":
-        this.deathSound?.play();
+        if (this.deathSound) {
+          try {
+            this.deathSound.play();
+          } catch (e) {
+            console.error("Error playing death sound:", e);
+          }
+        }
         break;
       case "levelup":
-        this.levelupSound?.play();
+        if (this.levelupSound) {
+          try {
+            this.levelupSound.play();
+          } catch (e) {
+            console.error("Error playing levelup sound:", e);
+          }
+        }
         break;
       case "pickup":
-        this.pickupSound?.play();
+        if (this.pickupSound) {
+          try {
+            this.pickupSound.play();
+          } catch (e) {
+            console.error("Error playing pickup sound:", e);
+          }
+        }
         break;
     }
   }
