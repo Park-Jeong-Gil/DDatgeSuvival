@@ -3,6 +3,7 @@ import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://ddatge-survival.vercel.app"),
   title: "DDatge Survival",
   description: "survival growth game - eat or be eaten!",
   icons: {
