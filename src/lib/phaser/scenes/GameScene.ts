@@ -793,6 +793,75 @@ export class GameScene extends Phaser.Scene {
 
     // Update NPC spawns
     this.npcManager.onLevelUp(data.level, this.player.x, this.player.y);
+
+    // 레벨이 6의 배수일 때 가까운 장애물 제거
+    if (data.level % 6 === 0) {
+      this.removeCloseObstacles(data.level);
+    }
+  }
+
+  // 서로 가까운 장애물들을 찾아서 제거
+  private removeCloseObstacles(playerLevel: number) {
+    if (!this.mapElements || !this.mapElements.obstacles) return;
+
+    const obstacles =
+      this.mapElements.obstacles.getChildren() as Phaser.Physics.Arcade.Sprite[];
+    if (obstacles.length === 0) return;
+
+    // 플레이어 크기 계산 (레벨에 따라 증가)
+    const playerSize = 32 + playerLevel * 4;
+    // 플레이어가 통과하기 위한 최소 간격 (플레이어 크기의 1.5배)
+    const minDistance = playerSize * 1.5;
+
+    const toRemove: Phaser.Physics.Arcade.Sprite[] = [];
+
+    // 모든 장애물 쌍을 확인
+    for (let i = 0; i < obstacles.length; i++) {
+      if (!obstacles[i].active) continue;
+
+      for (let j = i + 1; j < obstacles.length; j++) {
+        if (!obstacles[j].active) continue;
+
+        const dist = Phaser.Math.Distance.Between(
+          obstacles[i].x,
+          obstacles[i].y,
+          obstacles[j].x,
+          obstacles[j].y,
+        );
+
+        // 너무 가까운 경우 하나를 제거 대상으로 표시
+        if (dist < minDistance) {
+          // 둘 중 하나만 제거 (랜덤 선택)
+          const victim = Math.random() < 0.5 ? obstacles[i] : obstacles[j];
+          if (!toRemove.includes(victim)) {
+            toRemove.push(victim);
+            // 한 레벨업 당 최대 5개만 제거
+            if (toRemove.length >= 5) break;
+          }
+        }
+      }
+      if (toRemove.length >= 5) break;
+    }
+
+    // 장애물 제거 (부드러운 페이드 아웃 효과)
+    toRemove.forEach((obstacle) => {
+      this.tweens.add({
+        targets: obstacle,
+        alpha: 0,
+        scale: 0.5,
+        duration: 500,
+        ease: "Power2",
+        onComplete: () => {
+          this.mapElements.obstacles.remove(obstacle, true, true);
+        },
+      });
+    });
+
+    if (toRemove.length > 0) {
+      console.log(
+        `[Level ${playerLevel}] Removed ${toRemove.length} close obstacles`,
+      );
+    }
   }
 
   private updateCameraZoom() {
