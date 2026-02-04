@@ -101,6 +101,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     });
     this.nameLabel.setOrigin(0.5, 1);
     this.nameLabel.setDepth(15);
+    this.nameLabel.setFontFamily("Mulmaru");
   }
 
   public getNameLabelText(): string {

@@ -363,23 +363,29 @@ export class NPCManager {
       const barState = npc.getBarState();
       if (!barState) continue;
 
-      const barWidth = Math.max(32, npc.displayWidth * 1.6);
+      // const barWidth = Math.max(32, npc.displayWidth * 1.6);
+      const barWidth = Math.max(32, npc.displayWidth);
       const barHeight = 4;
       const barX = npc.x - barWidth / 2;
       const barY = npc.y + npc.displayHeight / 2 + 6;
 
       // Background
-      this.barGraphics.fillStyle(0x374151, 1);
-      this.barGraphics.fillRect(barX, barY, barWidth, barHeight);
+      this.barGraphics.fillStyle(0x666666, 1);
+      this.barGraphics.fillRoundedRect(barX, barY, barWidth, barHeight, 2);
 
-      // Fill (use fillRect instead of fillRoundedRect to reduce vertex count)
+      // Border
+      this.barGraphics.lineStyle(1, 0x333333, 1);
+      this.barGraphics.strokeRoundedRect(barX, barY, barWidth, barHeight, 2);
+
+      // Fill
       const fillColor = barState.type === "stun" ? 0x22c55e : 0xef4444;
       this.barGraphics.fillStyle(fillColor, 1);
-      this.barGraphics.fillRect(
+      this.barGraphics.fillRoundedRect(
         barX,
         barY,
         Math.max(2, barWidth * barState.ratio),
         barHeight,
+        2,
       );
     }
   }

@@ -8,6 +8,7 @@ export class PreloadScene extends Phaser.Scene {
   private loadingBg!: Phaser.GameObjects.Rectangle;
   private loadingContainer!: Phaser.GameObjects.Container;
   private loadStartTime: number = 0;
+  private fontLoaded: boolean = false;
 
   constructor() {
     super({ key: "PreloadScene" });
@@ -16,6 +17,9 @@ export class PreloadScene extends Phaser.Scene {
   preload() {
     this.loadStartTime = Date.now();
     this.createLoadingScreen();
+
+    // Mulmaru 폰트 로딩 확인 및 대기
+    this.waitForFont();
 
     // Player sprites
     this.load.image("player_idle", "assets/sprites/player/idle.png");
@@ -272,6 +276,52 @@ export class PreloadScene extends Phaser.Scene {
 
     EventBus.emit("current-scene-ready", this);
 
+    // 폰트 로딩 완료 대기
+    this.waitForFontAndProceed();
+  }
+
+  private waitForFont() {
+    // 브라우저의 Font Loading API 사용
+    if (typeof document !== "undefined" && document.fonts) {
+      document.fonts
+        .load("12px Mulmaru")
+        .then(() => {
+          console.log("[PreloadScene] Mulmaru font loaded");
+          this.fontLoaded = true;
+        })
+        .catch((error) => {
+          console.warn("[PreloadScene] Font loading error:", error);
+          this.fontLoaded = true; // 오류 발생 시에도 진행
+        });
+    } else {
+      // Font Loading API를 지원하지 않는 브라우저
+      this.fontLoaded = true;
+    }
+  }
+
+  private waitForFontAndProceed() {
+    const checkFont = () => {
+      if (this.fontLoaded) {
+        this.proceedToGame();
+      } else {
+        // 100ms마다 폰트 로딩 확인
+        this.time.delayedCall(100, checkFont);
+      }
+    };
+
+    // 최대 3초 대기 후 강제로 진행
+    this.time.delayedCall(3000, () => {
+      if (!this.fontLoaded) {
+        console.warn("[PreloadScene] Font loading timeout, proceeding anyway");
+        this.fontLoaded = true;
+        this.proceedToGame();
+      }
+    });
+
+    checkFont();
+  }
+
+  private proceedToGame() {
     // 로딩 완료 후 최소 1초 대기 후 페이드 아웃
     const elapsed = Date.now() - this.loadStartTime;
     const remaining = Math.max(0, 1000 - elapsed);

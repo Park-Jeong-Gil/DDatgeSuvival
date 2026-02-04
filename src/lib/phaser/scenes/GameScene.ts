@@ -22,6 +22,7 @@ import { LevelSystem } from "../systems/LevelSystem";
 import { NPCManager } from "../systems/NPCManager";
 import { ItemManager } from "../systems/ItemManager";
 import { generateMap, type MapElements } from "../utils/mapGenerator";
+import { getCostumeById } from "../data/skinData";
 
 export class GameScene extends Phaser.Scene {
   player!: Player;
@@ -44,6 +45,7 @@ export class GameScene extends Phaser.Scene {
   private invincibleUntil: number = 0;
   private warningGraphics!: Phaser.GameObjects.Graphics;
   private playerLabelText?: Phaser.GameObjects.Text;
+  private playerCostumeLabelText?: Phaser.GameObjects.Text;
   private playerHpGraphics?: Phaser.GameObjects.Graphics;
   private playerExpGraphics?: Phaser.GameObjects.Graphics;
   private inputReady: boolean = false;
@@ -373,6 +375,26 @@ export class GameScene extends Phaser.Scene {
     });
     this.playerLabelText.setOrigin(0.5, 1);
     this.playerLabelText.setDepth(20);
+    this.playerLabelText.setShadow(0, 0, "#000000", 0, true, true);
+
+    // 코스튬 라벨 (더 작은 글씨)
+    const costumeLabelFontSize = isMobile ? "16px" : "9px";
+    this.playerCostumeLabelText = this.add.text(
+      this.player.x,
+      this.player.y,
+      "",
+      {
+        fontSize: costumeLabelFontSize,
+        fontFamily: "Mulmaru",
+        color: "#fbbf24",
+        stroke: "#000000",
+        strokeThickness: 3,
+      },
+    );
+    this.playerCostumeLabelText.setOrigin(0.5, 1);
+    this.playerCostumeLabelText.setDepth(20);
+    this.playerCostumeLabelText.setFontFamily("Mulmaru");
+    // this.playerCostumeLabelText.setShadow(0, 0, "#000000", 0, true, true);
 
     this.playerHpGraphics = this.add.graphics();
     this.playerHpGraphics.setDepth(20);
@@ -385,7 +407,8 @@ export class GameScene extends Phaser.Scene {
     if (
       !this.playerLabelText ||
       !this.playerHpGraphics ||
-      !this.playerExpGraphics
+      !this.playerExpGraphics ||
+      !this.playerCostumeLabelText
     )
       return;
 
@@ -393,11 +416,42 @@ export class GameScene extends Phaser.Scene {
     const nickname = store.nickname || "플레이어";
     const label = `Lv${store.level} ${nickname}`;
 
+    // 닉네임 라벨 위치 (기본)
     const labelOffset = Math.round(this.player.displayHeight / 2 + 8);
     this.playerLabelText.setText(label);
     this.playerLabelText.setPosition(px, py - labelOffset);
 
-    const barWidth = Math.max(32, Math.round(this.player.displayWidth * 1.6));
+    // 코스튬 라벨 업데이트 (닉네임 위에 표시)
+    const currentCostume = store.currentCostume;
+    const isMobile = this.scale.width <= MOBILE_BREAKPOINT;
+    if (currentCostume) {
+      const costumeData = getCostumeById(currentCostume);
+      if (costumeData) {
+        // 희귀도별 색상 설정
+        const rarityColors: Record<string, string> = {
+          common: "#b5bcc9", // gray-400
+          uncommon: "#4ade80", // green-400
+          rare: "#60a5fa", // blue-400
+          epic: "#c084fc", // purple-400
+          legendary: "#fbbf24", // amber-400
+        };
+        const color = rarityColors[costumeData.rarity] || "#fbbf24";
+        this.playerCostumeLabelText.setColor(color);
+        this.playerCostumeLabelText.setText(costumeData.name);
+        // 코스튬 라벨 위치 (닉네임 라벨 위에)
+        const costumeLabelOffset = labelOffset + (isMobile ? 18 : 16);
+        this.playerCostumeLabelText.setPosition(px, py - costumeLabelOffset);
+        this.playerCostumeLabelText.setVisible(true);
+      } else {
+        this.playerCostumeLabelText.setVisible(false);
+      }
+    } else {
+      this.playerCostumeLabelText.setVisible(false);
+    }
+
+    const barWidth = Math.max(32, Math.round(this.player.displayWidth));
+    // const barWidth = Math.max(32, Math.round(this.player.displayWidth * 1.6));
+    // const barWidth = 50;
     const barHeight = 6;
     const barX = px - barWidth / 2;
     const barY = py + Math.round(this.player.displayHeight / 2 + 6);
