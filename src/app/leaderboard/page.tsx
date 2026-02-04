@@ -37,29 +37,70 @@ export default function LeaderboardPage() {
   const [sort, setSort] = useState<SortType>("score");
   const [userRank, setUserRank] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string>("");
+  const [offset, setOffset] = useState(0);
 
   useEffect(() => {
     const userId = getOrCreateUserId();
     setCurrentUserId(userId);
-    fetchScores();
+    setScores([]);
+    setOffset(0);
+    setHasMore(true);
+    fetchScores(0, true);
   }, [sort]);
 
-  const fetchScores = async () => {
-    setLoading(true);
+  const fetchScores = async (currentOffset: number, isInitial = false) => {
+    if (isInitial) {
+      setLoading(true);
+    } else {
+      setLoadingMore(true);
+    }
     try {
       const userId = getOrCreateUserId();
       const res = await fetch(
-        `/api/scores?sort=${sort}&limit=100&userId=${userId}`,
+        `/api/scores?sort=${sort}&limit=10&offset=${currentOffset}&userId=${userId}`,
       );
       const data: LeaderboardResponse = await res.json();
-      setScores(data.scores);
-      setUserRank(data.userRank?.rank ?? null);
+      
+      if (isInitial) {
+        setScores(data.scores);
+        setUserRank(data.userRank?.rank ?? null);
+      } else {
+        setScores(prev => [...prev, ...data.scores]);
+      }
+      
+      setHasMore(data.scores.length === 10);
+      setOffset(currentOffset + data.scores.length);
     } catch {
       // API not available yet
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
     }
-    setLoading(false);
   };
+
+  useEffect(() => {
+    const handleScroll = (e: Event) => {
+      const target = e.target as HTMLElement;
+      if (!target) return;
+      
+      const scrollTop = target.scrollTop;
+      const scrollHeight = target.scrollHeight;
+      const clientHeight = target.clientHeight;
+      
+      if (scrollHeight - scrollTop - clientHeight < 100 && hasMore && !loadingMore) {
+        fetchScores(offset);
+      }
+    };
+
+    const mainElement = document.querySelector('.leaderboardPage');
+    if (mainElement) {
+      mainElement.addEventListener('scroll', handleScroll);
+      return () => mainElement.removeEventListener('scroll', handleScroll);
+    }
+  }, [offset, hasMore, loadingMore]);
 
   return (
     <main
@@ -222,6 +263,16 @@ export default function LeaderboardPage() {
                 </div>
               );
             })}
+            {loadingMore && (
+              <div className="text-center py-4">
+                <span className="text-white">Loading more...</span>
+              </div>
+            )}
+            {!hasMore && scores.length > 0 && (
+              <div className="text-center py-4">
+                <span className="text-gray-400">No more results</span>
+              </div>
+            )}
           </div>
         )}
       </div>

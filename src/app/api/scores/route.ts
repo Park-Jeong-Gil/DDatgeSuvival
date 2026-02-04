@@ -103,7 +103,8 @@ export async function GET(request: NextRequest) {
     const supabase = createServerClient();
     const { searchParams } = new URL(request.url);
     const sort = searchParams.get("sort") ?? "score";
-    const limit = parseInt(searchParams.get("limit") ?? "100", 10);
+    const limit = parseInt(searchParams.get("limit") ?? "10", 10);
+    const offset = parseInt(searchParams.get("offset") ?? "0", 10);
     const userId = searchParams.get("userId");
 
     const sortColumn =
@@ -117,7 +118,7 @@ export async function GET(request: NextRequest) {
       .from("scores")
       .select("*", { count: "exact" })
       .order(sortColumn, { ascending: false })
-      .limit(limit);
+      .range(offset, offset + limit - 1);
 
     let userRank = undefined;
     if (userId) {
