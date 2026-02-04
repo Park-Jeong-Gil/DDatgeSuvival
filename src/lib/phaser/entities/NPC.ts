@@ -698,12 +698,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
 
     // 중간
     this.shadow.fillStyle(0x000000, 0.15);
-    this.shadow.fillEllipse(
-      centerX,
-      centerY,
-      shadowWidth,
-      shadowHeight,
-    );
+    this.shadow.fillEllipse(centerX, centerY, shadowWidth, shadowHeight);
 
     // 내부 - 가장 진하고 작은 타원
     this.shadow.fillStyle(0x000000, 0.2);
