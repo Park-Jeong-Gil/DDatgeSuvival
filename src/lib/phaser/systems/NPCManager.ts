@@ -85,10 +85,22 @@ export class NPCManager {
 
   initialSpawn(playerLevel: number, playerX: number, playerY: number) {
     const range = this.getSpawnableRange(playerLevel);
+    
+    // 먼저 화면 밖에 일반 NPC 생성
     for (const level of range) {
       const target = this.getTargetCount(level, playerLevel);
       for (let i = 0; i < target; i++) {
         this.spawnNPC(level, playerX, playerY);
+      }
+    }
+
+    // 화면 안에 먹이(플레이어보다 낮은 레벨) 3-5마리 추가 생성
+    const preyLevels = range.filter(level => level < playerLevel);
+    if (preyLevels.length > 0) {
+      const numPreyOnScreen = 3 + Math.floor(Math.random() * 3); // 3-5마리
+      for (let i = 0; i < numPreyOnScreen; i++) {
+        const level = preyLevels[Math.floor(Math.random() * preyLevels.length)];
+        this.spawnNPCOnScreen(level, playerX, playerY);
       }
     }
   }
@@ -179,6 +191,51 @@ export class NPCManager {
         margin,
         MAP_HEIGHT - margin,
       ),
+    };
+  }
+
+  // 화면 안에 NPC 생성 (먹이 전용)
+  private spawnNPCOnScreen(level: number, playerX: number, playerY: number) {
+    const data = getNPCDataByLevel(level);
+    if (!data) return;
+
+    const pos = this.getOnScreenPosition(playerX, playerY);
+    const npc = new NPC(this.scene, pos.x, pos.y, data);
+    this.npcGroup.add(npc);
+    this.npcs.push(npc);
+  }
+
+  // 화면 안의 랜덤 위치 반환 (플레이어와 최소 거리 유지)
+  private getOnScreenPosition(
+    playerX: number,
+    playerY: number,
+  ): { x: number; y: number } {
+    const minDistFromPlayer = 150; // 플레이어로부터 최소 거리
+    const halfW = GAME_WIDTH / 2 - 50; // 화면 가장자리 여유 공간
+    const halfH = GAME_HEIGHT / 2 - 50;
+
+    for (let attempt = 0; attempt < 20; attempt++) {
+      const offsetX = (Math.random() - 0.5) * halfW * 2;
+      const offsetY = (Math.random() - 0.5) * halfH * 2;
+      const x = playerX + offsetX;
+      const y = playerY + offsetY;
+
+      // 맵 경계 체크
+      if (x < 100 || x > MAP_WIDTH - 100 || y < 100 || y > MAP_HEIGHT - 100) {
+        continue;
+      }
+
+      // 플레이어와 최소 거리 체크
+      const distSq = offsetX * offsetX + offsetY * offsetY;
+      if (distSq > minDistFromPlayer * minDistFromPlayer) {
+        return { x, y };
+      }
+    }
+
+    // Fallback: 플레이어 오른쪽 위
+    return {
+      x: Math.min(playerX + 200, MAP_WIDTH - 100),
+      y: Math.max(playerY - 200, 100),
     };
   }
 
