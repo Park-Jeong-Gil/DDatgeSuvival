@@ -76,7 +76,7 @@ export const npcDatabase: NPCData[] = [
     name: "Snake",
     nameKo: "뱀",
     baseSpeed: 153,
-    baseSize: 75, // 플레이어 Lv6 크기
+    baseSize: 82, // 플레이어 Lv6 크기
     scoreValue: 40,
     hungerRestore: 45,
     spriteKey: "npc_7",
@@ -106,7 +106,7 @@ export const npcDatabase: NPCData[] = [
     name: "Weasel",
     nameKo: "족제비",
     baseSpeed: 173,
-    baseSize: 68, // 플레이어 Lv9 크기
+    baseSize: 58, // 플레이어 Lv9 크기
     scoreValue: 55,
     hungerRestore: 60,
     spriteKey: "npc_10",
@@ -116,7 +116,7 @@ export const npcDatabase: NPCData[] = [
     name: "Owl",
     nameKo: "부엉이",
     baseSpeed: 180,
-    baseSize: 72, // 플레이어 Lv10 크기
+    baseSize: 78, // 플레이어 Lv10 크기
     scoreValue: 60,
     hungerRestore: 65,
     spriteKey: "npc_11",
@@ -126,7 +126,7 @@ export const npcDatabase: NPCData[] = [
     name: "Fox",
     nameKo: "여우",
     baseSpeed: 187,
-    baseSize: 76, // 플레이어 Lv11 크기
+    baseSize: 60, // 플레이어 Lv11 크기
     scoreValue: 65,
     hungerRestore: 70,
     spriteKey: "npc_12",
@@ -136,7 +136,7 @@ export const npcDatabase: NPCData[] = [
     name: "King Komodo",
     nameKo: "킹 코모도",
     baseSpeed: 193,
-    baseSize: 80, // 플레이어 Lv12 크기
+    baseSize: 76, // 플레이어 Lv12 크기
     scoreValue: 70,
     hungerRestore: 75,
     spriteKey: "npc_13",
@@ -146,7 +146,7 @@ export const npcDatabase: NPCData[] = [
     name: "Eagle",
     nameKo: "독수리",
     baseSpeed: 200,
-    baseSize: 84, // 플레이어 Lv13 크기
+    baseSize: 94, // 플레이어 Lv13 크기
     scoreValue: 75,
     hungerRestore: 80,
     spriteKey: "npc_14",
@@ -156,7 +156,7 @@ export const npcDatabase: NPCData[] = [
     name: "Boar",
     nameKo: "멧돼지",
     baseSpeed: 207,
-    baseSize: 88, // 플레이어 Lv14 크기
+    baseSize: 90, // 플레이어 Lv14 크기
     scoreValue: 80,
     hungerRestore: 85,
     spriteKey: "npc_15",
@@ -166,7 +166,7 @@ export const npcDatabase: NPCData[] = [
     name: "Wolf",
     nameKo: "늑대",
     baseSpeed: 213,
-    baseSize: 92, // 플레이어 Lv15 크기
+    baseSize: 95, // 플레이어 Lv15 크기
     scoreValue: 85,
     hungerRestore: 90,
     spriteKey: "npc_16",

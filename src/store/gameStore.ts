@@ -77,8 +77,15 @@ export const useGameStore = create<GameStore>((set) => ({
 
   setScore: (score) => set({ score }),
   addScore: (amount) => set((state) => ({ score: state.score + amount })),
-  setLevel: (level) => set({ level }),
-  setHunger: (hunger) => set({ hunger: Math.max(0, Math.min(100, hunger)) }),
+  setLevel: (level) =>
+    set((state) => {
+      const maxHunger = 100 + (level - 1) * 15;
+      return { level, maxHunger };
+    }),
+  setHunger: (hunger) =>
+    set((state) => ({
+      hunger: Math.max(0, Math.min(state.maxHunger, hunger)),
+    })),
   setIsPlaying: (isPlaying) => set({ isPlaying }),
   setGameOver: (deathReason, predatorName) =>
     set((state) => {

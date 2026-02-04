@@ -67,9 +67,27 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     const body = this.body as Phaser.Physics.Arcade.Body;
     body.setBounce(0.2);
     body.setCollideWorldBounds(true); // 물리 바디에서도 월드 경계 충돌 활성화
-    // 물리 바디를 표시 크기와 동일하게 설정
-    body.setSize(displayWidth, displayHeight);
-    body.setOffset(0, 0);
+
+    // 공룡(level 99)만 물리 바디를 축소 (실제 보이는 공룡 영역만 충돌 감지)
+    if (data.level === 99) {
+      const bodyWidth = textureFrame.width * 0.4; // 원본 크기의 40%
+      const bodyHeight = textureFrame.height * 0.5; // 원본 크기의 50%
+      body.setSize(bodyWidth, bodyHeight);
+
+      // 중앙 정렬을 위한 오프셋 계산
+      const offsetX = (textureFrame.width - bodyWidth) / 2;
+      const offsetY = (textureFrame.height - bodyHeight) / 2;
+      body.setOffset(offsetX, offsetY);
+    } else {
+      // 일반 NPC는 원본 텍스처 크기의 80%
+      const bodyWidth = textureFrame.width * 0.8;
+      const bodyHeight = textureFrame.height * 0.8;
+      body.setSize(bodyWidth, bodyHeight);
+      // 중앙 정렬
+      const offsetX = (textureFrame.width - bodyWidth) / 2;
+      const offsetY = (textureFrame.height - bodyHeight) / 2;
+      body.setOffset(offsetX, offsetY);
+    }
 
     // Name label - 모바일에서는 폰트 사이즈 2배
     const isMobile = typeof window !== "undefined" && window.innerWidth <= 960;
@@ -207,7 +225,22 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
         body.enable = false;
         return;
       }
-      body.setSize(this.displayWidth, this.displayHeight, true);
+      // 공룡(level 99)은 축소된 크기 유지, 나머지는 원본 크기의 80%
+      if (this.level === 99) {
+        const bodyWidth = this.width * 0.4;
+        const bodyHeight = this.height * 0.5;
+        body.setSize(bodyWidth, bodyHeight);
+        const offsetX = (this.width - bodyWidth) / 2;
+        const offsetY = (this.height - bodyHeight) / 2;
+        body.setOffset(offsetX, offsetY);
+      } else {
+        const bodyWidth = this.width * 0.8;
+        const bodyHeight = this.height * 0.8;
+        body.setSize(bodyWidth, bodyHeight);
+        const offsetX = (this.width - bodyWidth) / 2;
+        const offsetY = (this.height - bodyHeight) / 2;
+        body.setOffset(offsetX, offsetY);
+      }
     }
   }
 
@@ -238,7 +271,22 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     if (!body.enable) {
       body.enable = true;
       body.reset(this.x, this.y);
-      body.setSize(this.displayWidth, this.displayHeight, true);
+      // 공룡(level 99)은 축소된 크기 유지, 나머지는 원본 크기의 80%
+      if (this.level === 99) {
+        const bodyWidth = this.width * 0.4;
+        const bodyHeight = this.height * 0.5;
+        body.setSize(bodyWidth, bodyHeight);
+        const offsetX = (this.width - bodyWidth) / 2;
+        const offsetY = (this.height - bodyHeight) / 2;
+        body.setOffset(offsetX, offsetY);
+      } else {
+        const bodyWidth = this.width * 0.8;
+        const bodyHeight = this.height * 0.8;
+        body.setSize(bodyWidth, bodyHeight);
+        const offsetX = (this.width - bodyWidth) / 2;
+        const offsetY = (this.height - bodyHeight) / 2;
+        body.setOffset(offsetX, offsetY);
+      }
     }
   }
 
@@ -331,7 +379,10 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     const baseDetection = 180 + this.level * 5; // 감지 거리 기본값 원래 200 * 10
 
     let detectionRange = baseDetection;
-    if (levelDiff < 0) {
+    // 공룡(level 99)은 보스이므로 항상 최대 감지 거리 유지
+    if (this.level === 99) {
+      detectionRange = baseDetection * 1.5; // 보스는 1.5배 넓은 감지 범위
+    } else if (levelDiff < 0) {
       const reductionFactor = Math.pow(0.85, Math.abs(levelDiff));
       detectionRange = baseDetection * reductionFactor;
     }
@@ -360,8 +411,11 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
         this.updateTexture("chase");
       }
 
-      // Chase duration limit
-      if (Date.now() - this.chaseStartTime > this.MAX_CHASE_DURATION) {
+      // Chase duration limit (공룡은 제한 없음)
+      if (
+        this.level !== 99 &&
+        Date.now() - this.chaseStartTime > this.MAX_CHASE_DURATION
+      ) {
         this._stunUntil = Date.now() + 5000;
         this.aiState = NPCState.WANDER;
         this.chaseStartTime = 0;
@@ -429,7 +483,8 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     bushData?: { x: number; y: number; r2: number }[],
   ) {
     const angle = Phaser.Math.Angle.Between(this.x, this.y, targetX, targetY);
-    let speed = playerSpeed * 1.005;
+    // let speed = playerSpeed * 1.01;
+    let speed = playerSpeed * 1;
 
     // 추격 중인 포식자가 풀숲에 있으면 속도 감소 (cached data, squared distance)
     if (bushData) {
@@ -553,6 +608,11 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     type: "chase" | "stun";
     ratio: number;
   } | null {
+    // 공룡(level 99)은 바 표시하지 않음
+    if (this.level === 99) {
+      return null;
+    }
+
     const now = Date.now();
     if (now < this._stunUntil) {
       const remaining = this._stunUntil - now;

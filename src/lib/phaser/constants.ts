@@ -7,3 +7,7 @@ export const MAP_HEIGHT = 2000;
 export const MOBILE_BREAKPOINT = 960;
 export const MOBILE_GAME_WIDTH = 420; // 280 * 1.5
 export const MOBILE_GAME_HEIGHT = 315; // 210 * 1.5
+
+// Debug: 시작 레벨 설정 (1-18, 1이 기본값)
+// 예: export const DEBUG_START_LEVEL = 10; // 레벨10부터 시작
+export const DEBUG_START_LEVEL = 1;

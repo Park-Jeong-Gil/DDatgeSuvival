@@ -26,7 +26,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setDepth(10);
 
     const body = this.body as Phaser.Physics.Arcade.Body;
-    body.setSize(Player.TEX_W, Player.TEX_H);
+    // 물리 바디를 원본 텍스처 크기의 80%로 설정
+    const bodyWidth = Player.TEX_W * 0.8;
+    const bodyHeight = Player.TEX_H * 0.8;
+    body.setSize(bodyWidth, bodyHeight);
+    // 중앙 정렬
+    const offsetX = (Player.TEX_W - bodyWidth) / 2;
+    const offsetY = (Player.TEX_H - bodyHeight) / 2;
+    body.setOffset(offsetX, offsetY);
   }
 
   setPlayerState(state: PlayerState) {
@@ -90,7 +97,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     if (this.body) {
       const body = this.body as Phaser.Physics.Arcade.Body;
-      body.setSize(Player.TEX_W, Player.TEX_H);
+      // 물리 바디를 원본 텍스처 크기의 80%로 설정
+      const bodyWidth = Player.TEX_W * 0.8;
+      const bodyHeight = Player.TEX_H * 0.8;
+      body.setSize(bodyWidth, bodyHeight);
+      // 중앙 정렬
+      const offsetX = (Player.TEX_W - bodyWidth) / 2;
+      const offsetY = (Player.TEX_H - bodyHeight) / 2;
+      body.setOffset(offsetX, offsetY);
     }
   }
 }

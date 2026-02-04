@@ -30,7 +30,9 @@ export class Item extends Phaser.Physics.Arcade.Sprite {
     if (body) {
       body.setImmovable(true);
       body.setAllowGravity(false);
-      body.setSize(32, 32);
+      // 원본 텍스처 크기 사용
+      const textureFrame = this.texture.get();
+      body.setSize(textureFrame.width, textureFrame.height);
     }
 
     this.setDepth(3);

@@ -12,6 +12,7 @@ import {
   MOBILE_BREAKPOINT,
   MOBILE_GAME_WIDTH,
   MOBILE_GAME_HEIGHT,
+  DEBUG_START_LEVEL,
 } from "../constants";
 import { useGameStore } from "@/store/gameStore";
 import { useAudioStore } from "@/store/audioStore";
@@ -79,6 +80,19 @@ export class GameScene extends Phaser.Scene {
     this.isGameOver = false;
     this.survivalTimer = 0;
 
+    // Debug: 시작 레벨 설정
+    if (DEBUG_START_LEVEL > 1) {
+      const store = useGameStore.getState();
+      store.setLevel(DEBUG_START_LEVEL);
+      // 해당 레벨에 필요한 총 점수를 설정
+      const requiredScore =
+        LevelSystem.getTotalScoreForLevel(DEBUG_START_LEVEL);
+      store.setScore(requiredScore);
+      console.log(
+        `[DEBUG] Starting at level ${DEBUG_START_LEVEL} with score ${requiredScore}`,
+      );
+    }
+
     // Background - 기본 배경 타일 (4배 작게 보이도록 스케일 조정)
     this.add
       .tileSprite(0, 0, MAP_WIDTH, MAP_HEIGHT, "base_background")
@@ -92,8 +106,29 @@ export class GameScene extends Phaser.Scene {
     // Map obstacles
     this.mapElements = generateMap(this);
 
+    // Debug: 디버그 모드에서 시작 레벨에 맞게 장애물 제거
+    if (DEBUG_START_LEVEL >= 2) {
+      // 레벨 2, 4, 6, 8... 마다 장애물이 제거되므로, 해당 횟수만큼 제거
+      const removalCount = Math.floor(DEBUG_START_LEVEL / 2);
+      console.log(
+        `[DEBUG] Removing obstacles for level ${DEBUG_START_LEVEL} (${removalCount} times)`,
+      );
+
+      // 장애물 제거는 시간차를 두고 실행 (물리 엔진 초기화 후)
+      this.time.delayedCall(100, () => {
+        for (let i = 1; i <= removalCount; i++) {
+          this.removeCloseObstacles(i * 2);
+        }
+      });
+    }
+
     // Player
     this.player = new Player(this, MAP_WIDTH / 2, MAP_HEIGHT / 2);
+
+    // Debug: 디버그 레벨에 맞게 Player 크기 업데이트
+    if (DEBUG_START_LEVEL > 1) {
+      this.player.updateStats(DEBUG_START_LEVEL);
+    }
 
     this.createPlayerOverlay();
 
@@ -148,8 +183,9 @@ export class GameScene extends Phaser.Scene {
     this.itemManager = new ItemManager(this, this.mapElements);
     this.itemManager.setPlayer(this.player);
 
-    // Initial NPC spawn
-    this.npcManager.initialSpawn(1, MAP_WIDTH / 2, MAP_HEIGHT / 2);
+    // Initial NPC spawn - 디버그 레벨에 맞게 스폰
+    const startLevel = DEBUG_START_LEVEL;
+    this.npcManager.initialSpawn(startLevel, MAP_WIDTH / 2, MAP_HEIGHT / 2);
 
     // Collisions
     this.setupCollisions();
@@ -779,9 +815,9 @@ export class GameScene extends Phaser.Scene {
     if (!this.hungerSystem) return;
     if (!this.cameras || !this.cameras.main) return;
 
-    // HP 30% 회복
-    const maxHunger = 100;
-    const currentHunger = useGameStore.getState().hunger;
+    // HP 30% 회복 (레벨에 따른 최대 HP 기준)
+    const store = useGameStore.getState();
+    const maxHunger = store.maxHunger;
     const healAmount = maxHunger * 0.3;
     this.hungerSystem.restore(healAmount);
 
@@ -794,10 +830,40 @@ export class GameScene extends Phaser.Scene {
     // Update NPC spawns
     this.npcManager.onLevelUp(data.level, this.player.x, this.player.y);
 
-    // 레벨이 6의 배수일 때 가까운 장애물 제거
-    if (data.level % 6 === 0) {
+    // 레벨 20 이상: 모든 장애물 제거
+    if (data.level >= 20) {
+      this.removeAllObstacles();
+    }
+    // 레벨이 2의 배수일 때 가까운 장애물 제거
+    else if (data.level % 2 === 0) {
       this.removeCloseObstacles(data.level);
     }
+  }
+
+  // 모든 장애물 제거 (레벨 20 이상)
+  private removeAllObstacles() {
+    if (!this.mapElements || !this.mapElements.obstacles) return;
+
+    const obstacles =
+      this.mapElements.obstacles.getChildren() as Phaser.Physics.Arcade.Sprite[];
+    if (obstacles.length === 0) return;
+
+    console.log(`[Level 20+] Removing all ${obstacles.length} obstacles`);
+
+    obstacles.forEach((obstacle) => {
+      if (obstacle.active) {
+        this.tweens.add({
+          targets: obstacle,
+          alpha: 0,
+          scale: 0.5,
+          duration: 500,
+          ease: "Power2",
+          onComplete: () => {
+            this.mapElements.obstacles.remove(obstacle, true, true);
+          },
+        });
+      }
+    });
   }
 
   // 서로 가까운 장애물들을 찾아서 제거
@@ -835,12 +901,9 @@ export class GameScene extends Phaser.Scene {
           const victim = Math.random() < 0.5 ? obstacles[i] : obstacles[j];
           if (!toRemove.includes(victim)) {
             toRemove.push(victim);
-            // 한 레벨업 당 최대 5개만 제거
-            if (toRemove.length >= 5) break;
           }
         }
       }
-      if (toRemove.length >= 5) break;
     }
 
     // 장애물 제거 (부드러운 페이드 아웃 효과)
