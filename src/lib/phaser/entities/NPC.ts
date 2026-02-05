@@ -391,9 +391,15 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       const reductionFactor = Math.pow(0.85, Math.abs(levelDiff));
       detectionRange = baseDetection * reductionFactor;
     }
-    // 모바일: 화면이 좁으므로 감지 범위 2/3로 축소
+    // 모바일: 포식자는 0.75배, 그 외는 2/3로 축소
     if (isMobile) {
-      detectionRange *= 0.67;
+      if (levelDiff < 0) {
+        // 포식자는 감지 범위 0.75배
+        detectionRange *= 0.75;
+      } else {
+        // 먹이는 화면이 좁으므로 감지 범위 2/3로 축소
+        detectionRange *= 0.67;
+      }
     }
 
     // If player is invisible or out of range, wander
