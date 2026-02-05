@@ -25,6 +25,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
   private lastFlipTime: number = 0; // 마지막 좌우 반전 시간
   private readonly FLIP_COOLDOWN = 200; // 최소 200ms 간격
   private shadow?: Phaser.GameObjects.Graphics; // 그림자
+  private outlineFX?: Phaser.FX.Glow | null; // 포식자 아웃라인
 
   constructor(scene: Phaser.Scene, x: number, y: number, data: NPCData) {
     // walk 이미지를 기본으로 사용
@@ -404,6 +405,10 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
 
     // If player is invisible or out of range, wander
     if (isPlayerInvisible || distance > detectionRange) {
+      if (this.aiState === NPCState.CHASE) {
+        // 추격 종료 시 아웃라인 제거
+        this.removePredatorOutline();
+      }
       this.aiState = NPCState.WANDER;
       this.chaseStartTime = 0;
       this.updateTexture("walk");
@@ -420,6 +425,8 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
         this.setDepth(12);
         // chase 텍스처로 변경
         this.updateTexture("chase");
+        // 포식자 빨간색 아웃라인 추가
+        this.addPredatorOutline();
       }
 
       // Chase duration limit (공룡은 제한 없음)
@@ -432,6 +439,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
         this.chaseStartTime = 0;
         this.setDepth(11);
         this.updateTexture("walk");
+        this.removePredatorOutline();
         return;
       }
       this.chase(playerX, playerY, playerSpeed, bushData);
@@ -440,6 +448,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       if (this.aiState === NPCState.CHASE) {
         this.setDepth(11);
         this.updateTexture("walk");
+        this.removePredatorOutline();
       }
       this.aiState = NPCState.FLEE;
       this.chaseStartTime = 0;
@@ -449,6 +458,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       if (this.aiState === NPCState.CHASE) {
         this.setDepth(11);
         this.updateTexture("walk");
+        this.removePredatorOutline();
       }
       this.aiState = NPCState.WANDER;
       this.chaseStartTime = 0;
@@ -723,6 +733,23 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     if (this.shadow) {
       this.shadow.destroy();
       this.shadow = undefined;
+    }
+  }
+
+  // 포식자 빨간색 아웃라인 추가
+  private addPredatorOutline() {
+    if (!this.outlineFX && this.preFX) {
+      this.outlineFX = this.preFX.addGlow(0xff0000, 3, 0, false, 0.3, 10);
+    }
+  }
+
+  // 포식자 아웃라인 제거
+  private removePredatorOutline() {
+    if (this.outlineFX) {
+      if (this.preFX) {
+        this.preFX.remove(this.outlineFX);
+      }
+      this.outlineFX = null;
     }
   }
 }
