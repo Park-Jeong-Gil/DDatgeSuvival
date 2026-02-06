@@ -160,6 +160,7 @@ export class PreloadScene extends Phaser.Scene {
     this.loadingText = this.add.text(width / 2, height / 2 - 70, quoteText, {
       fontSize: "20px",
       color: "#cccccc",
+      // fontFamily: "Mulmaru",
       fontStyle: "italic",
       align: "center",
     });
