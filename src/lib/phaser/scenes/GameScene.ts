@@ -1012,7 +1012,7 @@ export class GameScene extends Phaser.Scene {
 
     // 플레이어 크기 계산 (레벨에 따라 증가)
     const playerSize = 32 + playerLevel * 4;
-    // 플레이어가 통과하기 위한 최소 간격 (플레이어 크기의 1.5배)
+    // 플레이어가 통과하기 위한 최소 간격 (플레이어 크기의 1.8배)
     const minDistance = playerSize * 1.8;
 
     const toRemove: Phaser.Physics.Arcade.Sprite[] = [];

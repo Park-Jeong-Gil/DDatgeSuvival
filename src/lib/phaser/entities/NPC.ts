@@ -382,7 +382,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     );
 
     const levelDiff = playerLevel - this.level;
-    const baseDetection = 180 + this.level * 5; // 감지 거리 기본값 원래 200 * 10
+    const baseDetection = 190 + this.level * 7; // 감지 거리 기본값 원래 200 * 10
 
     let detectionRange = baseDetection;
     // 공룡(level 99)은 보스이므로 항상 최대 감지 거리 유지
