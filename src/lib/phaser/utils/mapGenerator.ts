@@ -126,6 +126,7 @@ function createCloudShapedBush(
 ) {
   const TILE_SIZE = 200;
   const TILE_SCALE = 0.25;
+  const BUSH_ALPHA = 0.85; // 일정한 alpha 값
 
   // 그리드 중심을 타일 크기에 맞춰 정렬
   const gridCenterX = Math.round(centerX / TILE_SIZE) * TILE_SIZE;
@@ -157,7 +158,7 @@ function createCloudShapedBush(
     }
   }
 
-  // 클러스터 바운딩 박스 계산 (장식 타일 포함)
+  // 클러스터 바운딩 박스 계산
   let minDx = 0, maxDx = 0, minDy = 0, maxDy = 0;
   for (const key of tilesToPlace) {
     const [dx, dy] = key.split(",").map(Number);
@@ -167,12 +168,12 @@ function createCloudShapedBush(
     maxDy = Math.max(maxDy, dy);
   }
 
-  // 장식 타일을 위한 여유 공간 추가
-  const DECO_MARGIN = 80;
-  const rtWidth = (maxDx - minDx + 1) * TILE_SIZE + DECO_MARGIN * 2;
-  const rtHeight = (maxDy - minDy + 1) * TILE_SIZE + DECO_MARGIN * 2;
-  const rtOffsetX = minDx * TILE_SIZE - DECO_MARGIN;
-  const rtOffsetY = minDy * TILE_SIZE - DECO_MARGIN;
+  // 픽셀 라운드를 위한 여유 공간
+  const CORNER_SIZE = 40;
+  const rtWidth = (maxDx - minDx + 1) * TILE_SIZE + CORNER_SIZE * 2;
+  const rtHeight = (maxDy - minDy + 1) * TILE_SIZE + CORNER_SIZE * 2;
+  const rtOffsetX = minDx * TILE_SIZE - CORNER_SIZE;
+  const rtOffsetY = minDy * TILE_SIZE - CORNER_SIZE;
 
   // RenderTexture 생성 (모든 타일을 하나의 텍스처로 베이킹)
   const rt = scene.add.renderTexture(
@@ -183,22 +184,17 @@ function createCloudShapedBush(
   );
   rt.setDepth(1);
 
-  const cardinalDirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
-
   // 임시 TileSprite로 RenderTexture에 그리기
   for (const key of tilesToPlace) {
     const [dx, dy] = key.split(",").map(Number);
     // RenderTexture 내 상대 좌표
-    const localX = (dx - minDx) * TILE_SIZE + DECO_MARGIN;
-    const localY = (dy - minDy) * TILE_SIZE + DECO_MARGIN;
+    const localX = (dx - minDx) * TILE_SIZE + CORNER_SIZE;
+    const localY = (dy - minDy) * TILE_SIZE + CORNER_SIZE;
 
-    // 메인 타일 그리기
-    const distFromCenter = Math.sqrt(dx * dx + dy * dy);
-    const alpha = 0.75 + (1 - distFromCenter / 2) * 0.15;
-
+    // 메인 타일 그리기 (일정한 alpha)
     const tempTile = scene.add.tileSprite(0, 0, TILE_SIZE, TILE_SIZE, "grass_tile");
     tempTile.setTileScale(TILE_SCALE, TILE_SCALE);
-    tempTile.setAlpha(alpha);
+    tempTile.setAlpha(BUSH_ALPHA);
     rt.draw(tempTile, localX, localY);
     tempTile.destroy();
 
@@ -210,40 +206,30 @@ function createCloudShapedBush(
     bush.setDisplaySize(TILE_SIZE, TILE_SIZE);
     bush.setAlpha(0);
 
-    // 가장자리 장식 타일 그리기
-    for (const [ddx, ddy] of cardinalDirs) {
-      const neighborKey = `${dx + ddx},${dy + ddy}`;
-      if (!tilesToPlace.has(neighborKey)) {
-        const edgeLocalX = localX + (ddx * TILE_SIZE) / 2;
-        const edgeLocalY = localY + (ddy * TILE_SIZE) / 2;
+    // 픽셀 라운드 코너 처리 - 대각선 이웃이 없고 양쪽 직선 이웃도 없는 경우
+    const corners = [
+      { corner: [-1, -1], adj1: [-1, 0], adj2: [0, -1], offsetX: -TILE_SIZE / 2 + CORNER_SIZE / 2, offsetY: -TILE_SIZE / 2 + CORNER_SIZE / 2 },
+      { corner: [1, -1], adj1: [1, 0], adj2: [0, -1], offsetX: TILE_SIZE / 2 - CORNER_SIZE / 2, offsetY: -TILE_SIZE / 2 + CORNER_SIZE / 2 },
+      { corner: [-1, 1], adj1: [-1, 0], adj2: [0, 1], offsetX: -TILE_SIZE / 2 + CORNER_SIZE / 2, offsetY: TILE_SIZE / 2 - CORNER_SIZE / 2 },
+      { corner: [1, 1], adj1: [1, 0], adj2: [0, 1], offsetX: TILE_SIZE / 2 - CORNER_SIZE / 2, offsetY: TILE_SIZE / 2 - CORNER_SIZE / 2 },
+    ];
 
-        const decoCount = 2 + Math.floor(Math.random() * 3);
-        for (let i = 0; i < decoCount; i++) {
-          const spread = (i - (decoCount - 1) / 2) * 50;
-          const perpX = ddy !== 0 ? spread : 0;
-          const perpY = ddx !== 0 ? spread : 0;
-          const randX = (Math.random() - 0.5) * 30;
-          const randY = (Math.random() - 0.5) * 30;
+    for (const { corner, adj1, adj2, offsetX, offsetY } of corners) {
+      const hasCorner = tilesToPlace.has(`${dx + corner[0]},${dy + corner[1]}`);
+      const hasAdj1 = tilesToPlace.has(`${dx + adj1[0]},${dy + adj1[1]}`);
+      const hasAdj2 = tilesToPlace.has(`${dx + adj2[0]},${dy + adj2[1]}`);
 
-          const decoLocalX = edgeLocalX + perpX + randX + ddx * (20 + Math.random() * 40);
-          const decoLocalY = edgeLocalY + perpY + randY + ddy * (20 + Math.random() * 40);
-          const decoSize = 50 + Math.random() * 30;
-          const decoAlpha = 0.4 + Math.random() * 0.2;
+      // 대각선에 타일이 없고, 양쪽 직선 방향에도 타일이 없으면 코너를 깎음
+      if (!hasCorner && !hasAdj1 && !hasAdj2) {
+        const cornerLocalX = localX + offsetX;
+        const cornerLocalY = localY + offsetY;
 
-          const tempDeco = scene.add.tileSprite(0, 0, decoSize, decoSize, "grass_tile");
-          tempDeco.setTileScale(TILE_SCALE, TILE_SCALE);
-          tempDeco.setAlpha(decoAlpha);
-          rt.draw(tempDeco, decoLocalX, decoLocalY);
-          tempDeco.destroy();
-
-          // 장식 타일 충돌 영역
-          const decoX = gridCenterX + rtOffsetX + decoLocalX;
-          const decoY = gridCenterY + rtOffsetY + decoLocalY;
-          const decoBush = group.create(decoX, decoY, textureKey);
-          decoBush.setDepth(2);
-          decoBush.setDisplaySize(decoSize, decoSize);
-          decoBush.setAlpha(0);
-        }
+        // 코너에 작은 픽셀 타일 추가 (라운드 효과)
+        const cornerTile = scene.add.tileSprite(0, 0, CORNER_SIZE, CORNER_SIZE, "grass_tile");
+        cornerTile.setTileScale(TILE_SCALE, TILE_SCALE);
+        cornerTile.setAlpha(BUSH_ALPHA);
+        rt.draw(cornerTile, cornerLocalX, cornerLocalY);
+        cornerTile.destroy();
       }
     }
   }
