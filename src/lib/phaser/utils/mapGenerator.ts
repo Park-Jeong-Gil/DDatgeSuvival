@@ -116,7 +116,7 @@ function placeClusteredBushes(
   }
 }
 
-// 구름 모양의 풀숲 생성 (다양한 크기의 사각형들을 랜덤하게 배치)
+// 타일 기반 비정형 풀숲 생성 (RenderTexture로 최적화)
 function createCloudShapedBush(
   scene: Phaser.Scene,
   group: Phaser.Physics.Arcade.StaticGroup,
@@ -124,51 +124,129 @@ function createCloudShapedBush(
   centerX: number,
   centerY: number,
 ) {
-  // 8~15개의 사각형으로 비정형 모양 만들기 (grass_tile 텍스처 사용)
-  const rectangleCount = 8 + Math.floor(Math.random() * 8);
+  const TILE_SIZE = 200;
+  const TILE_SCALE = 0.25;
 
-  for (let i = 0; i < rectangleCount; i++) {
-    // 중심에서 방사형으로 배치
-    const angle = (Math.PI * 2 * i) / rectangleCount + Math.random() * 0.5;
-    const distance = Math.random() * 150; // 중심에서의 거리 (0~150)
+  // 그리드 중심을 타일 크기에 맞춰 정렬
+  const gridCenterX = Math.round(centerX / TILE_SIZE) * TILE_SIZE;
+  const gridCenterY = Math.round(centerY / TILE_SIZE) * TILE_SIZE;
 
-    const x = centerX + Math.cos(angle) * distance;
-    const y = centerY + Math.sin(angle) * distance;
+  // 배치할 타일 좌표 Set
+  const tilesToPlace = new Set<string>();
+  tilesToPlace.add("0,0");
 
-    // 다양한 크기 (100~250 픽셀)
-    const size = 100 + Math.random() * 150;
+  const targetTileCount = 4 + Math.floor(Math.random() * 4);
+  const directions = [
+    [-1, 0], [1, 0], [0, -1], [0, 1],
+    [-1, -1], [-1, 1], [1, -1], [1, 1],
+  ];
 
-    // grass_tile을 사용한 타일스프라이트 생성
-    const grassTile = scene.add.tileSprite(x, y, size, size, "grass_tile");
-    grassTile.setDepth(1);
-    grassTile.setTileScale(0.25, 0.25);
-    grassTile.setAlpha(0.7 + Math.random() * 0.2);
+  while (tilesToPlace.size < targetTileCount) {
+    const existingTiles = Array.from(tilesToPlace);
+    const randomTile = existingTiles[Math.floor(Math.random() * existingTiles.length)];
+    const [tx, ty] = randomTile.split(",").map(Number);
 
-    // 실제 충돌 영역은 기존 bush 텍스처 사용 (투명하게)
-    const bush = group.create(x, y, textureKey);
-    bush.setDepth(2);
-    bush.setScale(size / 32);
-    bush.setAlpha(0); // 완전 투명 (충돌 영역만 사용)
+    const shuffledDirs = [...directions].sort(() => Math.random() - 0.5);
+    for (const [ddx, ddy] of shuffledDirs) {
+      const newKey = `${tx + ddx},${ty + ddy}`;
+      const dist = Math.sqrt((tx + ddx) ** 2 + (ty + ddy) ** 2);
+      if (!tilesToPlace.has(newKey) && dist <= 2) {
+        tilesToPlace.add(newKey);
+        break;
+      }
+    }
   }
 
-  // 중심에 큰 것 하나 더 추가 (밀도감)
-  const centerSize = 250 + Math.random() * 100;
+  // 클러스터 바운딩 박스 계산 (장식 타일 포함)
+  let minDx = 0, maxDx = 0, minDy = 0, maxDy = 0;
+  for (const key of tilesToPlace) {
+    const [dx, dy] = key.split(",").map(Number);
+    minDx = Math.min(minDx, dx);
+    maxDx = Math.max(maxDx, dx);
+    minDy = Math.min(minDy, dy);
+    maxDy = Math.max(maxDy, dy);
+  }
 
-  const centerGrassTile = scene.add.tileSprite(
-    centerX,
-    centerY,
-    centerSize,
-    centerSize,
-    "grass_tile",
+  // 장식 타일을 위한 여유 공간 추가
+  const DECO_MARGIN = 80;
+  const rtWidth = (maxDx - minDx + 1) * TILE_SIZE + DECO_MARGIN * 2;
+  const rtHeight = (maxDy - minDy + 1) * TILE_SIZE + DECO_MARGIN * 2;
+  const rtOffsetX = minDx * TILE_SIZE - DECO_MARGIN;
+  const rtOffsetY = minDy * TILE_SIZE - DECO_MARGIN;
+
+  // RenderTexture 생성 (모든 타일을 하나의 텍스처로 베이킹)
+  const rt = scene.add.renderTexture(
+    gridCenterX + rtOffsetX + rtWidth / 2,
+    gridCenterY + rtOffsetY + rtHeight / 2,
+    rtWidth,
+    rtHeight,
   );
-  centerGrassTile.setDepth(1);
-  centerGrassTile.setTileScale(0.25, 0.25);
-  centerGrassTile.setAlpha(0.8);
+  rt.setDepth(1);
 
-  const centerBush = group.create(centerX, centerY, textureKey);
-  centerBush.setDepth(2);
-  centerBush.setScale(centerSize / 32);
-  centerBush.setAlpha(0); // 완전 투명 (충돌 영역만 사용)
+  const cardinalDirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+
+  // 임시 TileSprite로 RenderTexture에 그리기
+  for (const key of tilesToPlace) {
+    const [dx, dy] = key.split(",").map(Number);
+    // RenderTexture 내 상대 좌표
+    const localX = (dx - minDx) * TILE_SIZE + DECO_MARGIN;
+    const localY = (dy - minDy) * TILE_SIZE + DECO_MARGIN;
+
+    // 메인 타일 그리기
+    const distFromCenter = Math.sqrt(dx * dx + dy * dy);
+    const alpha = 0.75 + (1 - distFromCenter / 2) * 0.15;
+
+    const tempTile = scene.add.tileSprite(0, 0, TILE_SIZE, TILE_SIZE, "grass_tile");
+    tempTile.setTileScale(TILE_SCALE, TILE_SCALE);
+    tempTile.setAlpha(alpha);
+    rt.draw(tempTile, localX, localY);
+    tempTile.destroy();
+
+    // 충돌 영역 (메인 타일만)
+    const tileX = gridCenterX + dx * TILE_SIZE;
+    const tileY = gridCenterY + dy * TILE_SIZE;
+    const bush = group.create(tileX, tileY, textureKey);
+    bush.setDepth(2);
+    bush.setDisplaySize(TILE_SIZE, TILE_SIZE);
+    bush.setAlpha(0);
+
+    // 가장자리 장식 타일 그리기
+    for (const [ddx, ddy] of cardinalDirs) {
+      const neighborKey = `${dx + ddx},${dy + ddy}`;
+      if (!tilesToPlace.has(neighborKey)) {
+        const edgeLocalX = localX + (ddx * TILE_SIZE) / 2;
+        const edgeLocalY = localY + (ddy * TILE_SIZE) / 2;
+
+        const decoCount = 2 + Math.floor(Math.random() * 3);
+        for (let i = 0; i < decoCount; i++) {
+          const spread = (i - (decoCount - 1) / 2) * 50;
+          const perpX = ddy !== 0 ? spread : 0;
+          const perpY = ddx !== 0 ? spread : 0;
+          const randX = (Math.random() - 0.5) * 30;
+          const randY = (Math.random() - 0.5) * 30;
+
+          const decoLocalX = edgeLocalX + perpX + randX + ddx * (20 + Math.random() * 40);
+          const decoLocalY = edgeLocalY + perpY + randY + ddy * (20 + Math.random() * 40);
+          const decoSize = 50 + Math.random() * 30;
+          const decoAlpha = 0.4 + Math.random() * 0.2;
+
+          const tempDeco = scene.add.tileSprite(0, 0, decoSize, decoSize, "grass_tile");
+          tempDeco.setTileScale(TILE_SCALE, TILE_SCALE);
+          tempDeco.setAlpha(decoAlpha);
+          rt.draw(tempDeco, decoLocalX, decoLocalY);
+          tempDeco.destroy();
+
+          // 장식 타일 충돌 영역
+          const decoX = gridCenterX + rtOffsetX + decoLocalX;
+          const decoY = gridCenterY + rtOffsetY + decoLocalY;
+          const decoBush = group.create(decoX, decoY, textureKey);
+          decoBush.setDepth(2);
+          decoBush.setDisplaySize(decoSize, decoSize);
+          decoBush.setAlpha(0);
+        }
+      }
+    }
+  }
 }
 
 function placeObjects(

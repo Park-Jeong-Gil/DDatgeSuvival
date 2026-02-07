@@ -865,8 +865,10 @@ export class GameScene extends Phaser.Scene {
     // 무적 시간 증가 (200ms → 500ms)
     this.invincibleUntil = this.time.now + 500;
 
-    // Visual feedback (효과 감소: 100ms → 50ms, 0.005 → 0.002)
-    this.cameras.main.shake(50, 0.002);
+    // Visual feedback - 모바일에서는 화면이 작아서 더 강하게 설정
+    const shakeDuration = this.isMobile ? 100 : 50;
+    const shakeIntensity = this.isMobile ? 0.01 : 0.002;
+    this.cameras.main.shake(shakeDuration, shakeIntensity);
 
     EventBus.emit("npc-eaten", {
       npcLevel: npc.level,
