@@ -215,6 +215,11 @@ export class GameScene extends Phaser.Scene {
     EventBus.on("pause-game", this.onPauseGameHandler);
     EventBus.on("resume-game", this.onResumeGameHandler);
 
+    // 모든 초기화 완료 후 카메라 fadeIn과 BGM 재생
+    // 검은 화면에서 게임으로 자연스럽게 전환
+    this.cameras.main.fadeIn(800, 0, 0, 0);
+    this.bgm?.play();
+
     EventBus.emit("current-scene-ready", this);
   }
 
@@ -1136,12 +1141,11 @@ export class GameScene extends Phaser.Scene {
     this.levelupSound = this.sound.add("levelup", { volume: sfxVol });
     this.pickupSound = this.sound.add("pickup", { volume: sfxVol });
 
-    // Initialize and play background music
+    // Initialize background music (재생은 fadeIn과 함께)
     this.bgm = this.sound.add("bgm", {
       volume: bgmVol,
       loop: true,
     });
-    this.bgm.play();
 
     // Listen for sound play events and audio settings changes
     EventBus.on("play-sound", this.onPlaySoundHandler, this);

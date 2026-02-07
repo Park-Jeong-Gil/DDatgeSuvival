@@ -323,21 +323,18 @@ export class PreloadScene extends Phaser.Scene {
   }
 
   private proceedToGame() {
-    // 로딩 완료 후 최소 1초 대기 후 페이드 아웃
+    // 로딩 완료 후 최소 1초 대기
     const elapsed = Date.now() - this.loadStartTime;
     const remaining = Math.max(0, 1000 - elapsed);
 
     this.time.delayedCall(remaining, () => {
-      // 컨테이너 페이드 아웃 애니메이션
-      this.tweens.add({
-        targets: this.loadingContainer,
-        alpha: { from: 1, to: 0 },
-        duration: 1000,
-        ease: "Linear",
-        onComplete: () => {
-          this.loadingContainer.destroy();
-          this.scene.start("GameScene");
-        },
+      // GameScene을 먼저 시작 (GameScene에서 카메라 fadeIn 처리)
+      // loadingContainer는 유지하여 검은 화면 방지
+      this.scene.start("GameScene");
+
+      // GameScene 시작 후 loadingContainer 정리
+      this.time.delayedCall(100, () => {
+        this.loadingContainer.destroy();
       });
     });
   }
