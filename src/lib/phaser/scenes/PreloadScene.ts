@@ -93,16 +93,20 @@ export class PreloadScene extends Phaser.Scene {
     // Costume sprites
     const costumeNames = [
       "angel",
+      "blue",
       "cosmic",
       "fighter",
       "fire",
       "ghost",
       "golden",
+      "green",
       "ice",
       "magic",
       "pierrot",
+      "pink",
       "rainbow",
       "robot",
+      "yellow",
     ];
 
     costumeNames.forEach((costume) => {
@@ -254,16 +258,20 @@ export class PreloadScene extends Phaser.Scene {
     // Costume sprites - LINEAR 필터 적용
     const costumeNames = [
       "angel",
+      "blue",
       "cosmic",
       "fighter",
       "fire",
       "ghost",
       "golden",
+      "green",
       "ice",
       "magic",
       "pierrot",
+      "pink",
       "rainbow",
       "robot",
+      "yellow",
     ];
 
     costumeNames.forEach((costume) => {
