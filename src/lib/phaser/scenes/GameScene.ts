@@ -1529,8 +1529,27 @@ export class GameScene extends Phaser.Scene {
   private onRestartGame() {
     // Stop all scenes and restart from PreloadScene
     // This maintains user interaction context for audio autoplay
-    this.scene.stop("UIScene");
-    this.scene.stop("GameScene");
-    this.scene.start("PreloadScene");
+    try {
+      // Scene manager가 유효한지 확인
+      if (!this.scene || !this.scene.manager) {
+        console.warn("Scene manager not available for restart");
+        return;
+      }
+
+      // 각 scene이 존재하는지 확인하고 stop
+      const uiScene = this.scene.get("UIScene");
+      if (uiScene && uiScene.scene.isActive("UIScene")) {
+        this.scene.stop("UIScene");
+      }
+
+      const gameScene = this.scene.get("GameScene");
+      if (gameScene && gameScene.scene.isActive("GameScene")) {
+        this.scene.stop("GameScene");
+      }
+
+      this.scene.start("PreloadScene");
+    } catch (error) {
+      console.error("Error restarting game:", error);
+    }
   }
 }

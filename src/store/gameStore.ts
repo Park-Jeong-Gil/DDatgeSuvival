@@ -133,6 +133,7 @@ export const useGameStore = create<GameStore>((set) => ({
     set((state) => ({
       ...initialState,
       nickname: state.nickname,
+      currentCostume: state.currentCostume, // 현재 코스튬 유지 (RETRY 시 같은 코스튬으로 시작)
       unlockedCostumes: state.unlockedCostumes, // 획득한 코스튬은 유지
     })),
 }));
