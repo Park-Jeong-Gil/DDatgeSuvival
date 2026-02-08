@@ -39,7 +39,7 @@ export const survivalItems: ItemData[] = [
   },
   {
     id: "poison_potion",
-    name: "독 물약",
+    name: "맹독 물약",
     category: "survival",
     effect: "stun_on_collision",
     duration: 10,

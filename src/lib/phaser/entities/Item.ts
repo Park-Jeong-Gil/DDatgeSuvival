@@ -41,7 +41,7 @@ export class Item extends Phaser.Physics.Arcade.Sprite {
     this.setDisplaySize(32, 32);
 
     // 그림자 추가
-    this.shadow = scene.add.ellipse(x, y + 2, 24, 12, 0x000000, 0.3);
+    this.shadow = scene.add.ellipse(x, y + 22, 24, 6, 0x000000, 0.15);
     this.shadow.setDepth(2);
 
     // Bobbing animation - 씬이 준비된 후 안전하게 시작
@@ -58,17 +58,17 @@ export class Item extends Phaser.Physics.Arcade.Sprite {
 
       // 그림자도 함께 움직이도록
       if (this.shadow && this.shadow.active) {
-        scene.tweens.add({
-          targets: this.shadow,
-          y: y - 3,
-          scaleX: 0.8,
-          scaleY: 0.8,
-          alpha: 0.2,
-          duration: 800,
-          yoyo: true,
-          repeat: -1,
-          ease: "Sine.easeInOut",
-        });
+        // scene.tweens.add({
+        //   targets: this.shadow,
+        //   y: y - 3,
+        //   scaleX: 0.8,
+        //   scaleY: 0.8,
+        //   alpha: 0.2,
+        //   duration: 800,
+        //   yoyo: true,
+        //   repeat: -1,
+        //   ease: "Sine.easeInOut",
+        // });
       }
     });
   }

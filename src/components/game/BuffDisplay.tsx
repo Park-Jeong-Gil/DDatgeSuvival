@@ -49,10 +49,10 @@ function BuffIcon({ buff }: { buff: ActiveBuff }) {
         setImageError(true);
       }}
       onLoad={() => {
-        console.log(`[BuffDisplay] Successfully loaded image:`, {
-          path: imagePath,
-          buff: buff.name,
-        });
+        // console.log(`[BuffDisplay] Successfully loaded image:`, {
+        //   path: imagePath,
+        //   buff: buff.name,
+        // });
       }}
     />
   );
