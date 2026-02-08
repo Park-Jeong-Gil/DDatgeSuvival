@@ -20,20 +20,36 @@ export default function GamePage() {
   const isGameOver = useGameStore((s) => s.isGameOver);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const hasOpenedSettings = useRef(false);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     useAudioStore.getState().initFromStorage();
 
+    // 닉네임 설정
     const stored = localStorage.getItem("mole_user_id");
-    if (!stored) return;
-    try {
-      const parsed = JSON.parse(stored);
-      if (parsed.nickname) {
-        useGameStore.getState().setNickname(parsed.nickname);
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (parsed.nickname) {
+          useGameStore.getState().setNickname(parsed.nickname);
+        }
+      } catch {
+        // ignore
       }
-    } catch {
-      return;
     }
+
+    // 선택한 코스튬 설정
+    const selectedCostume = localStorage.getItem("selected_costume");
+    // console.log("📦 localStorage에서 읽은 코스튬:", selectedCostume);
+
+    if (selectedCostume && selectedCostume !== "") {
+      useGameStore.getState().setCurrentCostume(selectedCostume);
+      // console.log("✅ gameStore에 설정한 코스튬:", useGameStore.getState().currentCostume);
+      // localStorage는 GameScene에서 코스튬 적용 후 제거됨
+    }
+
+    // 모든 설정이 완료되면 게임 렌더링
+    setIsReady(true);
   }, []);
 
   useEffect(() => {
@@ -51,24 +67,32 @@ export default function GamePage() {
 
   return (
     <div className="relative w-screen h-dvh bg-black">
-      <GameCanvas />
-      <HUD />
-      <LevelUpNotice />
+      {!isReady ? (
+        <div className="flex items-center justify-center h-full">
+          <div className="text-white text-xl">Loading...</div>
+        </div>
+      ) : (
+        <>
+          <GameCanvas />
+          <HUD />
+          <LevelUpNotice />
 
-      {isPlaying && !isGameOver && !settingsOpen && (
-        <button
-          onClick={() => setSettingsOpen(true)}
-          className="inGameSettings pixel-ui absolute top-4 right-4 z-40 bg-[#555] hover:bg-[#444] transition-colors px-3 py-2 text-base"
-        >
-          SETTING
-        </button>
+          {isPlaying && !isGameOver && !settingsOpen && (
+            <button
+              onClick={() => setSettingsOpen(true)}
+              className="inGameSettings pixel-ui absolute top-4 right-4 z-40 bg-[#555] hover:bg-[#444] transition-colors px-3 py-2 text-base"
+            >
+              SETTING
+            </button>
+          )}
+
+          {settingsOpen && (
+            <GameSettingsModal onClose={() => setSettingsOpen(false)} />
+          )}
+
+          {isGameOver && <GameOverOverlay />}
+        </>
       )}
-
-      {settingsOpen && (
-        <GameSettingsModal onClose={() => setSettingsOpen(false)} />
-      )}
-
-      {isGameOver && <GameOverOverlay />}
     </div>
   );
 }

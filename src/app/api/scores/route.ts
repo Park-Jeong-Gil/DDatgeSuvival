@@ -14,15 +14,26 @@ export async function POST(request: NextRequest) {
       deathReason,
       skinId,
       costume,
+      unlockedCostumes,
       collectedItems,
     } = await request.json();
 
     // Check existing record
     const { data: existing } = await supabase
       .from("scores")
-      .select("id, score")
+      .select("id, score, unlocked_costumes")
       .eq("user_id", userId)
       .single();
+
+    // 기존 코스튬과 새 코스튬 병합 (중복 제거)
+    const mergedCostumes = existing?.unlocked_costumes
+      ? Array.from(
+          new Set([
+            ...(existing.unlocked_costumes as string[]),
+            ...(unlockedCostumes ?? []),
+          ]),
+        )
+      : unlockedCostumes ?? [];
 
     let updated = false;
 
@@ -40,6 +51,7 @@ export async function POST(request: NextRequest) {
             death_reason: deathReason,
             skin_id: skinId,
             costume: costume ?? null,
+            unlocked_costumes: mergedCostumes,
             collected_items: collectedItems ?? null,
             updated_at: new Date().toISOString(),
           })
@@ -47,13 +59,14 @@ export async function POST(request: NextRequest) {
 
         updated = true;
       } else {
-        // Even if score is not higher, always update nickname, skin and costume
+        // Even if score is not higher, always update nickname, skin, costume and unlocked costumes
         await supabase
           .from("scores")
           .update({
             nickname,
             skin_id: skinId,
             costume: costume ?? null,
+            unlocked_costumes: mergedCostumes,
             updated_at: new Date().toISOString(),
           })
           .eq("id", existing.id);
@@ -69,6 +82,7 @@ export async function POST(request: NextRequest) {
         death_reason: deathReason,
         skin_id: skinId,
         costume: costume ?? null,
+        unlocked_costumes: mergedCostumes,
         collected_items: collectedItems ?? null,
       });
 
@@ -121,6 +135,7 @@ export async function GET(request: NextRequest) {
       .range(offset, offset + limit - 1);
 
     let userRank = undefined;
+    let userUnlockedCostumes = undefined;
     if (userId) {
       const { data: userScore } = await supabase
         .from("scores")
@@ -138,6 +153,9 @@ export async function GET(request: NextRequest) {
           rank: (higherCount ?? 0) + 1,
           score: userScore,
         };
+
+        // 획득한 코스튬 목록 반환
+        userUnlockedCostumes = userScore.unlocked_costumes ?? [];
       }
     }
 
@@ -145,6 +163,7 @@ export async function GET(request: NextRequest) {
       scores: scores ?? [],
       total: count ?? 0,
       userRank,
+      userUnlockedCostumes,
     });
   } catch (error) {
     console.error("Leaderboard fetch error:", error);

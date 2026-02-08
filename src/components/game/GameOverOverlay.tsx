@@ -36,6 +36,7 @@ export default function GameOverOverlay() {
   }
   const currentSkinId = useGameStore((s) => s.currentSkinId);
   const currentCostume = useGameStore((s) => s.currentCostume);
+  const unlockedCostumes = useGameStore((s) => s.unlockedCostumes);
   const nickname = useGameStore((s) => s.nickname);
   const resetGame = useGameStore((s) => s.resetGame);
 
@@ -66,6 +67,7 @@ export default function GameOverOverlay() {
             deathReason: deathReason ?? "hunger",
             skinId: currentSkinId,
             costume: currentCostume,
+            unlockedCostumes: unlockedCostumes,
             collectedItems: collectedItems,
           }),
         });
@@ -92,6 +94,7 @@ export default function GameOverOverlay() {
     deathReason,
     currentSkinId,
     currentCostume,
+    unlockedCostumes,
     nickname,
     collectedItems,
   ]);

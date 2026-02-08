@@ -104,13 +104,24 @@ export class GameScene extends Phaser.Scene {
 
     // Background - 기본 배경 타일 (4배 작게 보이도록 스케일 조정)
     this.backgroundTileSprite = this.add
-      .tileSprite(0, 0, this.currentMapWidth, this.currentMapHeight, "base_background")
+      .tileSprite(
+        0,
+        0,
+        this.currentMapWidth,
+        this.currentMapHeight,
+        "base_background",
+      )
       .setOrigin(0, 0)
       .setDepth(0)
       .setTileScale(0.28, 0.28);
 
     // World bounds
-    this.physics.world.setBounds(0, 0, this.currentMapWidth, this.currentMapHeight);
+    this.physics.world.setBounds(
+      0,
+      0,
+      this.currentMapWidth,
+      this.currentMapHeight,
+    );
 
     // Map obstacles
     this.mapElements = generateMap(this);
@@ -134,6 +145,28 @@ export class GameScene extends Phaser.Scene {
     // Player
     this.player = new Player(this, MAP_WIDTH / 2, MAP_HEIGHT / 2);
 
+    // 선택한 코스튬 적용 (localStorage에서 직접 읽기)
+    const selectedCostume = localStorage.getItem("selected_costume");
+    // console.log("🎮 GameScene - localStorage 코스튬:", selectedCostume);
+
+    let currentCostume = selectedCostume;
+    if (!currentCostume) {
+      // localStorage에 없으면 gameStore에서 읽기
+      currentCostume = useGameStore.getState().currentCostume;
+      // console.log("🎮 GameScene - gameStore 코스튬:", currentCostume);
+    }
+
+    if (currentCostume) {
+      // console.log("🎨 코스튬 적용 시도:", currentCostume);
+      this.player.changeCostume(currentCostume);
+      // console.log("✅ 플레이어 현재 코스튬:", this.player.getCurrentCostume());
+
+      // 적용 후 localStorage 클리어
+      localStorage.removeItem("selected_costume");
+    } else {
+      // console.log("⚠️ currentCostume이 null입니다");
+    }
+
     // Debug: 디버그 레벨에 맞게 Player 크기 업데이트
     if (DEBUG_START_LEVEL > 1) {
       this.player.updateStats(DEBUG_START_LEVEL);
@@ -142,7 +175,12 @@ export class GameScene extends Phaser.Scene {
     this.createPlayerOverlay();
 
     // Camera
-    this.cameras.main.setBounds(0, 0, this.currentMapWidth, this.currentMapHeight);
+    this.cameras.main.setBounds(
+      0,
+      0,
+      this.currentMapWidth,
+      this.currentMapHeight,
+    );
     this.cameras.main.startFollow(this.player, true, 1, 1);
     this.cameras.main.setRoundPixels(false);
 
@@ -1106,7 +1144,10 @@ export class GameScene extends Phaser.Scene {
 
       // NPCManager에 새로운 맵 크기 전달
       if (this.npcManager) {
-        this.npcManager.updateMapBounds(this.currentMapWidth, this.currentMapHeight);
+        this.npcManager.updateMapBounds(
+          this.currentMapWidth,
+          this.currentMapHeight,
+        );
       }
 
       // 맵 크기 즉시 적용
@@ -1122,14 +1163,27 @@ export class GameScene extends Phaser.Scene {
   private updateMapSize() {
     // 배경 TileSprite 크기 업데이트
     if (this.backgroundTileSprite) {
-      this.backgroundTileSprite.setSize(this.currentMapWidth, this.currentMapHeight);
+      this.backgroundTileSprite.setSize(
+        this.currentMapWidth,
+        this.currentMapHeight,
+      );
     }
 
     // Physics world bounds 업데이트
-    this.physics.world.setBounds(0, 0, this.currentMapWidth, this.currentMapHeight);
+    this.physics.world.setBounds(
+      0,
+      0,
+      this.currentMapWidth,
+      this.currentMapHeight,
+    );
 
     // Camera bounds 업데이트
-    this.cameras.main.setBounds(0, 0, this.currentMapWidth, this.currentMapHeight);
+    this.cameras.main.setBounds(
+      0,
+      0,
+      this.currentMapWidth,
+      this.currentMapHeight,
+    );
   }
 
   // 레벨 5마다 맵 확장 (레벨업 시)

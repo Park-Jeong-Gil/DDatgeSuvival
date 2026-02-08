@@ -307,21 +307,27 @@ export class PreloadScene extends Phaser.Scene {
 
     // Costume sprites - LINEAR 필터 적용
     const costumeNames = [
-      "angel",
-      "blue",
-      "cosmic",
-      "fighter",
+      "rock",
       "fire",
-      "ghost",
-      "golden",
-      "green",
       "ice",
-      "magic",
-      "pierrot",
-      "pink",
+      "golden",
       "rainbow",
+      "sherbet",
+      "fighter",
+      "angel",
+      "cosmic",
+      "ghost",
+      "crystal",
+      "ninja",
       "robot",
-      "yellow",
+      "icecream",
+      "pierrot",
+      "cowboy",
+      "magic",
+      "skater",
+      "street_fighter",
+      "king",
+      "link",
     ];
 
     costumeNames.forEach((costume) => {
@@ -345,7 +351,7 @@ export class PreloadScene extends Phaser.Scene {
       document.fonts
         .load("12px Mulmaru")
         .then(() => {
-          console.log("[PreloadScene] Mulmaru font loaded");
+          // console.log("[PreloadScene] Mulmaru font loaded");
           this.fontLoaded = true;
         })
         .catch((error) => {

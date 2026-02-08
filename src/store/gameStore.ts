@@ -16,6 +16,7 @@ interface GameStore {
   predatorName: string | null;
   currentSkinId: string;
   currentCostume: string | null;
+  unlockedCostumes: string[]; // 획득한 모든 코스튬 ID 목록
   activeBuffs: ActiveBuff[];
   nickname: string;
   npcPositions: NPCPosition[];
@@ -39,6 +40,7 @@ interface GameStore {
   incrementKills: () => void;
   setCurrentSkin: (skinId: string) => void;
   setCurrentCostume: (costume: string | null) => void;
+  addUnlockedCostume: (costumeId: string) => void; // 코스튬 획득 추가
   setActiveBuffs: (buffs: ActiveBuff[]) => void;
   setNickname: (nickname: string) => void;
   setNpcPositions: (positions: NPCPosition[]) => void;
@@ -62,6 +64,7 @@ const initialState = {
   predatorName: null as string | null,
   currentSkinId: "custom_1",
   currentCostume: null as string | null,
+  unlockedCostumes: [] as string[],
   activeBuffs: [] as ActiveBuff[],
   nickname: "",
   npcPositions: [] as NPCPosition[],
@@ -101,6 +104,16 @@ export const useGameStore = create<GameStore>((set) => ({
   incrementKills: () => set((state) => ({ killsCount: state.killsCount + 1 })),
   setCurrentSkin: (currentSkinId) => set({ currentSkinId }),
   setCurrentCostume: (currentCostume) => set({ currentCostume }),
+  addUnlockedCostume: (costumeId) =>
+    set((state) => {
+      // 이미 획득한 코스튬인지 확인
+      if (state.unlockedCostumes.includes(costumeId)) {
+        return state;
+      }
+      return {
+        unlockedCostumes: [...state.unlockedCostumes, costumeId],
+      };
+    }),
   setActiveBuffs: (activeBuffs) => set({ activeBuffs }),
   setNickname: (nickname) => set({ nickname }),
   setNpcPositions: (npcPositions) => set({ npcPositions }),
@@ -117,5 +130,9 @@ export const useGameStore = create<GameStore>((set) => ({
       },
     })),
   resetGame: () =>
-    set((state) => ({ ...initialState, nickname: state.nickname })),
+    set((state) => ({
+      ...initialState,
+      nickname: state.nickname,
+      unlockedCostumes: state.unlockedCostumes, // 획득한 코스튬은 유지
+    })),
 }));

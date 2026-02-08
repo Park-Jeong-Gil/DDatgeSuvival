@@ -2,11 +2,19 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import HowToPlayModal from "@/components/ui/HowToPlayModal";
+import CostumeSelectModal from "@/components/game/CostumeSelectModal";
+import { getOrCreateUserId } from "@/lib/userId";
+import { useGameStore } from "@/store/gameStore";
 
 export default function HomePage() {
+  const router = useRouter();
   const [nickname, setNickname] = useState("");
   const [howToPlayOpen, setHowToPlayOpen] = useState(false);
+  const [costumeSelectOpen, setCostumeSelectOpen] = useState(false);
+  const [unlockedCostumes, setUnlockedCostumes] = useState<string[]>([]);
+  const [isCheckingCostumes, setIsCheckingCostumes] = useState(false);
 
   useEffect(() => {
     console.log(
@@ -54,6 +62,54 @@ export default function HomePage() {
     }
   };
 
+  const handleStartGame = async () => {
+    setIsCheckingCostumes(true);
+    try {
+      const userId = getOrCreateUserId();
+      const res = await fetch(`/api/scores?userId=${userId}`);
+      if (res.ok) {
+        const data = await res.json();
+        const costumes = data.userUnlockedCostumes ?? [];
+        setUnlockedCostumes(costumes);
+
+        // 코스튬이 있으면 선택 모달 표시
+        if (costumes.length > 0) {
+          setCostumeSelectOpen(true);
+        } else {
+          // 코스튬이 없으면 바로 게임 시작
+          router.push("/game");
+        }
+      } else {
+        // API 실패 시 바로 게임 시작
+        router.push("/game");
+      }
+    } catch (error) {
+      console.error("Failed to fetch unlocked costumes:", error);
+      // 에러 발생 시 바로 게임 시작
+      router.push("/game");
+    } finally {
+      setIsCheckingCostumes(false);
+    }
+  };
+
+  const handleCostumeSelect = (costumeId: string | null) => {
+    // console.log("🎨 선택한 코스튬:", costumeId);
+
+    // 선택한 코스튬을 gameStore에 저장
+    useGameStore.getState().setCurrentCostume(costumeId);
+    if (costumeId) {
+      useGameStore.getState().addUnlockedCostume(costumeId);
+    }
+
+    // localStorage에도 저장 (페이지 이동 시 유지하기 위해)
+    localStorage.setItem("selected_costume", costumeId ?? "");
+    // console.log("💾 localStorage에 저장:", localStorage.getItem("selected_costume"));
+
+    setCostumeSelectOpen(false);
+    // 게임 페이지로 이동
+    router.push("/game");
+  };
+
   return (
     <main
       className="flex flex-col items-center justify-center h-screen bg-gray-900 gap-6"
@@ -82,12 +138,13 @@ export default function HomePage() {
       />
 
       <div className="flex flex-col gap-4 w-68">
-        <Link
-          href="/game"
-          className="pixel-ui w-full py-3 text-white text-xl font-bold text-center bg-[#2266cc] transition-colors hover:bg-[#1b4f99]"
+        <button
+          onClick={handleStartGame}
+          disabled={isCheckingCostumes}
+          className="pixel-ui w-full py-3 text-white text-xl font-bold text-center bg-[#2266cc] transition-colors hover:bg-[#1b4f99] disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          START GAME
-        </Link>
+          {isCheckingCostumes ? "LOADING..." : "START GAME"}
+        </button>
         <Link
           href="/leaderboard"
           className="pixel-ui w-full py-3 text-white text-xl text-center font-semibold bg-[#ff9030] transition-colors hover:bg-[#cc7326]"
@@ -106,6 +163,13 @@ export default function HomePage() {
         isOpen={howToPlayOpen}
         onClose={() => setHowToPlayOpen(false)}
       />
+
+      <CostumeSelectModal
+        isOpen={costumeSelectOpen}
+        unlockedCostumes={unlockedCostumes}
+        onSelect={handleCostumeSelect}
+      />
+
       {/* 푸터 */}
       <p className="mt-8 text-sm text-gray-100 text-shadow-md">
         © 2026 by{" "}

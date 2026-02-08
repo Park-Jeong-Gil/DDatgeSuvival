@@ -44,7 +44,9 @@ export class ItemManager {
     const costumeName = getRandomCostumeByRarity(rarity, currentCostume);
     if (costumeName) {
       this.player.changeCostume(costumeName);
-      useGameStore.getState().setCurrentCostume(costumeName);
+      const store = useGameStore.getState();
+      store.setCurrentCostume(costumeName);
+      store.addUnlockedCostume(costumeName); // 획득한 코스튬 목록에 추가
       EventBus.emit("costume-changed", { costume: costumeName, rarity });
     }
   }
