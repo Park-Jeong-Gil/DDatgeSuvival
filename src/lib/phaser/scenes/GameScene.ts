@@ -831,7 +831,10 @@ export class GameScene extends Phaser.Scene {
         console.log(
           `[DEBUG] Poison effect - removing predator level ${npcLevel}`,
         );
-        this.npcManager.removeNPC(npc);
+        // 맹독 물약 효과: 빨간색 오버레이와 함께 뒤집어지며 사라짐
+        npc.playPoisonDeathAnimation(() => {
+          this.npcManager.removeNPC(npc);
+        });
         return;
       }
 

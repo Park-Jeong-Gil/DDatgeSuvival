@@ -784,4 +784,56 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       this.outlineFX = null;
     }
   }
+
+  // 맹독 물약에 의한 사망 애니메이션 (빨간색 오버레이 + 뒤집어지며 사라짐)
+  public playPoisonDeathAnimation(onComplete?: () => void) {
+    if (!this.scene || this.destroyed) return;
+
+    // NPC 비활성화 (AI 업데이트 중지)
+    this.active = false;
+    this.destroyed = true;
+
+    // 빨간색 틴트 적용
+    this.setTint(0xff0000);
+
+    // 물리 비활성화
+    if (this.body) {
+      const body = this.body as Phaser.Physics.Arcade.Body;
+      body.enable = false;
+      this.setVelocity(0, 0);
+    }
+
+    // 이름 라벨 숨김
+    if (this.nameLabel) {
+      this.nameLabel.setVisible(false);
+    }
+
+    // 아웃라인 제거
+    this.removePredatorOutline();
+
+    // 뒤집어지며 사라지는 애니메이션
+    this.scene.tweens.add({
+      targets: this,
+      angle: 180, // 180도 회전
+      duration: 600,
+      ease: "Cubic.easeOut",
+      onComplete: () => {
+        // 애니메이션 완료 후 1초 뒤에 제거
+        this.scene.time.delayedCall(1000, () => {
+          if (onComplete) onComplete();
+          this.destroy();
+        });
+      },
+    });
+
+    // 그림자도 페이드아웃
+    if (this.shadow) {
+      this.scene.tweens.add({
+        targets: this.shadow,
+        alpha: 0,
+        duration: 600,
+        ease: "Cubic.easeOut",
+      });
+    }
+  }
 }
