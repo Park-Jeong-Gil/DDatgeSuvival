@@ -16,7 +16,7 @@ export const survivalItems: ItemData[] = [
     category: "survival",
     effect: "hunger_slow",
     duration: 25,
-    rarity: "uncommon",
+    rarity: "common",
     spriteKey: "item_satiety_potion",
   },
   {
@@ -81,7 +81,7 @@ export const buffItems: ItemData[] = [
     name: "거인의 힘",
     category: "buff",
     effect: "level_boost",
-    duration: 15,
+    duration: 12,
     rarity: "epic",
     spriteKey: "item_giant_power",
   },
@@ -91,7 +91,7 @@ export const buffItems: ItemData[] = [
     category: "buff",
     effect: "stun_predator",
     duration: 12,
-    rarity: "epic",
+    rarity: "rare",
     spriteKey: "item_crystal",
   },
 ];
