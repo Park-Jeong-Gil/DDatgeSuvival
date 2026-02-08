@@ -927,22 +927,27 @@ export class GameScene extends Phaser.Scene {
     // Score
     store.addScore(npc.scoreValue);
 
-    // Hunger restore - 레벨 차이에 따른 회복량 조정
+    // Hunger restore - 플레이어 레벨에 따라 회복량 점진적 감소
     const playerLevel = this.player.level;
+
+    // 레벨이 높을수록 회복량 감소 (레벨 1: 100% → 레벨 20: 30%)
+    // 공식: Math.max(0.3, 1 - (playerLevel - 1) * 0.035)
+    // 레벨 1: 100%, 레벨 5: 86%, 레벨 10: 68.5%, 레벨 20: 33.5%
+    const levelPenalty = Math.max(0.3, 1 - (playerLevel - 1) * 0.035);
+
+    // 레벨 차이에 따른 추가 조정 (낮은 레벨 먹이는 더 적게 회복)
     const levelDiff = playerLevel - npc.level;
-    let hungerRestoreAmount = npc.hungerRestore;
+    let levelDiffMultiplier = 1.0;
 
     if (levelDiff > 0) {
-      // 플레이어가 더 높음 (레벨 낮은 먹이) - 회복량 감소
-      hungerRestoreAmount =
-        npc.hungerRestore * Math.max(0.3, 1 - levelDiff * 0.15);
+      // 플레이어가 더 높음 (레벨 낮은 먹이) - 추가 감소
+      levelDiffMultiplier = Math.max(0.5, 1 - levelDiff * 0.1);
     } else if (levelDiff < 0) {
-      // 먹이가 더 높음 (레벨 높은 먹이) - 회복량 감소
-      hungerRestoreAmount =
-        npc.hungerRestore * Math.max(0.4, 1 + levelDiff * 0.1);
+      // 먹이가 더 높음 (레벨 높은 먹이) - 약간 보너스
+      levelDiffMultiplier = Math.min(1.2, 1 - levelDiff * 0.05);
     }
-    // levelDiff === 0 (같은 레벨) - 기본 회복량 유지
 
+    const hungerRestoreAmount = npc.hungerRestore * levelPenalty * levelDiffMultiplier;
     this.hungerSystem.restore(hungerRestoreAmount);
 
     // Kill count
