@@ -186,8 +186,8 @@ export const npcDatabase: NPCData[] = [
   },
   {
     level: 17,
-    name: "Moon Bear",
-    nameKo: "반달곰",
+    name: "Ursus Bear",
+    nameKo: "불곰",
     baseSpeed: 220,
     baseSize: 96, // 플레이어 Lv16 크기
     scoreValue: 90,
