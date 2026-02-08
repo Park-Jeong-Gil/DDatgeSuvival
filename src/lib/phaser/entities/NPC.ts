@@ -388,7 +388,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     );
 
     const levelDiff = playerLevel - this.level;
-    const baseDetection = 185 + this.level * 5; // 감지 거리 기본값 원래 200 * 10
+    const baseDetection = 160 + this.level * 3; // 감지 거리 기본값 원래 200 * 10
 
     let detectionRange = baseDetection;
     // 공룡(level 99)은 보스이므로 항상 최대 감지 거리 유지
@@ -448,7 +448,13 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
         this.removePredatorOutline();
         return;
       }
-      this.chase(playerX, playerY, playerSpeed, bushData, predatorSpeedMultiplier);
+      this.chase(
+        playerX,
+        playerY,
+        playerSpeed,
+        bushData,
+        predatorSpeedMultiplier,
+      );
     } else if (levelDiff > 0) {
       // NPC is prey - flee
       if (this.aiState === NPCState.CHASE) {
@@ -541,7 +547,12 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     this.safeSetFlipX(Math.cos(angle));
   }
 
-  private flee(targetX: number, targetY: number, playerSpeed: number, hasAttractPreyBuff?: boolean) {
+  private flee(
+    targetX: number,
+    targetY: number,
+    playerSpeed: number,
+    hasAttractPreyBuff?: boolean,
+  ) {
     // attract_prey 효과가 있으면 플레이어에게 다가감
     if (hasAttractPreyBuff) {
       const angle = Phaser.Math.Angle.Between(this.x, this.y, targetX, targetY);

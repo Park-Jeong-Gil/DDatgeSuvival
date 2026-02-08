@@ -74,6 +74,7 @@ export class GameScene extends Phaser.Scene {
   private deathSound?: Phaser.Sound.BaseSound;
   private levelupSound?: Phaser.Sound.BaseSound;
   private pickupSound?: Phaser.Sound.BaseSound;
+  private levelZoomMultiplier: number = 1.0; // 레벨 기반 줌 배율 (1.0 = 기본)
 
   constructor() {
     super({ key: "GameScene" });
@@ -141,6 +142,12 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, MAP_WIDTH, MAP_HEIGHT);
     this.cameras.main.startFollow(this.player, true, 1, 1);
     this.cameras.main.setRoundPixels(false);
+
+    // Debug: 시작 레벨에 맞게 카메라 줌 초기화
+    if (DEBUG_START_LEVEL > 1) {
+      this.initializeCameraZoomForLevel(DEBUG_START_LEVEL);
+    }
+
     this.updateCameraZoom();
 
     // Resize handler
@@ -244,7 +251,8 @@ export class GameScene extends Phaser.Scene {
         const npc = npcObj as NPC;
         if (!npc.active || npc.destroyed) return false;
 
-        const playerLevel = this.player.level + this.itemManager.getLevelBoost();
+        const playerLevel =
+          this.player.level + this.itemManager.getLevelBoost();
         const npcLevel = npc.level;
 
         // 동일 레벨이고 넉백 버프가 있으면 물리적 충돌 무시
@@ -346,7 +354,8 @@ export class GameScene extends Phaser.Scene {
     this.levelSystem.checkLevelUp(this.player);
 
     // Re-read level after potential level-up to keep NPC labels in sync
-    const currentLevel = useGameStore.getState().level + this.itemManager.getLevelBoost();
+    const currentLevel =
+      useGameStore.getState().level + this.itemManager.getLevelBoost();
     this.npcManager.update(
       delta,
       currentLevel,
@@ -815,7 +824,9 @@ export class GameScene extends Phaser.Scene {
     } else if (FoodChain.mustFlee(playerLevel, npcLevel)) {
       // stun_on_collision 버프가 있으면 부딪힌 포식자 즉시 제거 (독약 효과)
       if (this.itemManager.hasStunOnCollisionBuff()) {
-        console.log(`[DEBUG] Poison effect - removing predator level ${npcLevel}`);
+        console.log(
+          `[DEBUG] Poison effect - removing predator level ${npcLevel}`,
+        );
         this.npcManager.removeNPC(npc);
         return;
       }
@@ -964,7 +975,9 @@ export class GameScene extends Phaser.Scene {
       Math.sin(angle) * knockbackForce,
     );
 
-    console.log(`[DEBUG] Knockback applied to NPC level ${npc.level} with force ${knockbackForce}`);
+    console.log(
+      `[DEBUG] Knockback applied to NPC level ${npc.level} with force ${knockbackForce}`,
+    );
 
     // 1.5초 후 NPC 속도 리셋 및 기절/넉백 해제
     this.time.delayedCall(1500, () => {
@@ -1035,17 +1048,61 @@ export class GameScene extends Phaser.Scene {
     // Flash effect
     this.cameras.main.flash(500, 255, 255, 100);
 
+    // 레벨 5마다 카메라 줌 아웃 (시야 확장)
+    if (data.level % 5 === 0) {
+      this.applyCameraZoomOut(data.level);
+    }
+
     // Update NPC spawns
     this.npcManager.onLevelUp(data.level, this.player.x, this.player.y);
 
     // 레벨 20 이상: 모든 장애물 제거
-    if (data.level >= 20) {
+    if (data.level >= 25) {
       this.removeAllObstacles();
     }
     // 레벨이 2의 배수일 때 가까운 장애물 제거
     else if (data.level % 2 === 0) {
       this.removeCloseObstacles(data.level);
     }
+  }
+
+  // 디버그 모드: 시작 레벨에 맞게 카메라 줌 초기화
+  private initializeCameraZoomForLevel(level: number) {
+    // 레벨 5마다 줌 아웃 횟수 계산
+    const zoomOutCount = Math.floor(level / 5);
+
+    if (zoomOutCount > 0) {
+      // 0.9배씩 곱한 누적 배율 계산
+      this.levelZoomMultiplier = Math.pow(0.9, zoomOutCount);
+
+      // 최소 줌 배율 제한 (최대 80% 줌 아웃까지만)
+      this.levelZoomMultiplier = Math.max(this.levelZoomMultiplier, 0.2);
+
+      console.log(
+        `[DEBUG] Camera zoom initialized for level ${level}: ${this.levelZoomMultiplier.toFixed(3)}x (${zoomOutCount} zoom-outs)`,
+      );
+    }
+  }
+
+  // 레벨 5마다 카메라 줌 아웃 효과 (레벨업 시)
+  private applyCameraZoomOut(_level: number) {
+    // 레벨 5마다 7% 줌 아웃 (0.93배)
+    const targetMultiplier = this.levelZoomMultiplier * 0.93;
+
+    // 최소 줌 배율 제한 (최대 80% 줌 아웃까지만)
+    const minZoom = 0.2;
+    const newMultiplier = Math.max(targetMultiplier, minZoom);
+
+    // 부드러운 줌 아웃 트윈 애니메이션
+    this.tweens.add({
+      targets: this,
+      levelZoomMultiplier: newMultiplier,
+      duration: 1000, // 1초
+      ease: "Cubic.easeInOut",
+      onUpdate: () => {
+        this.updateCameraZoom();
+      },
+    });
   }
 
   // 모든 장애물 제거 (레벨 20 이상)
@@ -1149,7 +1206,10 @@ export class GameScene extends Phaser.Scene {
 
     const zoomX = screenW / baseW;
     const zoomY = viewportH / baseH;
-    this.cameras.main.setZoom(Math.min(zoomX, zoomY));
+    const baseZoom = Math.min(zoomX, zoomY);
+
+    // 레벨 기반 줌 배율 적용 (레벨이 높을수록 시야 확장)
+    this.cameras.main.setZoom(baseZoom * this.levelZoomMultiplier);
   }
 
   private handleResize() {

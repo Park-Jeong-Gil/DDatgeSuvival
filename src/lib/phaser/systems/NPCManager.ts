@@ -130,16 +130,16 @@ export class NPCManager {
 
     // Despawn out-of-range NPCs
     const minLevel = Math.max(0, playerLevel - 3);
-    const maxLevel = Math.min(18, playerLevel + 3);
+    const maxLevel = Math.min(29, playerLevel + 3);
 
     this.npcs = this.npcs.filter((npc) => {
       if (!npc.active) return false;
       // Boss always stays
       if (npc.level === 99) return true;
 
-      // 플레이어 레벨 19 이상일 때는 호랑이(Lv 18)만 유지
-      if (playerLevel >= 19) {
-        if (npc.level !== 18) {
+      // 플레이어 레벨 30 이상일 때는 북극곰(Lv 29)만 유지
+      if (playerLevel >= 30) {
+        if (npc.level !== 29) {
           this.npcGroup.remove(npc, true, true);
           npc.destroy();
           return false;
@@ -156,9 +156,9 @@ export class NPCManager {
       return true;
     });
 
-    // Spawn boss - 레벨 18부터 시작, 레벨 22부터는 레벨당 1마리씩 추가
-    if (playerLevel >= 18) {
-      const targetBossCount = playerLevel >= 22 ? playerLevel - 21 : 1;
+    // Spawn boss - 레벨 29부터 시작, 레벨 33부터는 레벨당 1마리씩 추가
+    if (playerLevel >= 29) {
+      const targetBossCount = playerLevel >= 33 ? playerLevel - 32 : 1;
       const currentBossCount = this.npcs.filter(
         (n) => n.level === 99 && n.active,
       ).length;
@@ -277,13 +277,13 @@ export class NPCManager {
   }
 
   private getSpawnableRange(playerLevel: number): number[] {
-    // 플레이어 레벨 19 이상일 때는 호랑이(Lv 18)만 스폰
-    if (playerLevel >= 19) {
-      return [18]; // 최종 NPC인 호랑이만
+    // 플레이어 레벨 30 이상일 때는 북극곰(Lv 29)만 스폰
+    if (playerLevel >= 30) {
+      return [29]; // 최종 NPC인 북극곰만
     }
 
     const minLevel = Math.max(0, playerLevel - 3);
-    const maxLevel = Math.min(18, playerLevel + 3);
+    const maxLevel = Math.min(29, playerLevel + 3);
     const levels: number[] = [];
     for (let i = minLevel; i <= maxLevel; i++) {
       levels.push(i);
@@ -292,9 +292,9 @@ export class NPCManager {
   }
 
   private getTargetCount(npcLevel: number, playerLevel: number): number {
-    // 플레이어 레벨 19 이상일 때 호랑이(Lv 18) 개체수 고정
-    if (playerLevel >= 19 && npcLevel === 18) {
-      return 8; // 호랑이 8마리 고정
+    // 플레이어 레벨 30 이상일 때 북극곰(Lv 29) 개체수 고정
+    if (playerLevel >= 30 && npcLevel === 29) {
+      return 8; // 북극곰 8마리 고정
     }
 
     const diff = npcLevel - playerLevel;

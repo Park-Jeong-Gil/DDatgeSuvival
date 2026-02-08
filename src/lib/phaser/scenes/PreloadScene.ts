@@ -43,23 +43,34 @@ export class PreloadScene extends Phaser.Scene {
     const npcNames = [
       "Ant",
       "Horned_Caterpillar",
+      "Scarab",
+      "Grasshopper",
       "Mantis",
       "Spider",
       "Lizard",
-      "Sparrow",
       "Poison_Toad",
+      "Sparrow",
       "Snake",
+      "Meerkat",
       "Crow",
       "Cat",
       "Weasel",
+      "Honey_Badger",
       "Owl",
       "Fox",
       "King_Komodo",
+      "Leopard",
       "Eagle",
       "Boar",
       "Wolf",
+      "Hyena",
       "Moon_Bear",
+      "Crocodile",
+      "Hippo",
+      "Lion",
+      "Ursus_Bear",
       "Tiger",
+      "Polar_Bear",
       "Dinosaur",
     ];
 
@@ -223,23 +234,34 @@ export class PreloadScene extends Phaser.Scene {
     const npcNames = [
       "Ant",
       "Horned_Caterpillar",
+      "Scarab",
+      "Grasshopper",
       "Mantis",
       "Spider",
       "Lizard",
-      "Sparrow",
       "Poison_Toad",
+      "Sparrow",
       "Snake",
+      "Meerkat",
       "Crow",
       "Cat",
       "Weasel",
+      "Honey_Badger",
       "Owl",
       "Fox",
       "King_Komodo",
+      "Leopard",
       "Eagle",
       "Boar",
       "Wolf",
+      "Hyena",
       "Moon_Bear",
+      "Crocodile",
+      "Hippo",
+      "Lion",
+      "Ursus_Bear",
       "Tiger",
+      "Polar_Bear",
       "Dinosaur",
     ];
 
@@ -380,24 +402,35 @@ export class PreloadScene extends Phaser.Scene {
     // NPC level colors (red gradient for predators, blue for prey)
     const npcColors: Record<number, number> = {
       0: 0x94a3b8, // ant - gray
-      1: 0xa3e635, // caterpillar - lime
-      2: 0x78716c, // beetle - stone
-      3: 0x6b7280, // spider - gray
-      4: 0x84cc16, // grasshopper - green
-      5: 0x10b981, // frog - emerald
+      1: 0xa3e635, // horned caterpillar - lime
+      2: 0x78716c, // scarab - stone
+      3: 0x84cc16, // grasshopper - green
+      4: 0x6b7280, // mantis - gray
+      5: 0x71717a, // spider - zinc
       6: 0x14b8a6, // lizard - teal
-      7: 0xf59e0b, // sparrow - amber
-      8: 0x1f2937, // crow - dark
+      7: 0x10b981, // poison toad - emerald
+      8: 0xf59e0b, // sparrow - amber
       9: 0x7c3aed, // snake - violet
-      10: 0xfb923c, // cat - orange
-      11: 0xa16207, // weasel - yellow
-      12: 0x0ea5e9, // heron - sky
-      13: 0xdc2626, // lynx - red
-      14: 0x64748b, // falcon - slate
-      15: 0x92400e, // boar - brown
-      16: 0x4b5563, // wolf - gray
-      17: 0x7f1d1d, // bear - dark red
-      18: 0xea580c, // tiger - deep orange
+      10: 0xfbbf24, // meerkat - yellow
+      11: 0x1f2937, // crow - dark
+      12: 0xfb923c, // cat - orange
+      13: 0xa16207, // weasel - brown
+      14: 0x78350f, // honey badger - amber brown
+      15: 0x64748b, // owl - slate
+      16: 0xdc2626, // fox - red
+      17: 0x7c2d12, // king komodo - orange brown
+      18: 0xfde047, // leopard - yellow
+      19: 0x0ea5e9, // eagle - sky
+      20: 0x92400e, // boar - brown
+      21: 0x4b5563, // wolf - gray
+      22: 0xa8a29e, // hyena - stone
+      23: 0x1e293b, // moon bear - slate dark
+      24: 0x065f46, // crocodile - emerald dark
+      25: 0x6366f1, // hippo - indigo
+      26: 0xf97316, // lion - orange
+      27: 0x7f1d1d, // ursus bear - dark red
+      28: 0xea580c, // tiger - deep orange
+      29: 0xe0f2fe, // polar bear - sky light
       99: 0x9333ea, // dinosaur boss - purple
     };
 

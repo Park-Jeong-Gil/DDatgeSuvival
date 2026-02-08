@@ -25,7 +25,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     this.setCollideWorldBounds(true);
 
-    const size = 32 + this.level * 4; // Lv1 = 36px (2x)
+    const size = 28 + this.level * 0.5; // Lv1 = 36px (2x)
     this.setScale(size / Player.TEX_H);
     this.setDepth(10);
 

@@ -67,7 +67,7 @@ export default function HowToPlayContent() {
               </div>
               <div className="flex justify-between">
                 <span>・ 맹독 물약</span>
-                <span className="text-gray-400">부딪힌 천적 제거 (10초)</span>
+                <span className="text-gray-400">부딪힌 천적 제거 (12초)</span>
               </div>
             </div>
           </div>
@@ -93,8 +93,8 @@ export default function HowToPlayContent() {
                 <span className="text-gray-400">일시적 레벨 상승 (15초)</span>
               </div>
               <div className="flex justify-between">
-                <span>・ 단단해지기 수정</span>
-                <span className="text-gray-400">부딪힌 천적 기절 (8초)</span>
+                <span>・ 얼음 수정</span>
+                <span className="text-gray-400">부딪힌 천적 기절 (12초)</span>
               </div>
             </div>
           </div>
