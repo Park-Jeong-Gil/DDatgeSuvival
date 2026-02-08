@@ -54,8 +54,8 @@ export default function CostumeSelectModal({
         </p>
 
         {/* 코스튬 그리드 */}
-        <div className="max-h-[60vh] overflow-y-auto mb-6 pr-2">
-          <div className="grid grid-cols-3 gap-3">
+        <div className="max-h-[60vh] overflow-y-auto mb-6 py-4 px-2">
+          <div className="grid grid-cols-3 gap-4">
             {allCostumes.map((costume) => {
               const isSelected = selectedCostume === costume.id;
               const isLocked = !costume.unlocked;
@@ -67,7 +67,9 @@ export default function CostumeSelectModal({
                   onClick={() => {
                     if (!isLocked) {
                       // Toggle: if already selected, deselect (set to null)
-                      setSelectedCostume(selectedCostume === costume.id ? null : costume.id);
+                      setSelectedCostume(
+                        selectedCostume === costume.id ? null : costume.id,
+                      );
                     }
                   }}
                   disabled={isLocked}
@@ -79,7 +81,12 @@ export default function CostumeSelectModal({
                         : "bg-[#2a2a2a] hover:bg-[#333]"
                   }`}
                   style={{
-                    borderColor: isSelected && !isLocked ? borderColor : isLocked ? "#444" : "transparent",
+                    borderColor:
+                      isSelected && !isLocked
+                        ? borderColor
+                        : isLocked
+                          ? "#444"
+                          : "transparent",
                     borderWidth: isSelected || isLocked ? "3px" : "2px",
                   }}
                 >
@@ -103,7 +110,9 @@ export default function CostumeSelectModal({
                         }
                         alt={costume.name}
                         className={`relative w-full h-full object-contain ${
-                          isLocked ? "brightness-[0.25] grayscale opacity-50" : ""
+                          isLocked
+                            ? "brightness-[0.25] grayscale opacity-50"
+                            : ""
                         }`}
                         onError={(e) => {
                           // 이미지 로드 실패 시 fallback
