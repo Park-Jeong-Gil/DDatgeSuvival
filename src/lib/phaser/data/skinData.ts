@@ -68,21 +68,35 @@ export interface CostumeData {
 }
 
 export const costumesData: CostumeData[] = [
-  { id: "yellow", name: "노랑 땃쥐", rarity: "common" },
-  { id: "blue", name: "파랑 땃쥐", rarity: "common" },
-  { id: "pink", name: "분홍 땃쥐", rarity: "common" },
-  { id: "green", name: "초록 땃쥐", rarity: "common" },
-  { id: "fire", name: "불꽃 땃쥐", rarity: "uncommon" },
-  { id: "ice", name: "얼음 땃쥐", rarity: "uncommon" },
-  { id: "golden", name: "황금 땃쥐", rarity: "uncommon" },
+  // { id: "yellow", name: "노랑 땃쥐", rarity: "common" },
+  // { id: "blue", name: "파랑 땃쥐", rarity: "common" },
+  // { id: "pink", name: "분홍 땃쥐", rarity: "common" },
+  // { id: "green", name: "초록 땃쥐", rarity: "common" },
+  { id: "rock", name: "바위 땃쥐", rarity: "common" },
+  { id: "fire", name: "불꽃 땃쥐", rarity: "common" },
+  { id: "ice", name: "얼음 땃쥐", rarity: "common" },
+  { id: "golden", name: "황금 땃쥐", rarity: "common" },
+
   { id: "rainbow", name: "무지개 땃쥐", rarity: "uncommon" },
-  { id: "fighter", name: "격투가 땃쥐", rarity: "rare" },
-  { id: "angel", name: "천사 땃쥐", rarity: "rare" },
+  { id: "sherbet", name: "샤베트 땃쥐", rarity: "uncommon" },
+  { id: "fighter", name: "격투가 땃쥐", rarity: "uncommon" },
+  { id: "angel", name: "천사 땃쥐", rarity: "uncommon" },
+
+  { id: "cosmic", name: "우주 땃쥐", rarity: "rare" },
   { id: "ghost", name: "유령 땃쥐", rarity: "rare" },
+  { id: "crystal", name: "크리스탈 땃쥐", rarity: "rare" },
+  { id: "robot", name: "로봇 땃쥐", rarity: "rare" },
+  { id: "ninja", name: "닌자 땃쥐", rarity: "rare" },
+
+  { id: "icecream", name: "아이스크림 땃쥐", rarity: "epic" },
   { id: "pierrot", name: "삐에로 땃쥐", rarity: "epic" },
-  { id: "robot", name: "로봇 땃쥐", rarity: "epic" },
+  { id: "cowboy", name: "카우보이 땃쥐", rarity: "epic" },
   { id: "magic", name: "마법소녀 땃쥐", rarity: "epic" },
-  { id: "cosmic", name: "우주 땃쥐", rarity: "legendary" },
+  { id: "skater", name: "스케이터 땃쥐", rarity: "epic" },
+
+  { id: "street_fighter", name: "무도가 땃쥐", rarity: "legendary" },
+  { id: "king", name: "킹 땃쥐", rarity: "legendary" },
+  { id: "link", name: "링크 땃쥐", rarity: "legendary" },
 ];
 
 export function getCostumeById(costumeId: string): CostumeData | undefined {
@@ -91,11 +105,11 @@ export function getCostumeById(costumeId: string): CostumeData | undefined {
 
 // 코스튼별 레어리티 매핑
 export const costumesByRarity: Record<Rarity, string[]> = {
-  common: ["yellow", "blue", "pink", "green"],
-  uncommon: ["fire", "ice", "golden", "rainbow"],
-  rare: ["fighter", "angel", "ghost"],
-  epic: ["pierrot", "robot", "magic"],
-  legendary: ["cosmic"],
+  common: ["rock", "fire", "ice", "golden"],
+  uncommon: ["rainbow", "sherbet", "fighter", "angel"],
+  rare: ["cosmic", "ghost", "crystal", "ninja", "robot"],
+  epic: ["icecream", "pierrot", "cowboy", "magic", "skater"],
+  legendary: ["street_fighter", "king", "link"],
 };
 
 export function getRandomCostumeByRarity(
