@@ -14,7 +14,7 @@ const buffColors: Record<string, string> = {
   honey_pot: "text-amber-400",
   poison_potion: "text-green-500",
   wing_feather: "text-cyan-400",
-  predator_shield: "text-purple-400",
+  punch_glove: "text-purple-400",
   invisible_cloak: "text-gray-300",
   giant_power: "text-red-400",
   crystal: "text-pink-400",

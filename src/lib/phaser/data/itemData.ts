@@ -59,13 +59,13 @@ export const buffItems: ItemData[] = [
     spriteKey: "item_wing_feather",
   },
   {
-    id: "predator_shield",
-    name: "돌진 방패",
+    id: "punch_glove",
+    name: "펀치 글로브",
     category: "buff",
     effect: "knockback_same_level",
     duration: 18,
     rarity: "uncommon",
-    spriteKey: "item_predator_shield",
+    spriteKey: "item_glove",
   },
   {
     id: "invisible_cloak",

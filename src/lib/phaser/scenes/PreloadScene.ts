@@ -101,10 +101,7 @@ export class PreloadScene extends Phaser.Scene {
       "item_wing_feather",
       "assets/sprites/items/item_wing_feather.png",
     );
-    this.load.image(
-      "item_predator_shield",
-      "assets/sprites/items/item_predator_shield.png",
-    );
+    this.load.image("item_glove", "assets/sprites/items/item_glove.png");
     this.load.image(
       "item_invisible_cloak",
       "assets/sprites/items/item_invisible_cloak.png",
@@ -292,7 +289,7 @@ export class PreloadScene extends Phaser.Scene {
       "item_honey_pot",
       "item_poison_potion",
       "item_wing_feather",
-      "item_predator_shield",
+      "item_glove",
       "item_invisible_cloak",
       "item_giant_power",
       "item_crystal",
