@@ -36,7 +36,7 @@ export default function HowToPlayContent() {
           <p>・ 풀숲에서는 천적의 이동 속도가 반감</p>
           <p>・ 도망 칠 때 와리가리 하면 오히려 더 빨리 잡힙니다</p>
           <p>・ 공복 게이지가 0이 되면 사망</p>
-          <p>・ 천적을 피하고 먹이를 잡으며 최대한 오래 생존하세요!</p>
+          <p>・ 먹이를 잡고 천적을 피하며 최대한 오래 생존하세요!</p>
         </div>
       </section>
 
@@ -66,7 +66,7 @@ export default function HowToPlayContent() {
                 <span className="text-gray-400">먹이 유혹 (15초)</span>
               </div>
               <div className="flex justify-between">
-                <span>・ 독 물약</span>
+                <span>・ 맹독 물약</span>
                 <span className="text-gray-400">부딪힌 천적 제거 (10초)</span>
               </div>
             </div>
@@ -93,7 +93,7 @@ export default function HowToPlayContent() {
                 <span className="text-gray-400">일시적 레벨 상승 (15초)</span>
               </div>
               <div className="flex justify-between">
-                <span>・ 수정</span>
+                <span>・ 단단해지기 수정</span>
                 <span className="text-gray-400">부딪힌 천적 기절 (8초)</span>
               </div>
             </div>

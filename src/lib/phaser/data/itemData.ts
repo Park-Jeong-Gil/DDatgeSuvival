@@ -87,7 +87,7 @@ export const buffItems: ItemData[] = [
   },
   {
     id: "crystal",
-    name: "수정",
+    name: "단단해지기 수정",
     category: "buff",
     effect: "stun_predator",
     duration: 8,
