@@ -20,6 +20,7 @@ export interface ActiveBuff {
   name: string;
   remainingTime: number;
   duration: number;
+  spriteKey: string;
 }
 
 export interface PlayerStats {

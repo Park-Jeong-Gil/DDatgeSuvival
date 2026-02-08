@@ -23,9 +23,16 @@ export default function BuffDisplay({ buffs }: BuffDisplayProps) {
       {buffs.map((buff) => (
         <div
           key={buff.id}
-          className={`text-xs font-bold ${buffColors[buff.id] ?? "text-white"}`}
+          className={`flex items-center gap-2 font-bold ${buffColors[buff.id] ?? "text-white"}`}
         >
-          {buff.name} ({Math.ceil(buff.remainingTime / 1000)}s)
+          <img
+            src={`/assets/sprites/items/${buff.spriteKey}.png`}
+            alt={buff.name}
+            className="w-6 h-6 object-contain"
+          />
+          <span>
+            {buff.name} ({Math.ceil(buff.remainingTime / 1000)}s)
+          </span>
         </div>
       ))}
     </div>

@@ -24,14 +24,14 @@ export default function HUD() {
   return (
     <div className="absolute inset-0 pointer-events-none">
       {/* Top Center - Score & Time */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/50 rounded-lg px-4 py-2 flex gap-4 text-sm text-white font-bold">
+      <div className="score-panel absolute top-4 left-1/2 -translate-x-1/2 px-4 py-2 flex gap-4 text-sm text-white font-bold pixel-panel_hud">
         <span>Score: {score.toLocaleString()}</span>
         <span>Time: {formatTime(survivalTime)}</span>
       </div>
 
       {/* Top Center Below Score - Active Buffs (아이템이 있을 때만 표시) */}
       {hasActiveBuffs && (
-        <div className="absolute top-16 left-1/2 -translate-x-1/2 bg-black/50 rounded-lg px-3 py-2">
+        <div className="items-panel absolute top-20 left-1/2 -translate-x-1/2 px-3 py-2 pixel-panel_hud">
           <BuffDisplay buffs={activeBuffs} />
         </div>
       )}

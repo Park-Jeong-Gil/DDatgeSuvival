@@ -154,11 +154,13 @@ export class ItemManager {
   private syncBuffsToStore() {
     const buffs: ActiveBuff[] = [];
     for (const [id, buff] of this.activeBuffs) {
+      const itemData = allItems.find((i) => i.id === id);
       buffs.push({
         id,
-        name: allItems.find((i) => i.id === id)?.name ?? id,
+        name: itemData?.name ?? id,
         remainingTime: buff.remainingTime,
         duration: buff.duration,
+        spriteKey: itemData?.spriteKey ?? "",
       });
     }
     useGameStore.getState().setActiveBuffs(buffs);
