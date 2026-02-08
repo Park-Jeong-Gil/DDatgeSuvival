@@ -166,6 +166,7 @@ export default function HomePage() {
 
       <CostumeSelectModal
         isOpen={costumeSelectOpen}
+        onClose={() => setCostumeSelectOpen(false)}
         unlockedCostumes={unlockedCostumes}
         onSelect={handleCostumeSelect}
       />

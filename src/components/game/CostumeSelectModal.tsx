@@ -7,12 +7,14 @@ interface CostumeSelectModalProps {
   isOpen: boolean;
   unlockedCostumes: string[];
   onSelect: (costumeId: string | null) => void;
+  onClose: () => void;
 }
 
 export default function CostumeSelectModal({
   isOpen,
   unlockedCostumes,
   onSelect,
+  onClose,
 }: CostumeSelectModalProps) {
   const [selectedCostume, setSelectedCostume] = useState<string | null>(null);
 
@@ -40,7 +42,10 @@ export default function CostumeSelectModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+      onClick={onClose}
+    >
       <div
         className="pixel-panel bg-[#221813] backdrop-blur p-6 w-full max-w-md mx-4 text-center"
         onClick={(e) => e.stopPropagation()}
@@ -77,7 +82,7 @@ export default function CostumeSelectModal({
                     isLocked
                       ? "bg-[#1a1a1a] cursor-not-allowed opacity-60"
                       : isSelected
-                        ? "bg-[#3a3a3a] scale-105"
+                        ? "bg-[#515151] scale-105"
                         : "bg-[#2a2a2a] hover:bg-[#333]"
                   }`}
                   style={{
