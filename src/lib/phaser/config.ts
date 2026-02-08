@@ -2,9 +2,9 @@ import * as Phaser from "phaser";
 import { PreloadScene } from "./scenes/PreloadScene";
 import { GameScene } from "./scenes/GameScene";
 import { UIScene } from "./scenes/UIScene";
-import { GAME_WIDTH, GAME_HEIGHT } from "./constants";
+import { GAME_WIDTH, GAME_HEIGHT, DEBUG_MODE } from "./constants";
 
-export { GAME_WIDTH, GAME_HEIGHT } from "./constants";
+export { GAME_WIDTH, GAME_HEIGHT, DEBUG_MODE } from "./constants";
 export { MAP_WIDTH, MAP_HEIGHT } from "./constants";
 
 export const gameConfig: Phaser.Types.Core.GameConfig = {
@@ -17,7 +17,7 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
     default: "arcade",
     arcade: {
       gravity: { x: 0, y: 0 },
-      debug: false,
+      debug: DEBUG_MODE,
     },
   },
   input: {

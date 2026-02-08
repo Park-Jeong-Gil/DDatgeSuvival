@@ -54,6 +54,8 @@ export class NPCManager {
     playerY: number,
     isPlayerInvisible: boolean,
     isMobile?: boolean,
+    predatorSpeedMultiplier?: number,
+    hasAttractPreyBuff?: boolean,
   ) {
     // Spawn check
     this.spawnTimer += delta;
@@ -75,6 +77,8 @@ export class NPCManager {
           isPlayerInvisible,
           bushData,
           isMobile,
+          predatorSpeedMultiplier,
+          hasAttractPreyBuff,
         );
       }
     }

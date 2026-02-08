@@ -64,21 +64,30 @@ export class PreloadScene extends Phaser.Scene {
     });
 
     // Item sprites
-    this.load.image(
-      "item_golden_fruit",
-      "assets/sprites/items/item_golden_fruit.png",
-    );
+    this.load.image("item_grape", "assets/sprites/items/item_grape.png");
     this.load.image(
       "item_satiety_potion",
       "assets/sprites/items/item_satiety_potion.png",
     );
     this.load.image(
-      "item_predator_shield",
-      "assets/sprites/items/item_predator_shield.png",
+      "item_golden_fruit",
+      "assets/sprites/items/item_golden_fruit.png",
+    );
+    this.load.image(
+      "item_honey_pot",
+      "assets/sprites/items/item_honey_pot.png",
+    );
+    this.load.image(
+      "item_poison_potion",
+      "assets/sprites/items/item_poison_potion.png",
     );
     this.load.image(
       "item_wing_feather",
       "assets/sprites/items/item_wing_feather.png",
+    );
+    this.load.image(
+      "item_predator_shield",
+      "assets/sprites/items/item_predator_shield.png",
     );
     this.load.image(
       "item_invisible_cloak",
@@ -88,6 +97,7 @@ export class PreloadScene extends Phaser.Scene {
       "item_giant_power",
       "assets/sprites/items/item_giant_power.png",
     );
+    this.load.image("item_crystal", "assets/sprites/items/item_crystal.png");
     this.load.image("item_costume", "assets/sprites/items/item_costume.png");
 
     // Costume sprites
@@ -240,12 +250,16 @@ export class PreloadScene extends Phaser.Scene {
 
     // Item sprites - LINEAR 필터 적용
     const itemKeys = [
-      "item_golden_fruit",
+      "item_grape",
       "item_satiety_potion",
-      "item_predator_shield",
+      "item_golden_fruit",
+      "item_honey_pot",
+      "item_poison_potion",
       "item_wing_feather",
+      "item_predator_shield",
       "item_invisible_cloak",
       "item_giant_power",
+      "item_crystal",
       "item_costume",
     ];
 

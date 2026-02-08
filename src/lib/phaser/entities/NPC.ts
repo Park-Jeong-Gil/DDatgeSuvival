@@ -16,6 +16,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
   private chaseStartTime: number = 0;
   private readonly MAX_CHASE_DURATION = 8000;
   private _stunUntil: number = 0;
+  public isKnockedBack: boolean = false; // 넉백 중인지 여부
   private nameLabel: Phaser.GameObjects.Text;
   private currentLabelColor: string = "";
   private lastSeenAt: number = -Infinity;
@@ -305,6 +306,8 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     isPlayerInvisible: boolean,
     bushData?: { x: number; y: number; r2: number }[],
     isMobile?: boolean,
+    predatorSpeedMultiplier?: number,
+    hasAttractPreyBuff?: boolean,
   ) {
     if (!this.active) return;
 
@@ -355,7 +358,10 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
 
     // 정지 상태 체크
     if (now < this._stunUntil) {
-      this.setVelocity(0, 0);
+      // 넉백 중이 아니면 속도를 0으로 설정 (일반 기절)
+      if (!this.isKnockedBack) {
+        this.setVelocity(0, 0);
+      }
       // 기절 중에는 어두운 색상 유지
       if (!this.tintTopLeft || this.tintTopLeft === 0xffffff) {
         this.setTint(0x888888);
@@ -442,7 +448,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
         this.removePredatorOutline();
         return;
       }
-      this.chase(playerX, playerY, playerSpeed, bushData);
+      this.chase(playerX, playerY, playerSpeed, bushData, predatorSpeedMultiplier);
     } else if (levelDiff > 0) {
       // NPC is prey - flee
       if (this.aiState === NPCState.CHASE) {
@@ -452,7 +458,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       }
       this.aiState = NPCState.FLEE;
       this.chaseStartTime = 0;
-      this.flee(playerX, playerY, playerSpeed);
+      this.flee(playerX, playerY, playerSpeed, hasAttractPreyBuff);
     } else {
       // Same level - wander
       if (this.aiState === NPCState.CHASE) {
@@ -502,6 +508,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     targetY: number,
     playerSpeed: number,
     bushData?: { x: number; y: number; r2: number }[],
+    predatorSpeedMultiplier?: number,
   ) {
     const angle = Phaser.Math.Angle.Between(this.x, this.y, targetX, targetY);
     // let speed = playerSpeed * 1.01;
@@ -524,12 +531,26 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       }
     }
 
+    // slow_predator 효과 적용
+    if (predatorSpeedMultiplier !== undefined) {
+      speed *= predatorSpeedMultiplier;
+    }
+
     this.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
 
     this.safeSetFlipX(Math.cos(angle));
   }
 
-  private flee(targetX: number, targetY: number, playerSpeed: number) {
+  private flee(targetX: number, targetY: number, playerSpeed: number, hasAttractPreyBuff?: boolean) {
+    // attract_prey 효과가 있으면 플레이어에게 다가감
+    if (hasAttractPreyBuff) {
+      const angle = Phaser.Math.Angle.Between(this.x, this.y, targetX, targetY);
+      const speed = playerSpeed * 0.4;
+      this.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
+      this.safeSetFlipX(Math.cos(angle));
+      return;
+    }
+
     const worldBounds = this.scene.physics.world.bounds;
     const margin = 100; // 경계로부터 여유 거리
 

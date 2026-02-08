@@ -102,22 +102,34 @@ export class ItemManager {
     const store = useGameStore.getState();
 
     switch (data.effect) {
+      case "hunger_half":
+        store.setHunger(Math.min(store.hunger + store.maxHunger * 0.5, store.maxHunger));
+        break;
       case "hunger_full":
         store.setHunger(store.maxHunger);
         break;
       case "hunger_slow":
         this.addBuff(data.id, data.effect, data.duration * 1000);
         break;
-      case "invincible":
+      case "attract_prey":
+        this.addBuff(data.id, data.effect, data.duration * 1000);
+        break;
+      case "stun_on_collision":
         this.addBuff(data.id, data.effect, data.duration * 1000);
         break;
       case "speed_boost":
         this.addBuff(data.id, data.effect, data.duration * 1000);
         break;
+      case "knockback_same_level":
+        this.addBuff(data.id, data.effect, data.duration * 1000);
+        break;
       case "invisible":
         this.addBuff(data.id, data.effect, data.duration * 1000);
         break;
-      case "eat_same_level":
+      case "level_boost":
+        this.addBuff(data.id, data.effect, data.duration * 1000);
+        break;
+      case "stun_predator":
         this.addBuff(data.id, data.effect, data.duration * 1000);
         break;
       case "costume_change":
@@ -177,20 +189,32 @@ export class ItemManager {
     return this.hasActiveBuff("speed_boost") ? 1.5 : 1.0;
   }
 
-  isPlayerInvincible(): boolean {
-    return this.hasActiveBuff("invincible");
-  }
-
   isPlayerInvisible(): boolean {
     return this.hasActiveBuff("invisible");
   }
 
-  canEatSameLevel(): boolean {
-    return this.hasActiveBuff("eat_same_level");
-  }
-
   getHungerDecreaseMultiplier(): number {
     return this.hasActiveBuff("hunger_slow") ? 0.5 : 1.0;
+  }
+
+  hasAttractPreyBuff(): boolean {
+    return this.hasActiveBuff("attract_prey");
+  }
+
+  hasStunOnCollisionBuff(): boolean {
+    return this.hasActiveBuff("stun_on_collision");
+  }
+
+  hasKnockbackSameLevelBuff(): boolean {
+    return this.hasActiveBuff("knockback_same_level");
+  }
+
+  getLevelBoost(): number {
+    return this.hasActiveBuff("level_boost") ? 2 : 0;
+  }
+
+  hasStunPredatorBuff(): boolean {
+    return this.hasActiveBuff("stun_predator");
   }
 
   // NPC kill skin drop (disabled until customization feature is implemented)
@@ -213,6 +237,7 @@ export class ItemManager {
   private findValidItemPosition(): { x: number; y: number } | null {
     const margin = 200;
     const minDistanceFromObstacle = 60; // 장애물과 최소 거리
+    const minDistanceFromPlayer = 150; // 플레이어와 최소 거리
 
     for (let attempt = 0; attempt < 50; attempt++) {
       const x = margin + Math.random() * (MAP_WIDTH - margin * 2);
@@ -251,6 +276,21 @@ export class ItemManager {
         return true;
       });
 
+      if (tooClose) continue;
+
+      // 플레이어와의 거리 체크 (플레이어 근처에 아이템이 갑자기 생성되지 않도록)
+      if (this.player) {
+        const distanceFromPlayer = Phaser.Math.Distance.Between(
+          x,
+          y,
+          this.player.x,
+          this.player.y,
+        );
+        if (distanceFromPlayer < minDistanceFromPlayer) {
+          tooClose = true;
+        }
+      }
+
       if (!tooClose) {
         return { x, y };
       }
@@ -273,6 +313,31 @@ export class ItemManager {
     }
 
     return null;
+  }
+
+  // Debug: Spawn all items around player
+  debugSpawnAllItems() {
+    if (!this.player) return;
+
+    const radius = 150;
+    const centerX = this.player.x;
+    const centerY = this.player.y;
+
+    // Filter out costume items for debug spawn (too many)
+    const itemsToSpawn = allItems.filter((item) => item.category !== "cosmetic");
+    const angleStep = (Math.PI * 2) / itemsToSpawn.length;
+
+    itemsToSpawn.forEach((data, index) => {
+      const angle = angleStep * index;
+      const x = centerX + Math.cos(angle) * radius;
+      const y = centerY + Math.sin(angle) * radius;
+
+      const item = new Item(this.scene, x, y, data);
+      this.itemGroup.add(item);
+      this.items.push(item);
+    });
+
+    console.log(`[DEBUG] Spawned ${itemsToSpawn.length} items around player`);
   }
 
   destroy() {

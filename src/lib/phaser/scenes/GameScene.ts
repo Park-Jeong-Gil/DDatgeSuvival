@@ -13,6 +13,7 @@ import {
   MOBILE_GAME_WIDTH,
   MOBILE_GAME_HEIGHT,
   DEBUG_START_LEVEL,
+  DEBUG_MODE,
 } from "../constants";
 import { useGameStore } from "@/store/gameStore";
 import { useAudioStore } from "@/store/audioStore";
@@ -186,6 +187,14 @@ export class GameScene extends Phaser.Scene {
     this.itemManager = new ItemManager(this, this.mapElements);
     this.itemManager.setPlayer(this.player);
 
+    // Debug: Spawn all items with 'I' key (DEBUG_MODE가 true일 때만 사용)
+    if (DEBUG_MODE && this.input.keyboard) {
+      this.input.keyboard.on("keydown-I", () => {
+        console.log("[DEBUG] 'I' key pressed - spawning all items");
+        this.itemManager.debugSpawnAllItems();
+      });
+    }
+
     // Initial NPC spawn - 디버그 레벨에 맞게 스폰
     const startLevel = DEBUG_START_LEVEL;
     this.npcManager.initialSpawn(startLevel, MAP_WIDTH / 2, MAP_HEIGHT / 2);
@@ -224,7 +233,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private setupCollisions() {
-    // Player vs NPC - 물리적 충돌 (동일 레벨일 때만)
+    // Player vs NPC - 물리적 충돌 (동일 레벨일 때만, 넉백 버프 없을 때)
     this.physics.add.collider(
       this.player,
       this.npcManager.npcGroup,
@@ -233,11 +242,18 @@ export class GameScene extends Phaser.Scene {
         const npc = npcObj as NPC;
         if (!npc.active || npc.destroyed) return false;
 
-        const playerLevel = this.player.level;
+        const playerLevel = this.player.level + this.itemManager.getLevelBoost();
         const npcLevel = npc.level;
 
-        // 동일 레벨인 경우에만 물리적 충돌 발생
-        return FoodChain.sameLevel(playerLevel, npcLevel);
+        // 동일 레벨이고 넉백 버프가 있으면 물리적 충돌 무시
+        if (FoodChain.sameLevel(playerLevel, npcLevel)) {
+          if (this.itemManager.hasKnockbackSameLevelBuff()) {
+            return false; // 넉백 효과를 위해 충돌 무시
+          }
+          return true; // 일반 충돌
+        }
+
+        return false;
       },
     );
 
@@ -328,7 +344,7 @@ export class GameScene extends Phaser.Scene {
     this.levelSystem.checkLevelUp(this.player);
 
     // Re-read level after potential level-up to keep NPC labels in sync
-    const currentLevel = useGameStore.getState().level;
+    const currentLevel = useGameStore.getState().level + this.itemManager.getLevelBoost();
     this.npcManager.update(
       delta,
       currentLevel,
@@ -337,6 +353,8 @@ export class GameScene extends Phaser.Scene {
       this.player.y,
       this.itemManager.isPlayerInvisible(),
       this.isMobile,
+      undefined, // predatorSpeedMultiplier 제거됨
+      this.itemManager.hasAttractPreyBuff(),
     );
     this.npcManager.drawBars();
     this.itemManager.update(delta);
@@ -772,7 +790,7 @@ export class GameScene extends Phaser.Scene {
     const body = npc.body as Phaser.Physics.Arcade.Body;
     if (!body.enable) return;
 
-    const playerLevel = this.player.level;
+    const playerLevel = this.player.level + this.itemManager.getLevelBoost();
     const npcLevel = npc.level;
 
     if (FoodChain.isBoss(npcLevel)) {
@@ -781,20 +799,28 @@ export class GameScene extends Phaser.Scene {
     }
 
     // 먹을 수 있는 대상인지 확인
-    const canEatNPC =
-      FoodChain.canEat(playerLevel, npcLevel) ||
-      (FoodChain.sameLevel(playerLevel, npcLevel) &&
-        this.itemManager.canEatSameLevel());
+    const canEatNPC = FoodChain.canEat(playerLevel, npcLevel);
 
     if (canEatNPC) {
       this.handleEat(npc);
     } else if (FoodChain.sameLevel(playerLevel, npcLevel)) {
-      // 같은 레벨은 장애물처럼 단순 충돌만 처리 (넉백 없음)
+      // knockback_same_level 버프가 있으면 NPC를 멀리 밀어냄
+      if (this.itemManager.hasKnockbackSameLevelBuff()) {
+        this.handleSameLevelKnockback(npc);
+      }
+      // 같은 레벨은 장애물처럼 단순 충돌만 처리
       return;
     } else if (FoodChain.mustFlee(playerLevel, npcLevel)) {
-      // 플레이어가 무적 상태면 포식자 즉시 기절
-      if (this.itemManager.isPlayerInvincible()) {
-        npc.stunUntil = Date.now() + 10000;
+      // stun_on_collision 버프가 있으면 부딪힌 포식자 즉시 제거 (독약 효과)
+      if (this.itemManager.hasStunOnCollisionBuff()) {
+        console.log(`[DEBUG] Poison effect - removing predator level ${npcLevel}`);
+        this.npcManager.removeNPC(npc);
+        return;
+      }
+
+      // stun_predator 버프가 있으면 포식자 즉시 기절
+      if (this.itemManager.hasStunPredatorBuff()) {
+        npc.stunUntil = Date.now() + 5000;
         npc.aiState = NPCState.STUNNED;
         npc.setTint(0x888888);
         return;
@@ -907,6 +933,43 @@ export class GameScene extends Phaser.Scene {
     this.time.delayedCall(300, () => {
       if (this.player.active) {
         this.player.setVelocity(0, 0);
+      }
+    });
+  }
+
+  private handleSameLevelKnockback(npc: NPC) {
+    // 이미 넉백 중이면 무시 (중복 넉백 방지)
+    if (npc.stunUntil > Date.now()) return;
+
+    // 플레이어 → NPC 방향으로 강하게 밀어냄
+    const angle = Phaser.Math.Angle.Between(
+      this.player.x,
+      this.player.y,
+      npc.x,
+      npc.y,
+    );
+    const knockbackForce = 2000; // 매우 강한 넉백 (800 → 2000)
+
+    // NPC를 넉백 상태로 설정
+    npc.isKnockedBack = true;
+    npc.stunUntil = Date.now() + 1500; // 1.5초 기절 (1초 → 1.5초)
+    npc.aiState = NPCState.STUNNED;
+    npc.setTint(0xaaaaaa);
+
+    // NPC만 밀어냄 (플레이어는 그대로)
+    npc.setVelocity(
+      Math.cos(angle) * knockbackForce,
+      Math.sin(angle) * knockbackForce,
+    );
+
+    console.log(`[DEBUG] Knockback applied to NPC level ${npc.level} with force ${knockbackForce}`);
+
+    // 1.5초 후 NPC 속도 리셋 및 기절/넉백 해제
+    this.time.delayedCall(1500, () => {
+      if (npc.active) {
+        npc.isKnockedBack = false;
+        npc.setVelocity(0, 0);
+        npc.clearTint();
       }
     });
   }

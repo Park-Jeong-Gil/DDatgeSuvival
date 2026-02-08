@@ -50,16 +50,24 @@ export default function HowToPlayContent() {
             </p>
             <div className="space-y-1 text-gray-300">
               <div className="flex justify-between">
+                <span>・ 포도</span>
+                <span className="text-gray-400">공복 50% 회복</span>
+              </div>
+              <div className="flex justify-between">
                 <span>・ 황금 열매</span>
                 <span className="text-gray-400">공복 완전 회복</span>
               </div>
               <div className="flex justify-between">
                 <span>・ 포만감 물약</span>
-                <span className="text-gray-400">공복 감소 느려짐 (30초)</span>
+                <span className="text-gray-400">공복 감소 느려짐 (25초)</span>
               </div>
               <div className="flex justify-between">
-                <span>・ 천적 방어막</span>
-                <span className="text-gray-400">무적 (10초)</span>
+                <span>・ 꿀단지</span>
+                <span className="text-gray-400">먹이 유혹 (15초)</span>
+              </div>
+              <div className="flex justify-between">
+                <span>・ 독 물약</span>
+                <span className="text-gray-400">부딪힌 천적 제거 (10초)</span>
               </div>
             </div>
           </div>
@@ -70,15 +78,23 @@ export default function HowToPlayContent() {
             <div className="space-y-1 text-gray-300">
               <div className="flex justify-between">
                 <span>・ 날개 깃털</span>
-                <span className="text-gray-400">이동속도 증가 (20초)</span>
+                <span className="text-gray-400">이동속도 증가 (15초)</span>
+              </div>
+              <div className="flex justify-between">
+                <span>・ 돌진 방패</span>
+                <span className="text-gray-400">같은 레벨 밀어냄 (18초)</span>
               </div>
               <div className="flex justify-between">
                 <span>・ 투명 망토</span>
-                <span className="text-gray-400">투명화 (15초)</span>
+                <span className="text-gray-400">투명화 (12초)</span>
               </div>
               <div className="flex justify-between">
                 <span>・ 거인의 힘</span>
-                <span className="text-gray-400">같은 레벨 먹기 (20초)</span>
+                <span className="text-gray-400">일시적 레벨 상승 (15초)</span>
+              </div>
+              <div className="flex justify-between">
+                <span>・ 수정</span>
+                <span className="text-gray-400">부딪힌 천적 기절 (8초)</span>
               </div>
             </div>
           </div>
