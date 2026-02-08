@@ -81,7 +81,7 @@ export const costumesData: CostumeData[] = [
   { id: "ghost", name: "유령 땃쥐", rarity: "rare" },
   { id: "pierrot", name: "삐에로 땃쥐", rarity: "epic" },
   { id: "robot", name: "로봇 땃쥐", rarity: "epic" },
-  { id: "magic", name: "마법 소녀 땃쥐", rarity: "epic" },
+  { id: "magic", name: "마법소녀 땃쥐", rarity: "epic" },
   { id: "cosmic", name: "우주 땃쥐", rarity: "legendary" },
 ];
 
