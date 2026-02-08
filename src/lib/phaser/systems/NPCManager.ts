@@ -19,6 +19,9 @@ export class NPCManager {
   private bushData: { x: number; y: number; r2: number }[] = [];
   // Single shared Graphics for all NPC chase/stun bars (saves 1 Graphics per NPC)
   private barGraphics: Phaser.GameObjects.Graphics;
+  // Dynamic map bounds (updated when map expands)
+  private mapWidth: number = MAP_WIDTH;
+  private mapHeight: number = MAP_HEIGHT;
 
   constructor(
     scene: Phaser.Scene,
@@ -192,8 +195,8 @@ export class NPCManager {
     const halfH = GAME_HEIGHT / 2 + 100;
 
     for (let attempt = 0; attempt < 30; attempt++) {
-      const x = margin + Math.random() * (MAP_WIDTH - margin * 2);
-      const y = margin + Math.random() * (MAP_HEIGHT - margin * 2);
+      const x = margin + Math.random() * (this.mapWidth - margin * 2);
+      const y = margin + Math.random() * (this.mapHeight - margin * 2);
 
       // Reject if within camera view + 100px buffer
       if (Math.abs(x - playerX) < halfW && Math.abs(y - playerY) < halfH) {
@@ -210,12 +213,12 @@ export class NPCManager {
       x: Phaser.Math.Clamp(
         playerX + Math.cos(angle) * dist,
         margin,
-        MAP_WIDTH - margin,
+        this.mapWidth - margin,
       ),
       y: Phaser.Math.Clamp(
         playerY + Math.sin(angle) * dist,
         margin,
-        MAP_HEIGHT - margin,
+        this.mapHeight - margin,
       ),
     };
   }
@@ -247,7 +250,7 @@ export class NPCManager {
       const y = playerY + offsetY;
 
       // 맵 경계 체크
-      if (x < 100 || x > MAP_WIDTH - 100 || y < 100 || y > MAP_HEIGHT - 100) {
+      if (x < 100 || x > this.mapWidth - 100 || y < 100 || y > this.mapHeight - 100) {
         continue;
       }
 
@@ -260,9 +263,16 @@ export class NPCManager {
 
     // Fallback: 플레이어 오른쪽 위
     return {
-      x: Math.min(playerX + 200, MAP_WIDTH - 100),
+      x: Math.min(playerX + 200, this.mapWidth - 100),
       y: Math.max(playerY - 200, 100),
     };
+  }
+
+  // 맵 크기 업데이트 (GameScene에서 맵 확장 시 호출)
+  updateMapBounds(width: number, height: number) {
+    this.mapWidth = width;
+    this.mapHeight = height;
+    console.log(`[NPCManager] Map bounds updated: ${width}x${height}`);
   }
 
   relocateNPC(npc: NPC, playerX: number, playerY: number) {

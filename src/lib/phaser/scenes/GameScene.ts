@@ -75,6 +75,9 @@ export class GameScene extends Phaser.Scene {
   private levelupSound?: Phaser.Sound.BaseSound;
   private pickupSound?: Phaser.Sound.BaseSound;
   private levelZoomMultiplier: number = 1.0; // 레벨 기반 줌 배율 (1.0 = 기본)
+  private currentMapWidth: number = MAP_WIDTH; // 현재 맵 너비 (동적 확장)
+  private currentMapHeight: number = MAP_HEIGHT; // 현재 맵 높이 (동적 확장)
+  private backgroundTileSprite?: Phaser.GameObjects.TileSprite; // 배경 타일 스프라이트
 
   constructor() {
     super({ key: "GameScene" });
@@ -100,14 +103,14 @@ export class GameScene extends Phaser.Scene {
     }
 
     // Background - 기본 배경 타일 (4배 작게 보이도록 스케일 조정)
-    this.add
-      .tileSprite(0, 0, MAP_WIDTH, MAP_HEIGHT, "base_background")
+    this.backgroundTileSprite = this.add
+      .tileSprite(0, 0, this.currentMapWidth, this.currentMapHeight, "base_background")
       .setOrigin(0, 0)
       .setDepth(0)
       .setTileScale(0.28, 0.28);
 
     // World bounds
-    this.physics.world.setBounds(0, 0, MAP_WIDTH, MAP_HEIGHT);
+    this.physics.world.setBounds(0, 0, this.currentMapWidth, this.currentMapHeight);
 
     // Map obstacles
     this.mapElements = generateMap(this);
@@ -139,13 +142,14 @@ export class GameScene extends Phaser.Scene {
     this.createPlayerOverlay();
 
     // Camera
-    this.cameras.main.setBounds(0, 0, MAP_WIDTH, MAP_HEIGHT);
+    this.cameras.main.setBounds(0, 0, this.currentMapWidth, this.currentMapHeight);
     this.cameras.main.startFollow(this.player, true, 1, 1);
     this.cameras.main.setRoundPixels(false);
 
-    // Debug: 시작 레벨에 맞게 카메라 줌 초기화
+    // Debug: 시작 레벨에 맞게 카메라 줌 초기화 및 맵 확장
     if (DEBUG_START_LEVEL > 1) {
       this.initializeCameraZoomForLevel(DEBUG_START_LEVEL);
+      this.initializeMapSizeForLevel(DEBUG_START_LEVEL);
     }
 
     this.updateCameraZoom();
@@ -1048,9 +1052,10 @@ export class GameScene extends Phaser.Scene {
     // Flash effect
     this.cameras.main.flash(500, 255, 255, 100);
 
-    // 레벨 5마다 카메라 줌 아웃 (시야 확장)
+    // 레벨 5마다 카메라 줌 아웃 및 맵 확장 (시야 확장)
     if (data.level % 5 === 0) {
       this.applyCameraZoomOut(data.level);
+      this.expandMap(data.level);
     }
 
     // Update NPC spawns
@@ -1084,10 +1089,91 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  // 디버그 모드: 시작 레벨에 맞게 맵 크기 초기화
+  private initializeMapSizeForLevel(level: number) {
+    // 레벨 5마다 맵 확장 횟수 계산
+    const expandCount = Math.floor(level / 5);
+
+    if (expandCount > 0) {
+      // 줌이 0.9배 = 보이는 영역이 1/0.9 = 1.111배
+      // 맵도 같은 비율로 확장
+      const expansionRatio = Math.pow(1 / 0.9, expandCount);
+      this.currentMapWidth = Math.floor(MAP_WIDTH * expansionRatio);
+      this.currentMapHeight = Math.floor(MAP_HEIGHT * expansionRatio);
+
+      // NPCManager에 새로운 맵 크기 전달
+      if (this.npcManager) {
+        this.npcManager.updateMapBounds(this.currentMapWidth, this.currentMapHeight);
+      }
+
+      // 맵 크기 즉시 적용
+      this.updateMapSize();
+
+      console.log(
+        `[DEBUG] Map size initialized for level ${level}: ${this.currentMapWidth}x${this.currentMapHeight} (${expandCount} expansions)`,
+      );
+    }
+  }
+
+  // 맵 크기 업데이트 (배경, 물리 바운드, 카메라 바운드)
+  private updateMapSize() {
+    // 배경 TileSprite 크기 업데이트
+    if (this.backgroundTileSprite) {
+      this.backgroundTileSprite.setSize(this.currentMapWidth, this.currentMapHeight);
+    }
+
+    // Physics world bounds 업데이트
+    this.physics.world.setBounds(0, 0, this.currentMapWidth, this.currentMapHeight);
+
+    // Camera bounds 업데이트
+    this.cameras.main.setBounds(0, 0, this.currentMapWidth, this.currentMapHeight);
+  }
+
+  // 레벨 5마다 맵 확장 (레벨업 시)
+  private expandMap(_level: number) {
+    // 줌이 0.9배 = 보이는 영역이 1/0.9 = 1.111배
+    const expansionRatio = 1 / 0.9;
+
+    // 새로운 맵 크기 계산
+    const newWidth = Math.floor(this.currentMapWidth * expansionRatio);
+    const newHeight = Math.floor(this.currentMapHeight * expansionRatio);
+
+    // 맵 크기 업데이트
+    this.currentMapWidth = newWidth;
+    this.currentMapHeight = newHeight;
+
+    // NPCManager에 새로운 맵 크기 전달
+    if (this.npcManager) {
+      this.npcManager.updateMapBounds(newWidth, newHeight);
+    }
+
+    // 부드러운 확장 애니메이션 (배경 크기만)
+    if (this.backgroundTileSprite) {
+      this.tweens.add({
+        targets: this.backgroundTileSprite,
+        width: newWidth,
+        height: newHeight,
+        duration: 1000,
+        ease: "Cubic.easeInOut",
+        onComplete: () => {
+          // 애니메이션 완료 후 물리/카메라 바운드 업데이트
+          this.updateMapSize();
+        },
+      });
+    } else {
+      // 배경이 없으면 즉시 업데이트
+      this.updateMapSize();
+    }
+
+    console.log(
+      `[Map Expansion] New size: ${newWidth}x${newHeight} (${expansionRatio.toFixed(3)}x expansion)`,
+    );
+  }
+
   // 레벨 5마다 카메라 줌 아웃 효과 (레벨업 시)
   private applyCameraZoomOut(_level: number) {
-    // 레벨 5마다 7% 줌 아웃 (0.93배)
-    const targetMultiplier = this.levelZoomMultiplier * 0.93;
+    // 레벨 5마다 10% 줌 아웃 (0.9배)
+    const targetMultiplier = this.levelZoomMultiplier * 0.9;
 
     // 최소 줌 배율 제한 (최대 80% 줌 아웃까지만)
     const minZoom = 0.2;

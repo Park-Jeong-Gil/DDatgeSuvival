@@ -25,7 +25,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     this.setCollideWorldBounds(true);
 
-    const size = 28 + this.level * 0.1; // Lv1 = 36px (2x) 플레이어 사이즈
+    const size = 30 + this.level * 3; // 플레이어 사이즈
     this.setScale(size / Player.TEX_H);
     this.setDepth(10);
 
@@ -99,7 +99,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   updateStats(level: number) {
     this.level = level;
     this.currentSpeed = 107 + level * 7;
-    const size = 32 + level * 4;
+    const size = 30 + level * 3; // 플레이어 사이즈
     this.setScale(size / Player.TEX_H);
 
     // 그림자 업데이트
