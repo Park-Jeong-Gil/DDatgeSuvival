@@ -118,21 +118,27 @@ export class PreloadScene extends Phaser.Scene {
 
     // Costume sprites
     const costumeNames = [
-      "angel",
-      "blue",
-      "cosmic",
-      "fighter",
+      "rock",
       "fire",
-      "ghost",
-      "golden",
-      "green",
       "ice",
-      "magic",
-      "pierrot",
-      "pink",
+      "golden",
       "rainbow",
+      "sherbet",
+      "fighter",
+      "angel",
+      "cosmic",
+      "ghost",
+      "crystal",
+      "ninja",
       "robot",
-      "yellow",
+      "icecream",
+      "pierrot",
+      "cowboy",
+      "magic",
+      "skater",
+      "street_fighter",
+      "king",
+      "link",
     ];
 
     costumeNames.forEach((costume) => {
