@@ -68,6 +68,7 @@ export class GameScene extends Phaser.Scene {
     };
     this.applyAudioSettings(settings);
   };
+  private onRestartGameHandler = this.onRestartGame.bind(this);
   private bgm?: Phaser.Sound.BaseSound;
   private biteSound?: Phaser.Sound.BaseSound;
   private deathSound?: Phaser.Sound.BaseSound;
@@ -223,6 +224,7 @@ export class GameScene extends Phaser.Scene {
 
     EventBus.on("pause-game", this.onPauseGameHandler);
     EventBus.on("resume-game", this.onResumeGameHandler);
+    EventBus.on("restart-game", this.onRestartGameHandler);
 
     // 모든 초기화 완료 후 카메라 fadeIn과 BGM 재생
     // 검은 화면에서 게임으로 자연스럽게 전환
@@ -1161,6 +1163,7 @@ export class GameScene extends Phaser.Scene {
     EventBus.off("joystick-update", this.onJoystickUpdateHandler, this);
     EventBus.off("pause-game", this.onPauseGameHandler);
     EventBus.off("resume-game", this.onResumeGameHandler);
+    EventBus.off("restart-game", this.onRestartGameHandler);
     EventBus.off("play-sound", this.onPlaySoundHandler);
     EventBus.off("audio-settings-changed", this.onAudioSettingsChangedHandler);
     this.stopBGM();
@@ -1318,5 +1321,13 @@ export class GameScene extends Phaser.Scene {
     if (this.bgm && this.bgm.isPaused) {
       this.bgm.resume();
     }
+  }
+
+  private onRestartGame() {
+    // Stop all scenes and restart from PreloadScene
+    // This maintains user interaction context for audio autoplay
+    this.scene.stop("UIScene");
+    this.scene.stop("GameScene");
+    this.scene.start("PreloadScene");
   }
 }

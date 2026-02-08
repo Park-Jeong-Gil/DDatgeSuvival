@@ -9,6 +9,7 @@ export class PreloadScene extends Phaser.Scene {
   private loadingContainer!: Phaser.GameObjects.Container;
   private loadStartTime: number = 0;
   private fontLoaded: boolean = false;
+  private isRestart: boolean = false;
 
   constructor() {
     super({ key: "PreloadScene" });
@@ -16,6 +17,10 @@ export class PreloadScene extends Phaser.Scene {
 
   preload() {
     this.loadStartTime = Date.now();
+
+    // Check if assets are already cached (restart scenario)
+    this.isRestart = this.cache.audio.exists("bgm");
+
     this.createLoadingScreen();
 
     // Mulmaru 폰트 로딩 확인 및 대기
@@ -181,27 +186,30 @@ export class PreloadScene extends Phaser.Scene {
     this.loadingText.setOrigin(0.5);
     this.loadingContainer.add(this.loadingText);
 
-    // 로딩 바 배경 (어두운 회색 테두리)
-    this.loadingBox = this.add.graphics();
-    this.loadingBox.fillStyle(0x222222, 1);
-    this.loadingBox.fillRect(width / 2 - 160, height / 2 - 25, 320, 50);
-    this.loadingContainer.add(this.loadingBox);
+    // Only show loading bar on first load, not on restart
+    if (!this.isRestart) {
+      // 로딩 바 배경 (어두운 회색 테두리)
+      this.loadingBox = this.add.graphics();
+      this.loadingBox.fillStyle(0x222222, 1);
+      this.loadingBox.fillRect(width / 2 - 160, height / 2 - 25, 320, 50);
+      this.loadingContainer.add(this.loadingBox);
 
-    // 로딩 바 (밝은 회색)
-    this.loadingBar = this.add.graphics();
-    this.loadingContainer.add(this.loadingBar);
+      // 로딩 바 (밝은 회색)
+      this.loadingBar = this.add.graphics();
+      this.loadingContainer.add(this.loadingBar);
 
-    // 로딩 진행률 이벤트
-    this.load.on("progress", (value: number) => {
-      this.loadingBar.clear();
-      this.loadingBar.fillStyle(0xcccccc, 1);
-      this.loadingBar.fillRect(
-        width / 2 - 150,
-        height / 2 - 15,
-        300 * value,
-        30,
-      );
-    });
+      // 로딩 진행률 이벤트
+      this.load.on("progress", (value: number) => {
+        this.loadingBar.clear();
+        this.loadingBar.fillStyle(0xcccccc, 1);
+        this.loadingBar.fillRect(
+          width / 2 - 150,
+          height / 2 - 15,
+          300 * value,
+          30,
+        );
+      });
+    }
   }
 
   create() {

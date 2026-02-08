@@ -6,6 +6,7 @@ import { getNpcNameKo } from "@/lib/npcNames";
 import { useRouter } from "next/navigation";
 import { getOrCreateUserId, getUserNickname } from "@/lib/userId";
 import { getItemById } from "@/lib/phaser/data/itemData";
+import { EventBus } from "@/lib/phaser/EventBus";
 
 function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -99,8 +100,9 @@ export default function GameOverOverlay() {
 
   const handleRetry = () => {
     resetGame();
-    // Reload the page to restart Phaser
-    window.location.reload();
+    // Restart Phaser scenes instead of reloading the page
+    // This maintains user interaction context for audio autoplay
+    EventBus.emit("restart-game");
   };
 
   const handleMenu = () => {
