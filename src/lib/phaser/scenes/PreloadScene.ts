@@ -153,8 +153,24 @@ export class PreloadScene extends Phaser.Scene {
       );
     });
 
-    // Skill sprites (오브 스킬용)
-    const skillNames = ["fireball", "iceball", "stone"];
+    // Skill sprites (모든 스킬)
+    const skillNames = [
+      "skateboard",
+      "milk",
+      "mushroom",
+      "detector",
+      "pick",
+      "ax",
+      "crown",
+      "clover",
+      "bubbles",
+      "revolver",
+      "cobweb",
+      "fireball",
+      "iceball",
+      "stone",
+      "lightning",
+    ];
     skillNames.forEach((skillName) => {
       this.load.image(
         `skill_${skillName}`,

@@ -2,6 +2,13 @@ import { create } from "zustand";
 import type { ActiveBuff, NPCPosition } from "@/types/game";
 import type { ItemData } from "@/types/item";
 
+export interface SkillCooldown {
+  skillId: string;
+  remainingCooldown: number; // ms
+  maxCooldown: number; // ms
+  spriteKey: string;
+}
+
 interface GameStore {
   // State
   score: number;
@@ -18,6 +25,7 @@ interface GameStore {
   currentCostume: string | null;
   unlockedCostumes: string[]; // 획득한 모든 코스튬 ID 목록
   selectedSkills: string[]; // 게임 시작 시 선택한 스킬 (최대 3개)
+  skillCooldowns: SkillCooldown[]; // 스킬 쿨타임 정보
   activeBuffs: ActiveBuff[];
   nickname: string;
   npcPositions: NPCPosition[];
@@ -43,6 +51,7 @@ interface GameStore {
   setCurrentCostume: (costume: string | null) => void;
   addUnlockedCostume: (costumeId: string) => void; // 코스튬 획득 추가
   setSelectedSkills: (skills: string[]) => void; // 선택한 스킬 설정 (최대 3개)
+  setSkillCooldowns: (cooldowns: SkillCooldown[]) => void; // 스킬 쿨타임 설정
   setActiveBuffs: (buffs: ActiveBuff[]) => void;
   setNickname: (nickname: string) => void;
   setNpcPositions: (positions: NPCPosition[]) => void;
@@ -68,6 +77,7 @@ const initialState = {
   currentCostume: null as string | null,
   unlockedCostumes: [] as string[],
   selectedSkills: [] as string[],
+  skillCooldowns: [] as SkillCooldown[],
   activeBuffs: [] as ActiveBuff[],
   nickname: "",
   npcPositions: [] as NPCPosition[],
@@ -118,6 +128,7 @@ export const useGameStore = create<GameStore>((set) => ({
       };
     }),
   setSelectedSkills: (selectedSkills) => set({ selectedSkills }),
+  setSkillCooldowns: (skillCooldowns) => set({ skillCooldowns }),
   setActiveBuffs: (activeBuffs) => set({ activeBuffs }),
   setNickname: (nickname) => set({ nickname }),
   setNpcPositions: (npcPositions) => set({ npcPositions }),

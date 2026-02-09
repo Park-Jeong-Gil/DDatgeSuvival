@@ -146,6 +146,7 @@ export class GameScene extends Phaser.Scene {
 
     // Player
     this.player = new Player(this, MAP_WIDTH / 2, MAP_HEIGHT / 2);
+    this.player.setName("player"); // Player에 이름 설정 (NPCManager에서 찾을 수 있도록)
 
     // 선택한 코스튬 적용 (localStorage에서 직접 읽기)
     const selectedCostume = localStorage.getItem("selected_costume");
@@ -447,7 +448,7 @@ export class GameScene extends Phaser.Scene {
     this.itemManager.update(delta);
     this.skillManager.update(delta);
 
-    // 스킬 쿨타임 정보를 UIScene에 전달
+    // 스킬 쿨타임 정보를 Store와 UIScene에 전달
     const skillCooldowns = this.skillManager
       .getSkillCooldowns()
       .map((cd) => ({
@@ -456,6 +457,11 @@ export class GameScene extends Phaser.Scene {
         maxCooldown: cd.maxCooldown,
         spriteKey: cd.skill.spriteKey,
       }));
+
+    // React 컴포넌트용 (최적화: 초 단위로만 업데이트)
+    store.setSkillCooldowns(skillCooldowns);
+
+    // Phaser UIScene용 (하위 호환성)
     EventBus.emit("skill-cooldown-update", skillCooldowns);
 
     // Update player alpha based on invisible buff

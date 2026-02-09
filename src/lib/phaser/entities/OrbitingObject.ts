@@ -15,12 +15,14 @@ export class OrbitingObject extends Phaser.Physics.Arcade.Sprite {
   private rotationSpeed: number; // 도/초
   public used: boolean = false; // 1회용 플래그
   public skillId: string; // 스킬 ID (fireball, iceball, stone)
+  private effectParams: Record<string, any>; // 스킬 효과 파라미터
 
   constructor(
     scene: Phaser.Scene,
     player: Player,
     skillId: string,
     initialAngle: number = 0,
+    effectParams: Record<string, any> = {},
   ) {
     // 오브는 플레이어 위치에서 시작
     super(scene, player.x, player.y, `skill_${skillId}`);
@@ -28,8 +30,9 @@ export class OrbitingObject extends Phaser.Physics.Arcade.Sprite {
     this.player = player;
     this.skillId = skillId;
     this.orbitAngle = initialAngle;
-    this.orbitRadius = 55; // 플레이어로부터 55px 거리
-    this.rotationSpeed = 360; // 초당 360도 회전 (1회전/초)
+    this.effectParams = effectParams;
+    this.orbitRadius = effectParams.orbitRadius ?? 55; // 기본 55px
+    this.rotationSpeed = 500; // 초당 500도 회전
 
     scene.add.existing(this);
     scene.physics.add.existing(this);
@@ -85,35 +88,54 @@ export class OrbitingObject extends Phaser.Physics.Arcade.Sprite {
   onHitPredator(npc: NPC) {
     if (this.used) return;
 
+    // 이미 디버프가 적용된 포식자는 스킵 (오브가 관통)
+    const now = Date.now();
+    const hasStun = now < npc.stunUntil;
+    const hasSlow = now < npc.slowUntil;
+    if (hasStun || hasSlow) {
+      console.log(
+        `[OrbitingObject] ${this.skillId} passed through ${npc.npcData.nameKo} (already debuffed)`,
+      );
+      return; // Don't consume the orb, let it pass through
+    }
+
     this.used = true;
 
     // 효과 적용
     switch (this.skillId) {
       case "fireball":
-        // 3초 기절
-        npc.stunUntil = Date.now() + 3000;
-        console.log(`[OrbitingObject] Fireball stunned ${npc.npcData.nameKo}`);
+        // 기절 (effectParams에서 duration 가져오기)
+        const stunDuration = this.effectParams.stunDuration ?? 3000;
+        npc.stunUntil = Date.now() + stunDuration;
+        console.log(
+          `[OrbitingObject] Fireball stunned ${npc.npcData.nameKo} for ${stunDuration / 1000}s`,
+        );
         break;
 
       case "iceball":
-        // 3초 감속 (50%)
-        npc.slowUntil = Date.now() + 3000;
-        npc.slowMultiplier = 0.5; // 50% 속도로 감속
-        console.log(`[OrbitingObject] Iceball slowed ${npc.npcData.nameKo}`);
+        // 감속 (effectParams에서 duration과 multiplier 가져오기)
+        const slowDuration = this.effectParams.slowDuration ?? 3000;
+        const slowMultiplier = this.effectParams.slowMultiplier ?? 0.5;
+        npc.slowUntil = Date.now() + slowDuration;
+        npc.slowMultiplier = slowMultiplier;
+        console.log(
+          `[OrbitingObject] Iceball slowed ${npc.npcData.nameKo} for ${slowDuration / 1000}s`,
+        );
         break;
 
       case "stone":
-        // 100px 넉백
+        // 넉백 (effectParams에서 distance 가져오기)
+        const knockbackDistance = this.effectParams.knockbackDistance ?? 100;
         const dx = npc.x - this.player.x;
         const dy = npc.y - this.player.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
         if (dist > 0) {
-          const knockbackX = (dx / dist) * 100;
-          const knockbackY = (dy / dist) * 100;
+          const knockbackX = (dx / dist) * knockbackDistance;
+          const knockbackY = (dy / dist) * knockbackDistance;
           npc.setPosition(npc.x + knockbackX, npc.y + knockbackY);
           npc.isKnockedBack = true;
           console.log(
-            `[OrbitingObject] Stone knocked back ${npc.npcData.nameKo}`,
+            `[OrbitingObject] Stone knocked back ${npc.npcData.nameKo} ${knockbackDistance}px`,
           );
         }
         break;

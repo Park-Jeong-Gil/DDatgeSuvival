@@ -134,21 +134,22 @@ export const skillsData: SkillData[] = [
     effectParams: { range: 500 },
   },
 
-  // 11. 거미줄 (액티브, 먹이 멈춤 - 충전형)
+  // 11. 거미줄 (액티브, 먹이 감속 - 지속형)
   {
     id: "cobweb",
     name: "거미줄",
-    description: "도망가는 먹이를 멈춤 (3회 충전, 각 10초 쿨타임)",
+    description:
+      "10초간 범위 내 먹이 이동 속도 50% 감소 (범위 200px, 쿨타임 20초)",
     type: "active",
     price: 600,
     unlockScore: 8000,
-    cooldown: 10,
+    cooldown: 20,
     spriteKey: "skills_cobweb",
-    effect: "freeze_prey",
+    effect: "slow_prey",
     effectParams: {
-      freezeDuration: 2000,
+      duration: 10000,
+      slowMultiplier: 0.5,
       range: 200,
-      maxCharges: 3,
     },
   },
 
@@ -156,11 +157,12 @@ export const skillsData: SkillData[] = [
   {
     id: "fireball",
     name: "파이어볼",
-    description: "플레이어 주변을 도는 화염구. 포식자 충돌 시 3초 기절 (쿨타임 45초)",
+    description:
+      "플레이어 주변을 도는 화염구. 포식자 충돌 시 3초 기절 (쿨타임 25초)",
     type: "active",
     price: 500,
     unlockScore: 5000,
-    cooldown: 45,
+    cooldown: 25,
     spriteKey: "skills_fireball",
     effect: "stun_predator",
     effectParams: {
@@ -174,11 +176,12 @@ export const skillsData: SkillData[] = [
   {
     id: "iceball",
     name: "아이스볼",
-    description: "플레이어 주변을 도는 얼음구. 포식자 충돌 시 3초간 속도 반감 (쿨타임 45초)",
+    description:
+      "플레이어 주변을 도는 얼음구. 포식자 충돌 시 3초간 속도 반감 (쿨타임 25초)",
     type: "active",
     price: 500,
     unlockScore: 6000,
-    cooldown: 45,
+    cooldown: 25,
     spriteKey: "skills_iceball",
     effect: "slow_predator",
     effectParams: {
@@ -193,11 +196,12 @@ export const skillsData: SkillData[] = [
   {
     id: "stone",
     name: "돌멩이",
-    description: "플레이어 주변을 도는 돌. 포식자 충돌 시 100px 넉백 (쿨타임 45초)",
+    description:
+      "플레이어 주변을 도는 돌. 포식자 충돌 시 100px 넉백 (쿨타임 25초)",
     type: "active",
     price: 450,
     unlockScore: 4000,
-    cooldown: 45,
+    cooldown: 25,
     spriteKey: "skills_stone",
     effect: "knockback_predator",
     effectParams: {

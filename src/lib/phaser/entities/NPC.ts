@@ -376,14 +376,14 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
 
     const now = Date.now();
 
-    // 정지 상태 체크
+    // 정지 상태 체크 (기절)
     if (now < this._stunUntil) {
       // 넉백 중이 아니면 속도를 0으로 설정 (일반 기절)
       if (!this.isKnockedBack) {
         this.setVelocity(0, 0);
       }
-      // 기절 중에는 어두운 색상 유지
-      if (!this.tintTopLeft || this.tintTopLeft === 0xffffff) {
+      // 기절 중에는 어두운 회색 (우선순위 높음)
+      if (!this.tintTopLeft || this.tintTopLeft === 0xffffff || this.tintTopLeft === 0x88ccff) {
         this.setTint(0x888888);
       }
       // 정지 중에도 라벨 위치 업데이트
@@ -393,9 +393,26 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       return;
     }
 
-    // 기절이 풀렸으면 원래 색으로 복구
-    if (this.tintTopLeft === 0x888888) {
+    // 감속 상태 체크 (기절보다 우선순위 낮음)
+    const isSlowed = now < this._slowUntil;
+    if (isSlowed) {
+      // 감속 중에는 파란 회색 틴트 (기절이 아닐 때만)
+      if (!this.tintTopLeft || this.tintTopLeft === 0xffffff) {
+        this.setTint(0x88ccff); // 파란 회색
+      }
+    } else if (this._slowUntil > 0) {
+      // 감속 효과 만료 시 틴트 제거
+      if (this.tintTopLeft === 0x88ccff) {
+        this.clearTint();
+      }
+    }
+
+    // 기절이 풀렸으면 원래 색으로 복구 (단, 감속 중이면 감속 색상 유지)
+    if (this.tintTopLeft === 0x888888 && !isSlowed) {
       this.clearTint();
+    } else if (this.tintTopLeft === 0x888888 && isSlowed) {
+      // 기절이 끝났지만 감속 중이면 감속 색상으로 전환
+      this.setTint(0x88ccff);
     }
 
     this.updateLabels(playerLevel);

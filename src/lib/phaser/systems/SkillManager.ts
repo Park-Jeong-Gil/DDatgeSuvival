@@ -20,9 +20,12 @@ export class SkillManager {
   // 쿨타임 관리 (ms 단위)
   private cooldowns: Map<string, number> = new Map();
 
-  // 충전 관리 (거미줄용)
-  private charges: Map<string, number> = new Map();
-  private chargeTimers: Map<string, number> = new Map();
+  // 충전 관리 (충전 시스템 제거됨)
+  // private charges: Map<string, number> = new Map();
+  // private chargeTimers: Map<string, number> = new Map();
+
+  // 거미줄 업데이트 타이머
+  private cobwebUpdateTimer: number = 0;
 
   // 액티브 버프 (비눗방울용)
   private activeBuffs: Map<
@@ -32,6 +35,9 @@ export class SkillManager {
 
   // 오브 관리 (파이어볼, 아이스볼, 돌멩이)
   private activeOrbs: OrbitingObject[] = [];
+
+  // 비눗방울 시각 효과
+  private bubblesVisual: Phaser.GameObjects.Arc | null = null;
 
   // 오브 소멸 이벤트 핸들러 (화살표 함수로 this 바인딩)
   private orbDestroyedHandler = (skillId: unknown) => {
@@ -113,22 +119,23 @@ export class SkillManager {
       // 오브 스킬은 즉시 발동 (모두 동시에 생성), 나머지는 5초 후 첫 발동
       if (orbSkillIds.includes(skill.id)) {
         this.cooldowns.set(skill.id, 0); // 즉시 발동
+        console.log(`[SkillManager] ${skill.name} - immediate activation`);
       } else {
         this.cooldowns.set(skill.id, 5000); // 5초 후 첫 발동
+        console.log(`[SkillManager] ${skill.name} - first activation in 5s`);
       }
     });
 
-    // 거미줄 충전 초기화 (3회)
-    const cobweb = this.selectedSkills.find((s) => s.id === "cobweb");
-    if (cobweb) {
-      this.charges.set("cobweb", 3);
-      this.chargeTimers.set("cobweb", 0);
-    }
+    // 거미줄은 충전 시스템이 아닌 지속형 스킬로 변경됨 (초기화 불필요)
 
     if (activeSkills.length > 0) {
       console.log(
         `[SkillManager] ${activeSkills.length} active skills initialized:`,
         activeSkills.map((s) => s.name),
+      );
+      console.log(
+        `[SkillManager] Cooldown map:`,
+        Array.from(this.cooldowns.entries()),
       );
     }
   }
@@ -164,6 +171,7 @@ export class SkillManager {
       const newRemaining = Math.max(0, remaining - delta);
       if (newRemaining === 0) {
         toActivate.push(skillId);
+        this.cooldowns.delete(skillId); // 쿨타임 도달 시 제거 (중복 발동 방지)
       } else {
         this.cooldowns.set(skillId, newRemaining);
       }
@@ -176,27 +184,50 @@ export class SkillManager {
 
     // 액티브 버프 시간 감소
     for (const [buffId, buff] of this.activeBuffs) {
+      const prevTime = buff.remainingTime;
       buff.remainingTime -= delta;
+
+      // 디버그: 거미줄 버프 시간 감소 확인
+      if (buffId === "cobweb" && Math.floor(prevTime / 1000) !== Math.floor(buff.remainingTime / 1000)) {
+        console.log(
+          `[SkillManager] Cobweb buff time: ${Math.ceil(buff.remainingTime / 1000)}s remaining`,
+        );
+      }
+
       if (buff.remainingTime <= 0) {
         this.activeBuffs.delete(buffId);
-        console.log(`[SkillManager] Buff expired: ${buffId}`);
+
+        // 비눗방울 버프 종료 시 시각 효과 제거
+        if (buffId === "bubbles" && this.bubblesVisual) {
+          this.bubblesVisual.destroy();
+          this.bubblesVisual = null;
+        }
+
+        // 지속형 스킬 버프 종료 시 쿨타임 시작
+        const skill = this.selectedSkills.find((s) => s.id === buffId);
+        if (skill && skill.cooldown) {
+          this.cooldowns.set(buffId, skill.cooldown * 1000);
+          console.log(
+            `[SkillManager] ${skill.name} effect ended - cooldown started (${skill.cooldown}s)`,
+          );
+        } else {
+          console.log(`[SkillManager] Buff expired: ${buffId}`);
+        }
       }
     }
 
-    // 거미줄 충전 업데이트
-    const cobwebCharges = this.charges.get("cobweb");
-    if (cobwebCharges !== undefined && cobwebCharges < 3) {
-      const chargeTimer = this.chargeTimers.get("cobweb") ?? 0;
-      const newChargeTimer = chargeTimer + delta;
-      this.chargeTimers.set("cobweb", newChargeTimer);
+    // 비눗방울 시각 효과 위치 업데이트
+    if (this.bubblesVisual && this.player) {
+      this.bubblesVisual.setPosition(this.player.x, this.player.y);
+    }
 
-      // 10초마다 1회 충전
-      if (newChargeTimer >= 10000) {
-        this.charges.set("cobweb", Math.min(3, cobwebCharges + 1));
-        this.chargeTimers.set("cobweb", 0);
-        console.log(
-          `[SkillManager] Cobweb recharged: ${this.charges.get("cobweb")}/3`,
-        );
+    // 거미줄 버프 활성화 중 - 주기적으로 범위 내 먹이 감속
+    if (this.activeBuffs.has("cobweb")) {
+      this.cobwebUpdateTimer += delta;
+      // 0.5초마다 범위 내 먹이에 감속 적용
+      if (this.cobwebUpdateTimer >= 500) {
+        this.applyNearbyPreySlow();
+        this.cobwebUpdateTimer = 0;
       }
     }
 
@@ -223,6 +254,10 @@ export class SkillManager {
     const orbSkillIds = ["fireball", "iceball", "stone"];
     const isOrbSkill = orbSkillIds.includes(skillId);
 
+    // 지속형 스킬 목록 (효과 종료 후 쿨타임 시작)
+    const durationSkills = ["bubbles", "cobweb"];
+    const isDurationSkill = durationSkills.includes(skillId);
+
     switch (skillId) {
       case "bubbles":
         this.activateBubbles(skill);
@@ -247,8 +282,11 @@ export class SkillManager {
         break;
     }
 
-    // 쿨타임 재시작 (오브 스킬 제외 - 오브는 소멸 시 쿨타임 시작)
-    if (skill.cooldown && !isOrbSkill) {
+    // 쿨타임 재시작
+    // - 오브 스킬: 소멸 시 쿨타임 시작
+    // - 지속형 스킬: 효과 종료 후 쿨타임 시작
+    // - 즉시 실행 스킬: 즉시 쿨타임 시작
+    if (skill.cooldown && !isOrbSkill && !isDurationSkill) {
       this.cooldowns.set(skillId, skill.cooldown * 1000);
     }
   }
@@ -257,12 +295,28 @@ export class SkillManager {
    * 비눗방울 - 포식자 감지 거리 반감 (15초)
    */
   private activateBubbles(skill: SkillData) {
-    const duration = 15000; // 15초
+    const duration = skill.effectParams?.duration ?? 15000;
     this.activeBuffs.set("bubbles", {
       effect: "reduce_predator_detection",
       remainingTime: duration,
     });
-    console.log("[SkillManager] Bubbles activated - detection range halved");
+
+    // 시각 효과: 플레이어 주변에 투명한 흰색 원형
+    if (this.player) {
+      this.bubblesVisual = this.scene.add.circle(
+        this.player.x,
+        this.player.y,
+        100, // 반지름
+        0xffffff,
+        0.2, // 투명도
+      );
+      this.bubblesVisual.setDepth(8); // 플레이어 아래
+      this.bubblesVisual.setStrokeStyle(2, 0xffffff, 0.5);
+    }
+
+    console.log(
+      `[SkillManager] Bubbles activated - ${duration / 1000}s duration`,
+    );
   }
 
   /**
@@ -271,40 +325,106 @@ export class SkillManager {
   private activateRevolver(skill: SkillData) {
     if (!this.npcManager) return;
 
-    const killed = this.npcManager.killRandomPrey();
-    if (killed) {
+    const killedNPC = this.npcManager.killRandomPrey();
+    if (killedNPC) {
+      // 총에 맞는 시각 효과
+      const hitFlash = this.scene.add.circle(
+        killedNPC.x,
+        killedNPC.y,
+        20,
+        0xff0000,
+        0.8,
+      );
+      hitFlash.setDepth(15);
+
+      // 쓰러지는 애니메이션
+      this.scene.tweens.add({
+        targets: killedNPC,
+        alpha: 0,
+        scale: 0.5,
+        angle: 90,
+        duration: 300,
+        ease: "Power2",
+        onComplete: () => {
+          hitFlash.destroy();
+          killedNPC.destroy(); // 애니메이션 완료 후 제거
+        },
+      });
+
       console.log("[SkillManager] Revolver killed a prey");
     }
   }
 
   /**
-   * 거미줄 - 플레이어 근처 도망가는 먹이 2초 정지
+   * 거미줄 - 지속 시간 동안 범위 내 먹이 이동 속도 반감
    */
   private activateCobweb(skill: SkillData) {
-    const charges = this.charges.get("cobweb") ?? 0;
-    if (charges <= 0) {
-      console.log("[SkillManager] Cobweb - no charges available");
+    const duration = skill.effectParams?.duration ?? 5000;
+    const range = skill.effectParams?.range ?? 300;
+
+    // 이미 활성화된 버프가 있다면 경고 (디버깅용)
+    if (this.activeBuffs.has("cobweb")) {
+      console.warn("[SkillManager] Cobweb already active - should not reactivate!");
       return;
     }
 
-    if (!this.npcManager) return;
+    this.activeBuffs.set("cobweb", {
+      effect: "slow_nearby_prey",
+      remainingTime: duration,
+    });
 
-    // 충전 소모
-    this.charges.set("cobweb", charges - 1);
-    console.log(`[SkillManager] Cobweb used - ${charges - 1} charges left`);
+    this.cobwebUpdateTimer = 0; // 타이머 리셋
 
-    // 근처 먹이 정지
-    this.npcManager.freezeNearbyPrey(200, 2000); // 200px 범위, 2초
+    console.log(
+      `[SkillManager] Cobweb activated - ${duration / 1000}s duration, range ${range}px`,
+    );
+
+    // 즉시 첫 번째 감속 적용
+    this.applyNearbyPreySlow();
   }
 
   /**
-   * 번개 - 모든 NPC 5초 정지
+   * 범위 내 먹이에 감속 적용 (거미줄 버프 활성화 중 주기적으로 호출)
+   */
+  private applyNearbyPreySlow() {
+    if (!this.npcManager) {
+      console.error("[SkillManager] NPCManager is null!");
+      return;
+    }
+
+    if (!this.player) {
+      console.error("[SkillManager] Player is null!");
+      return;
+    }
+
+    // 거미줄 스킬 데이터 가져오기
+    const cobwebSkill = this.selectedSkills.find((s) => s.id === "cobweb");
+    const range = cobwebSkill?.effectParams?.range ?? 300;
+    const slowDuration = 1000; // 0.5초마다 재적용되므로 1초면 충분
+
+    console.log(
+      `[SkillManager] Calling freezeNearbyPrey (range: ${range}px, duration: ${slowDuration}ms)`,
+    );
+
+    // 범위 내 먹이 감속
+    const slowedPreys = this.npcManager.freezeNearbyPrey(range, slowDuration);
+
+    console.log(
+      `[SkillManager] Cobweb - slowed ${slowedPreys.length} prey nearby`,
+    );
+  }
+
+  /**
+   * 번개 - 모든 NPC 정지
    */
   private activateLightning(skill: SkillData) {
     if (!this.npcManager) return;
 
-    this.npcManager.freezeAllNPCs(5000); // 5초
-    console.log("[SkillManager] Lightning - all NPCs frozen");
+    const freezeDuration = skill.effectParams?.freezeDuration ?? 5000;
+    this.npcManager.freezeAllNPCs(freezeDuration);
+    console.log(
+      `[SkillManager] Lightning - all NPCs frozen for ${freezeDuration / 1000}s`,
+    );
   }
 
   /**
@@ -372,7 +492,13 @@ export class SkillManager {
     if (!this.player) return;
 
     const angle = this.getActualOrbAngle("fireball");
-    const orb = new OrbitingObject(this.scene, this.player, "fireball", angle);
+    const orb = new OrbitingObject(
+      this.scene,
+      this.player,
+      "fireball",
+      angle,
+      skill.effectParams ?? {},
+    );
     this.activeOrbs.push(orb);
     this.setupOrbCollision(orb);
 
@@ -389,7 +515,13 @@ export class SkillManager {
     if (!this.player) return;
 
     const angle = this.getActualOrbAngle("iceball");
-    const orb = new OrbitingObject(this.scene, this.player, "iceball", angle);
+    const orb = new OrbitingObject(
+      this.scene,
+      this.player,
+      "iceball",
+      angle,
+      skill.effectParams ?? {},
+    );
     this.activeOrbs.push(orb);
     this.setupOrbCollision(orb);
 
@@ -406,7 +538,13 @@ export class SkillManager {
     if (!this.player) return;
 
     const angle = this.getActualOrbAngle("stone");
-    const orb = new OrbitingObject(this.scene, this.player, "stone", angle);
+    const orb = new OrbitingObject(
+      this.scene,
+      this.player,
+      "stone",
+      angle,
+      skill.effectParams ?? {},
+    );
     this.activeOrbs.push(orb);
     this.setupOrbCollision(orb);
 
@@ -581,13 +719,27 @@ export class SkillManager {
     // 액티브 스킬만 쿨타임 정보 반환
     for (const skill of this.selectedSkills) {
       if (skill.type === "active" && skill.cooldown) {
-        const remaining = this.cooldowns.get(skill.id) ?? 0;
-        result.push({
-          skillId: skill.id,
-          skill: skill,
-          remainingCooldown: remaining,
-          maxCooldown: skill.cooldown * 1000, // 초를 ms로 변환
-        });
+        // 지속형 스킬(거미줄, 비눗방울)은 버프 활성 중에는 버프 시간 표시
+        const buff = this.activeBuffs.get(skill.id);
+        if (buff) {
+          // 버프 지속 시간 표시 (effectParams에서 가져오기)
+          const buffDuration = skill.effectParams?.duration ?? 0;
+          result.push({
+            skillId: skill.id,
+            skill: skill,
+            remainingCooldown: buff.remainingTime,
+            maxCooldown: buffDuration,
+          });
+        } else {
+          // 쿨타임 표시
+          const remaining = this.cooldowns.get(skill.id) ?? 0;
+          result.push({
+            skillId: skill.id,
+            skill: skill,
+            remainingCooldown: remaining,
+            maxCooldown: skill.cooldown * 1000, // 초를 ms로 변환
+          });
+        }
       }
     }
 

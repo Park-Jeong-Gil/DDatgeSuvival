@@ -450,47 +450,70 @@ export class NPCManager {
 
   /**
    * 리볼버 스킬 - 화면 내 무작위 먹이 1마리 제거
-   * @returns 제거 성공 여부
+   * @returns 제거된 NPC 객체 (시각 효과용)
    */
-  killRandomPrey(): boolean {
+  killRandomPrey(): NPC | null {
     const cam = this.scene.cameras.main;
     const bounds = cam.worldView;
+
+    // 플레이어의 현재 레벨 가져오기
+    const player = this.scene.children.getByName("player") as any;
+    if (!player) return null;
+
+    // 플레이어의 현재 레벨 가져오기 (checkLevelUp은 boolean을 반환하므로 store에서 직접 가져옴)
+    const playerLevel = useGameStore.getState().level;
 
     // 화면 내 먹이 필터링 (플레이어보다 낮은 레벨만)
     const preyInView = this.npcs.filter((npc) => {
       if (!npc.active || npc.destroyed) return false;
       if (npc.x < bounds.x || npc.x > bounds.right) return false;
       if (npc.y < bounds.y || npc.y > bounds.bottom) return false;
-      // 먹이만 (플레이어 레벨보다 낮은 NPC)
-      // Note: playerLevel은 update()에서 전달받으므로 직접 접근 불가
-      // 대신 level이 낮은 순으로 정렬하여 첫 번째를 선택
-      return npc.level < 10; // 임시로 레벨 10 미만을 먹이로 간주
+      return npc.level < playerLevel; // 플레이어보다 레벨이 낮은 먹이만
     });
 
-    if (preyInView.length === 0) return false;
+    if (preyInView.length === 0) {
+      console.log(
+        `[NPCManager] Revolver - no prey found (player level: ${playerLevel})`,
+      );
+      return null;
+    }
 
     // 무작위 선택
     const target = Phaser.Utils.Array.GetRandom(preyInView);
     if (target) {
-      target.destroy();
+      // 리스트에서만 제거, 실제 destroy는 호출자가 애니메이션 후 처리
       this.npcs = this.npcs.filter((n) => n !== target);
-      return true;
+      console.log(
+        `[NPCManager] Revolver killed ${target.npcData.nameKo} (level ${target.level})`,
+      );
+      return target;
     }
 
-    return false;
+    return null;
   }
 
   /**
-   * 거미줄 스킬 - 플레이어 근처 도망가는 먹이 정지
+   * 거미줄 스킬 - 플레이어 근처 먹이 이동 속도 반감
    * @param radius 범위 (px)
-   * @param duration 정지 시간 (ms)
+   * @param duration 감속 지속 시간 (ms)
+   * @returns 감속된 NPC 배열 (시각 효과용)
    */
-  freezeNearbyPrey(radius: number, duration: number) {
+  freezeNearbyPrey(radius: number, duration: number): NPC[] {
     const player = this.scene.children.getByName("player") as any;
-    if (!player) return;
+    if (!player) return [];
 
-    const freezeUntil = Date.now() + duration;
-    let frozenCount = 0;
+    const slowUntil = Date.now() + duration;
+    const slowedNPCs: NPC[] = [];
+
+    // 플레이어의 현재 레벨 가져오기 (checkLevelUp은 boolean을 반환하므로 store에서 직접 가져옴)
+    const playerLevel = useGameStore.getState().level;
+
+    console.log(
+      `[NPCManager] Cobweb - searching for prey (player level: ${playerLevel}, total NPCs: ${this.npcs.length})`,
+    );
+
+    let nearbyCount = 0;
+    let preyCount = 0;
 
     this.npcs.forEach((npc) => {
       if (!npc.active || npc.destroyed) return;
@@ -503,14 +526,26 @@ export class NPCManager {
         npc.y,
       );
 
-      // 범위 내 + 도망가는 상태(WANDER or FLEE)인 먹이만
-      if (dist <= radius && npc.level < 10) {
-        npc.stunUntil = freezeUntil;
-        frozenCount++;
+      if (dist <= radius) {
+        nearbyCount++;
+        if (npc.level < playerLevel) preyCount++;
+      }
+
+      // 범위 내 + 플레이어보다 레벨이 낮은 모든 먹이 (이동 속도 반감)
+      if (dist <= radius && npc.level < playerLevel) {
+        npc.slowUntil = slowUntil;
+        npc.slowMultiplier = 0.5; // 50% 속도로 감속
+        slowedNPCs.push(npc);
+        console.log(
+          `[NPCManager] Cobweb slowed ${npc.npcData.nameKo} (level ${npc.level}, dist: ${Math.round(dist)}px)`,
+        );
       }
     });
 
-    console.log(`[NPCManager] Cobweb frozen ${frozenCount} prey nearby`);
+    console.log(
+      `[NPCManager] Cobweb result - Nearby NPCs: ${nearbyCount}, Prey in range: ${preyCount}, Slowed: ${slowedNPCs.length}`,
+    );
+    return slowedNPCs;
   }
 
   /**
