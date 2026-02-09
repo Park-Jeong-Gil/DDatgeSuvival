@@ -20,15 +20,6 @@ export const survivalItems: ItemData[] = [
     spriteKey: "item_satiety_potion",
   },
   {
-    id: "golden_fruit",
-    name: "황금 열매",
-    category: "survival",
-    effect: "hunger_full",
-    duration: 0,
-    rarity: "rare",
-    spriteKey: "item_golden_fruit",
-  },
-  {
     id: "honey_pot",
     name: "꿀단지",
     category: "survival",
@@ -38,12 +29,21 @@ export const survivalItems: ItemData[] = [
     spriteKey: "item_honey_pot",
   },
   {
+    id: "golden_fruit",
+    name: "황금 열매",
+    category: "survival",
+    effect: "hunger_full",
+    duration: 0,
+    rarity: "rare",
+    spriteKey: "item_golden_fruit",
+  },
+  {
     id: "poison_potion",
     name: "맹독 물약",
     category: "survival",
     effect: "stun_on_collision",
     duration: 12,
-    rarity: "rare",
+    rarity: "epic",
     spriteKey: "item_poison_potion",
   },
 ];
@@ -77,15 +77,6 @@ export const buffItems: ItemData[] = [
     spriteKey: "item_invisible_cloak",
   },
   {
-    id: "giant_power",
-    name: "거인의 힘",
-    category: "buff",
-    effect: "level_boost",
-    duration: 12,
-    rarity: "epic",
-    spriteKey: "item_giant_power",
-  },
-  {
     id: "crystal",
     name: "얼음 수정",
     category: "buff",
@@ -93,6 +84,15 @@ export const buffItems: ItemData[] = [
     duration: 12,
     rarity: "rare",
     spriteKey: "item_crystal",
+  },
+  {
+    id: "giant_power",
+    name: "거인의 힘",
+    category: "buff",
+    effect: "level_boost",
+    duration: 12,
+    rarity: "epic",
+    spriteKey: "item_giant_power",
   },
 ];
 
@@ -155,7 +155,7 @@ export const rarityWeights: Record<string, number> = {
   uncommon: 25,
   rare: 12,
   epic: 3,
-  legendary: 1,
+  legendary: 0.5,
 };
 
 export function getItemById(id: string): ItemData | undefined {
