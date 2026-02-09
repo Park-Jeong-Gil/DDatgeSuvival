@@ -22,6 +22,7 @@ import { HungerSystem } from "../systems/HungerSystem";
 import { LevelSystem } from "../systems/LevelSystem";
 import { NPCManager } from "../systems/NPCManager";
 import { ItemManager } from "../systems/ItemManager";
+import { SkillManager } from "../systems/SkillManager";
 import { generateMap, type MapElements } from "../utils/mapGenerator";
 import { getCostumeById } from "../data/skinData";
 
@@ -39,6 +40,7 @@ export class GameScene extends Phaser.Scene {
   private levelSystem!: LevelSystem;
   private npcManager!: NPCManager;
   private itemManager!: ItemManager;
+  private skillManager!: SkillManager;
   private mapElements!: MapElements;
   private survivalTimer: number = 0;
   private isGameOver: boolean = false;
@@ -237,6 +239,35 @@ export class GameScene extends Phaser.Scene {
     this.itemManager = new ItemManager(this, this.mapElements);
     this.itemManager.setPlayer(this.player);
 
+    // SkillManager 초기화 (선택한 스킬 로드)
+    const selectedSkillsJson = localStorage.getItem("selected_skills");
+    const selectedSkills = selectedSkillsJson
+      ? (JSON.parse(selectedSkillsJson) as string[])
+      : useGameStore.getState().selectedSkills;
+    this.skillManager = new SkillManager(this, selectedSkills);
+
+    // localStorage 클리어
+    if (selectedSkillsJson) {
+      localStorage.removeItem("selected_skills");
+    }
+
+    // ItemManager에 SkillManager 연결
+    this.itemManager.setSkillManager(this.skillManager);
+
+    // NPCManager에 SkillManager 연결
+    this.skillManager.setNPCManager(this.npcManager);
+
+    // Player에 SkillManager 연결
+    this.skillManager.setPlayer(this.player);
+
+    // 곡괭이/도끼 스킬로 장애물 제거
+    if (this.skillManager.hasPick()) {
+      this.removeObstaclesByType("rock_tile");
+    }
+    if (this.skillManager.hasAx()) {
+      this.removeObstaclesByType("tree_tile");
+    }
+
     // Debug: Spawn all items with 'I' key (DEBUG_MODE가 true일 때만 사용)
     if (DEBUG_MODE && this.input.keyboard) {
       this.input.keyboard.on("keydown-I", () => {
@@ -391,7 +422,8 @@ export class GameScene extends Phaser.Scene {
     this.hungerSystem.update(
       delta,
       store.level,
-      this.itemManager.getHungerDecreaseMultiplier(),
+      this.itemManager.getHungerDecreaseMultiplier() *
+        this.skillManager.getHungerMultiplier(),
     );
     this.levelSystem.checkLevelUp(this.player);
 
@@ -408,9 +440,23 @@ export class GameScene extends Phaser.Scene {
       this.isMobile,
       undefined, // predatorSpeedMultiplier 제거됨
       this.itemManager.hasAttractPreyBuff(),
+      this.skillManager.shouldHighlightPredators(),
+      this.skillManager.hasBubblesActive(),
     );
     this.npcManager.drawBars();
     this.itemManager.update(delta);
+    this.skillManager.update(delta);
+
+    // 스킬 쿨타임 정보를 UIScene에 전달
+    const skillCooldowns = this.skillManager
+      .getSkillCooldowns()
+      .map((cd) => ({
+        skillId: cd.skillId,
+        remainingCooldown: cd.remainingCooldown,
+        maxCooldown: cd.maxCooldown,
+        spriteKey: cd.skill.spriteKey,
+      }));
+    EventBus.emit("skill-cooldown-update", skillCooldowns);
 
     // Update player alpha based on invisible buff
     if (this.itemManager.isPlayerInvisible()) {
@@ -706,7 +752,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   private handlePlayerMovement() {
-    let speedMultiplier = this.itemManager.getSpeedMultiplier();
+    let speedMultiplier =
+      this.itemManager.getSpeedMultiplier() *
+      this.skillManager.getSpeedMultiplier();
     // 플레이어는 풀숲에서 속도 감소 없음
 
     const speed = this.player.currentSpeed * speedMultiplier;
@@ -1280,6 +1328,27 @@ export class GameScene extends Phaser.Scene {
   }
 
   // 서로 가까운 장애물들을 찾아서 제거
+  // 특정 타입의 모든 장애물 제거 (곡괭이/도끼 스킬용)
+  private removeObstaclesByType(textureKey: string) {
+    if (!this.mapElements || !this.mapElements.obstacles) return;
+
+    const obstacles =
+      this.mapElements.obstacles.getChildren() as Phaser.Physics.Arcade.Sprite[];
+    if (obstacles.length === 0) return;
+
+    let removedCount = 0;
+    obstacles.forEach((obstacle) => {
+      if (obstacle.active && obstacle.texture.key === textureKey) {
+        this.mapElements.obstacles.remove(obstacle, true, true);
+        removedCount++;
+      }
+    });
+
+    console.log(
+      `[SkillManager] Removed ${removedCount} ${textureKey} obstacles`,
+    );
+  }
+
   private removeCloseObstacles(playerLevel: number) {
     if (!this.mapElements || !this.mapElements.obstacles) return;
 
@@ -1375,6 +1444,7 @@ export class GameScene extends Phaser.Scene {
     EventBus.off("play-sound", this.onPlaySoundHandler);
     EventBus.off("audio-settings-changed", this.onAudioSettingsChangedHandler);
     this.stopBGM();
+    this.skillManager?.cleanup();
     this.npcManager.destroy();
     this.itemManager.destroy();
   }

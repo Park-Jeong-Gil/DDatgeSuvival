@@ -10,6 +10,7 @@ import type { ActiveBuff } from "@/types/game";
 import type { MapElements } from "../utils/mapGenerator";
 import type { Rarity } from "@/types/item";
 import type { Player } from "../entities/Player";
+import type { SkillManager } from "../systems/SkillManager";
 
 export class ItemManager {
   private scene: Phaser.Scene;
@@ -20,6 +21,7 @@ export class ItemManager {
   private readonly MAX_ITEMS = 15;
   private mapElements: MapElements;
   private player: Player | null = null;
+  private skillManager: SkillManager | null = null;
 
   // Active buff tracking
   private activeBuffs: Map<
@@ -37,6 +39,10 @@ export class ItemManager {
     this.player = player;
   }
 
+  setSkillManager(skillManager: SkillManager) {
+    this.skillManager = skillManager;
+  }
+
   private applyCostumeChange(rarity: Rarity) {
     if (!this.player) return;
 
@@ -52,9 +58,12 @@ export class ItemManager {
   }
 
   update(delta: number) {
-    // Spawn items
+    // Spawn items (with skill multiplier)
+    const spawnMultiplier = this.skillManager?.getItemSpawnMultiplier() ?? 1.0;
+    const effectiveInterval = this.SPAWN_INTERVAL / spawnMultiplier;
+
     this.spawnTimer += delta;
-    if (this.spawnTimer >= this.SPAWN_INTERVAL) {
+    if (this.spawnTimer >= effectiveInterval) {
       this.spawnTimer = 0;
       if (this.items.length < this.MAX_ITEMS) {
         this.spawnRandomItem();
@@ -302,10 +311,28 @@ export class ItemManager {
   }
 
   private rollItem(): ItemData | null {
-    const totalWeight = Object.values(rarityWeights).reduce((a, b) => a + b, 0);
+    // Apply rarity shift from skill (shifts weights toward higher rarities)
+    const rarityShift = this.skillManager?.getRarityShift() ?? 0;
+
+    // Clone and adjust weights
+    const adjustedWeights: Record<string, number> = { ...rarityWeights };
+    const rarities = ["common", "uncommon", "rare", "epic", "legendary"];
+
+    if (rarityShift > 0) {
+      // Shift probability from lower to higher rarities
+      for (let i = 0; i < rarities.length - 1; i++) {
+        const currentRarity = rarities[i];
+        const nextRarity = rarities[i + 1];
+        const shiftAmount = adjustedWeights[currentRarity] * rarityShift;
+        adjustedWeights[currentRarity] -= shiftAmount;
+        adjustedWeights[nextRarity] += shiftAmount;
+      }
+    }
+
+    const totalWeight = Object.values(adjustedWeights).reduce((a, b) => a + b, 0);
     let roll = Math.random() * totalWeight;
 
-    for (const [rarity, weight] of Object.entries(rarityWeights)) {
+    for (const [rarity, weight] of Object.entries(adjustedWeights)) {
       roll -= weight;
       if (roll <= 0) {
         const candidates = allItems.filter((i) => i.rarity === rarity);

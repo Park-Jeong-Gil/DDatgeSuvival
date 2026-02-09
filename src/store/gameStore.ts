@@ -17,6 +17,7 @@ interface GameStore {
   currentSkinId: string;
   currentCostume: string | null;
   unlockedCostumes: string[]; // 획득한 모든 코스튬 ID 목록
+  selectedSkills: string[]; // 게임 시작 시 선택한 스킬 (최대 3개)
   activeBuffs: ActiveBuff[];
   nickname: string;
   npcPositions: NPCPosition[];
@@ -41,6 +42,7 @@ interface GameStore {
   setCurrentSkin: (skinId: string) => void;
   setCurrentCostume: (costume: string | null) => void;
   addUnlockedCostume: (costumeId: string) => void; // 코스튬 획득 추가
+  setSelectedSkills: (skills: string[]) => void; // 선택한 스킬 설정 (최대 3개)
   setActiveBuffs: (buffs: ActiveBuff[]) => void;
   setNickname: (nickname: string) => void;
   setNpcPositions: (positions: NPCPosition[]) => void;
@@ -65,6 +67,7 @@ const initialState = {
   currentSkinId: "custom_1",
   currentCostume: null as string | null,
   unlockedCostumes: [] as string[],
+  selectedSkills: [] as string[],
   activeBuffs: [] as ActiveBuff[],
   nickname: "",
   npcPositions: [] as NPCPosition[],
@@ -114,6 +117,7 @@ export const useGameStore = create<GameStore>((set) => ({
         unlockedCostumes: [...state.unlockedCostumes, costumeId],
       };
     }),
+  setSelectedSkills: (selectedSkills) => set({ selectedSkills }),
   setActiveBuffs: (activeBuffs) => set({ activeBuffs }),
   setNickname: (nickname) => set({ nickname }),
   setNpcPositions: (npcPositions) => set({ npcPositions }),
@@ -135,5 +139,6 @@ export const useGameStore = create<GameStore>((set) => ({
       nickname: state.nickname,
       currentCostume: state.currentCostume, // 현재 코스튬 유지 (RETRY 시 같은 코스튬으로 시작)
       unlockedCostumes: state.unlockedCostumes, // 획득한 코스튬은 유지
+      selectedSkills: state.selectedSkills, // 선택한 스킬 유지
     })),
 }));

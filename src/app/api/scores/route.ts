@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase";
+import { checkSkillUnlocks } from "@/lib/phaser/data/skillData";
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,7 +22,9 @@ export async function POST(request: NextRequest) {
     // Check existing record
     const { data: existing } = await supabase
       .from("scores")
-      .select("id, score, unlocked_costumes")
+      .select(
+        "id, score, unlocked_costumes, total_accumulated_score, currency, purchased_skills",
+      )
       .eq("user_id", userId)
       .single();
 
@@ -34,6 +37,20 @@ export async function POST(request: NextRequest) {
           ]),
         )
       : unlockedCostumes ?? [];
+
+    // 누적 스코어 계산
+    const previousAccumulatedScore =
+      existing?.total_accumulated_score ?? 0;
+    const newAccumulatedScore = previousAccumulatedScore + score;
+
+    // 화폐 계산 (1000 스코어 = 100원)
+    const newCurrency = Math.floor(newAccumulatedScore / 10);
+
+    // 스킬 언락 체크
+    const unlockedSkills = checkSkillUnlocks(newAccumulatedScore);
+
+    // purchased_skills는 기존 데이터 유지
+    const purchasedSkills = existing?.purchased_skills ?? [];
 
     let updated = false;
 
@@ -53,13 +70,16 @@ export async function POST(request: NextRequest) {
             costume: costume ?? null,
             unlocked_costumes: mergedCostumes,
             collected_items: collectedItems ?? null,
+            total_accumulated_score: newAccumulatedScore,
+            currency: newCurrency,
+            unlocked_skills: unlockedSkills,
             updated_at: new Date().toISOString(),
           })
           .eq("id", existing.id);
 
         updated = true;
       } else {
-        // Even if score is not higher, always update nickname, skin, costume and unlocked costumes
+        // Even if score is not higher, always update nickname, skin, costume, accumulated score and currency
         await supabase
           .from("scores")
           .update({
@@ -67,6 +87,9 @@ export async function POST(request: NextRequest) {
             skin_id: skinId,
             costume: costume ?? null,
             unlocked_costumes: mergedCostumes,
+            total_accumulated_score: newAccumulatedScore,
+            currency: newCurrency,
+            unlocked_skills: unlockedSkills,
             updated_at: new Date().toISOString(),
           })
           .eq("id", existing.id);
@@ -84,6 +107,10 @@ export async function POST(request: NextRequest) {
         costume: costume ?? null,
         unlocked_costumes: mergedCostumes,
         collected_items: collectedItems ?? null,
+        total_accumulated_score: newAccumulatedScore,
+        currency: newCurrency,
+        unlocked_skills: unlockedSkills,
+        purchased_skills: purchasedSkills,
       });
 
       updated = true;
@@ -136,6 +163,10 @@ export async function GET(request: NextRequest) {
 
     let userRank = undefined;
     let userUnlockedCostumes = undefined;
+    let userUnlockedSkills = undefined;
+    let userPurchasedSkills = undefined;
+    let userCurrency = undefined;
+
     if (userId) {
       const { data: userScore } = await supabase
         .from("scores")
@@ -156,6 +187,11 @@ export async function GET(request: NextRequest) {
 
         // 획득한 코스튬 목록 반환
         userUnlockedCostumes = userScore.unlocked_costumes ?? [];
+
+        // 스킬 관련 정보 반환
+        userUnlockedSkills = userScore.unlocked_skills ?? [];
+        userPurchasedSkills = userScore.purchased_skills ?? [];
+        userCurrency = userScore.currency ?? 0;
       }
     }
 
@@ -164,6 +200,9 @@ export async function GET(request: NextRequest) {
       total: count ?? 0,
       userRank,
       userUnlockedCostumes,
+      userUnlockedSkills,
+      userPurchasedSkills,
+      userCurrency,
     });
   } catch (error) {
     console.error("Leaderboard fetch error:", error);

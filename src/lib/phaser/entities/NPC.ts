@@ -16,6 +16,8 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
   private chaseStartTime: number = 0;
   private readonly MAX_CHASE_DURATION = 8000;
   private _stunUntil: number = 0;
+  private _slowUntil: number = 0; // 감속 종료 시간
+  private _slowMultiplier: number = 1.0; // 감속 배율 (1.0 = 정상, 0.5 = 50% 감속)
   public isKnockedBack: boolean = false; // 넉백 중인지 여부
   private nameLabel: Phaser.GameObjects.Text;
   private currentLabelColor: string = "";
@@ -128,6 +130,22 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
 
   public get stunUntil(): number {
     return this._stunUntil;
+  }
+
+  public set slowUntil(time: number) {
+    this._slowUntil = time;
+  }
+
+  public get slowUntil(): number {
+    return this._slowUntil;
+  }
+
+  public set slowMultiplier(multiplier: number) {
+    this._slowMultiplier = multiplier;
+  }
+
+  public get slowMultiplier(): number {
+    return this._slowMultiplier;
   }
 
   private isTextureReady(): boolean {
@@ -308,6 +326,8 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     isMobile?: boolean,
     predatorSpeedMultiplier?: number,
     hasAttractPreyBuff?: boolean,
+    shouldHighlightPredators?: boolean,
+    hasBubblesActive?: boolean,
   ) {
     if (!this.active) return;
 
@@ -409,6 +429,11 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       }
     }
 
+    // 비눗방울 스킬: 포식자 감지 거리 반감
+    if (hasBubblesActive && levelDiff < 0) {
+      detectionRange *= 0.5;
+    }
+
     // If player is invisible or out of range, wander
     if (isPlayerInvisible || distance > detectionRange) {
       if (this.aiState === NPCState.CHASE) {
@@ -431,8 +456,10 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
         this.setDepth(12);
         // chase 텍스처로 변경
         this.updateTexture("chase");
-        // 포식자 빨간색 아웃라인 추가
-        this.addPredatorOutline();
+        // 포식자 빨간색 아웃라인 추가 (탐지기 스킬이 있을 때만)
+        if (shouldHighlightPredators) {
+          this.addPredatorOutline();
+        }
       }
 
       // Chase duration limit (공룡은 제한 없음)
@@ -542,6 +569,16 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       speed *= predatorSpeedMultiplier;
     }
 
+    // 감속 효과 적용 (아이스볼)
+    const now = Date.now();
+    if (now < this._slowUntil) {
+      speed *= this._slowMultiplier;
+    } else if (this._slowUntil > 0) {
+      // 감속 효과 만료 시 리셋
+      this._slowMultiplier = 1.0;
+      this._slowUntil = 0;
+    }
+
     this.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
 
     this.safeSetFlipX(Math.cos(angle));
@@ -634,7 +671,18 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       }
     }
 
-    const speed = playerSpeed * 0.3;
+    let speed = playerSpeed * 0.3;
+
+    // 감속 효과 적용 (아이스볼)
+    const now = Date.now();
+    if (now < this._slowUntil) {
+      speed *= this._slowMultiplier;
+    } else if (this._slowUntil > 0) {
+      // 감속 효과 만료 시 리셋
+      this._slowMultiplier = 1.0;
+      this._slowUntil = 0;
+    }
+
     this.setVelocity(Math.cos(fleeAngle) * speed, Math.sin(fleeAngle) * speed);
 
     this.safeSetFlipX(Math.cos(fleeAngle));
@@ -649,7 +697,18 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       this.wanderDirection.set(Math.cos(angle), Math.sin(angle));
     }
 
-    const speed = this.baseSpeed * 0.5;
+    let speed = this.baseSpeed * 0.5;
+
+    // 감속 효과 적용 (아이스볼)
+    const now = Date.now();
+    if (now < this._slowUntil) {
+      speed *= this._slowMultiplier;
+    } else if (this._slowUntil > 0) {
+      // 감속 효과 만료 시 리셋
+      this._slowMultiplier = 1.0;
+      this._slowUntil = 0;
+    }
+
     this.setVelocity(
       this.wanderDirection.x * speed,
       this.wanderDirection.y * speed,

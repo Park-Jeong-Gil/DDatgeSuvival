@@ -59,6 +59,8 @@ export class NPCManager {
     isMobile?: boolean,
     predatorSpeedMultiplier?: number,
     hasAttractPreyBuff?: boolean,
+    shouldHighlightPredators?: boolean,
+    hasBubblesActive?: boolean,
   ) {
     // Spawn check
     this.spawnTimer += delta;
@@ -82,6 +84,8 @@ export class NPCManager {
           isMobile,
           predatorSpeedMultiplier,
           hasAttractPreyBuff,
+          shouldHighlightPredators,
+          hasBubblesActive,
         );
       }
     }
@@ -438,6 +442,91 @@ export class NPCManager {
 
   onLevelUp(newLevel: number, playerX: number, playerY: number) {
     this.updateSpawns(newLevel, playerX, playerY);
+  }
+
+  // ========================================
+  // 스킬 효과 메서드
+  // ========================================
+
+  /**
+   * 리볼버 스킬 - 화면 내 무작위 먹이 1마리 제거
+   * @returns 제거 성공 여부
+   */
+  killRandomPrey(): boolean {
+    const cam = this.scene.cameras.main;
+    const bounds = cam.worldView;
+
+    // 화면 내 먹이 필터링 (플레이어보다 낮은 레벨만)
+    const preyInView = this.npcs.filter((npc) => {
+      if (!npc.active || npc.destroyed) return false;
+      if (npc.x < bounds.x || npc.x > bounds.right) return false;
+      if (npc.y < bounds.y || npc.y > bounds.bottom) return false;
+      // 먹이만 (플레이어 레벨보다 낮은 NPC)
+      // Note: playerLevel은 update()에서 전달받으므로 직접 접근 불가
+      // 대신 level이 낮은 순으로 정렬하여 첫 번째를 선택
+      return npc.level < 10; // 임시로 레벨 10 미만을 먹이로 간주
+    });
+
+    if (preyInView.length === 0) return false;
+
+    // 무작위 선택
+    const target = Phaser.Utils.Array.GetRandom(preyInView);
+    if (target) {
+      target.destroy();
+      this.npcs = this.npcs.filter((n) => n !== target);
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * 거미줄 스킬 - 플레이어 근처 도망가는 먹이 정지
+   * @param radius 범위 (px)
+   * @param duration 정지 시간 (ms)
+   */
+  freezeNearbyPrey(radius: number, duration: number) {
+    const player = this.scene.children.getByName("player") as any;
+    if (!player) return;
+
+    const freezeUntil = Date.now() + duration;
+    let frozenCount = 0;
+
+    this.npcs.forEach((npc) => {
+      if (!npc.active || npc.destroyed) return;
+
+      // 플레이어 근처인지 확인
+      const dist = Phaser.Math.Distance.Between(
+        player.x,
+        player.y,
+        npc.x,
+        npc.y,
+      );
+
+      // 범위 내 + 도망가는 상태(WANDER or FLEE)인 먹이만
+      if (dist <= radius && npc.level < 10) {
+        npc.stunUntil = freezeUntil;
+        frozenCount++;
+      }
+    });
+
+    console.log(`[NPCManager] Cobweb frozen ${frozenCount} prey nearby`);
+  }
+
+  /**
+   * 번개 스킬 - 모든 NPC 정지
+   * @param duration 정지 시간 (ms)
+   */
+  freezeAllNPCs(duration: number) {
+    const freezeUntil = Date.now() + duration;
+
+    this.npcs.forEach((npc) => {
+      if (npc.active && !npc.destroyed) {
+        npc.stunUntil = freezeUntil;
+      }
+    });
+
+    console.log(`[NPCManager] Lightning frozen all ${this.npcs.length} NPCs`);
   }
 
   destroy() {

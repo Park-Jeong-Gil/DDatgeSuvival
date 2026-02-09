@@ -153,6 +153,15 @@ export class PreloadScene extends Phaser.Scene {
       );
     });
 
+    // Skill sprites (오브 스킬용)
+    const skillNames = ["fireball", "iceball", "stone"];
+    skillNames.forEach((skillName) => {
+      this.load.image(
+        `skill_${skillName}`,
+        `assets/sprites/skills/skills_${skillName}.png`,
+      );
+    });
+
     // Sound effects
     this.load.audio("bite", "assets/sounds/player/bite.wav");
     this.load.audio("death", "assets/sounds/player/death.wav");
