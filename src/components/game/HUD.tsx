@@ -35,7 +35,7 @@ export default function HUD() {
       {/* Top Center Below Skills - Active Buffs (아이템이 있을 때만 표시) */}
       {hasActiveBuffs && (
         <div
-          className={`items-panel px-3 py-2 pixel-panel_hud ${hasSkills ? "top-[88px]" : "top-20"}`}
+          className={`items-panel px-3 py-2 pixel-panel_hud self-center w-fit ${hasSkills ? "top-[88px]" : "top-20"}`}
         >
           <BuffDisplay buffs={activeBuffs} />
         </div>

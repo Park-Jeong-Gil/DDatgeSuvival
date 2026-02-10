@@ -5,7 +5,7 @@ import type { SkillData } from "@/types/skill";
  * 난이도별로 정렬: 간단한 패시브 → 시작 시 → 액티브 → 오브
  */
 export const skillsData: SkillData[] = [
-  // 1. 스케이트보드 (패시브, 속도 증가)
+  // 스케이트보드 (패시브, 속도 증가)
   {
     id: "skateboard",
     name: "스케이트보드",
@@ -18,7 +18,7 @@ export const skillsData: SkillData[] = [
     effectParams: { speedMultiplier: 1.1 },
   },
 
-  // 2. 포만감 우유 (패시브, 공복 감소 저하)
+  // 포만감 우유 (패시브, 공복 감소 저하)
   {
     id: "milk",
     name: "포만감 우유",
@@ -31,7 +31,7 @@ export const skillsData: SkillData[] = [
     effectParams: { hungerMultiplier: 0.8 },
   },
 
-  // 3. 경험치 버섯 (패시브, 경험치 증가)
+  // 경험치 버섯 (패시브, 경험치 증가)
   {
     id: "mushroom",
     name: "경험치 버섯",
@@ -44,7 +44,7 @@ export const skillsData: SkillData[] = [
     effectParams: { expMultiplier: 1.15 },
   },
 
-  // 4. 천적 탐지기 (패시브, 포식자 하이라이트)
+  // 천적 탐지기 (패시브, 포식자 하이라이트)
   {
     id: "detector",
     name: "천적 탐지기",
@@ -56,7 +56,7 @@ export const skillsData: SkillData[] = [
     effect: "highlight_predators",
   },
 
-  // 5. 곡괭이 (시작 시, 바위 제거)
+  // 곡괭이 (시작 시, 바위 제거)
   {
     id: "pick",
     name: "곡괭이",
@@ -68,7 +68,7 @@ export const skillsData: SkillData[] = [
     effect: "remove_rocks",
   },
 
-  // 6. 도끼 (시작 시, 나무 제거)
+  // 도끼 (시작 시, 나무 제거)
   {
     id: "ax",
     name: "도끼",
@@ -80,33 +80,33 @@ export const skillsData: SkillData[] = [
     effect: "remove_trees",
   },
 
-  // 7. 왕관 (패시브, 아이템 스폰 빈도)
+  // 왕관 (패시브, 아이템 스폰 빈도)
   {
     id: "crown",
     name: "왕관",
-    description: "아이템 출몰 빈도 +30% (패시브)",
+    description: "아이템 출몰 빈도 +40% (패시브)",
     type: "passive",
     price: 1800,
     unlockScore: 25000,
     spriteKey: "skills_crown",
     effect: "item_spawn_boost",
-    effectParams: { spawnMultiplier: 1.3 },
+    effectParams: { spawnMultiplier: 1.4 },
   },
 
-  // 8. 네잎클로버 (패시브, 레어리티 확률)
+  // 네잎클로버 (패시브, 레어리티 확률)
   {
     id: "clover",
     name: "네잎클로버",
-    description: "아이템 레어리티 확률 +20% 시프트 (패시브)",
+    description: "아이템 레어리티 확률 +30% 시프트 (패시브)",
     type: "passive",
     price: 2000,
     unlockScore: 30000,
     spriteKey: "skills_clover",
     effect: "rarity_boost",
-    effectParams: { rarityShift: 0.2 },
+    effectParams: { rarityShift: 0.3 },
   },
 
-  // 9. 비눗방울 (액티브, 감지 거리 반감)
+  // 비눗방울 (액티브, 감지 거리 반감)
   {
     id: "bubbles",
     name: "비눗방울",
@@ -120,7 +120,7 @@ export const skillsData: SkillData[] = [
     effectParams: { detectionMultiplier: 0.5, duration: 15000 },
   },
 
-  // 10. 리볼버 (액티브, 범위 사냥 - 지속형)
+  // 리볼버 (액티브, 범위 사냥 - 지속형)
   {
     id: "revolver",
     name: "리볼버",
@@ -140,7 +140,7 @@ export const skillsData: SkillData[] = [
     },
   },
 
-  // 11. 거미줄 (액티브, 먹이 감속 - 지속형)
+  // 거미줄 (액티브, 먹이 감속 - 지속형)
   {
     id: "cobweb",
     name: "거미줄",
@@ -159,7 +159,7 @@ export const skillsData: SkillData[] = [
     },
   },
 
-  // 12. 파이어볼 (액티브, 오브 - 기절)
+  // 파이어볼 (액티브, 오브 - 기절)
   {
     id: "fireball",
     name: "파이어볼",
@@ -178,7 +178,7 @@ export const skillsData: SkillData[] = [
     },
   },
 
-  // 13. 아이스볼 (액티브, 오브 - 감속)
+  // 아이스볼 (액티브, 오브 - 감속)
   {
     id: "iceball",
     name: "아이스볼",
@@ -198,7 +198,7 @@ export const skillsData: SkillData[] = [
     },
   },
 
-  // 14. 돌멩이 (액티브, 오브 - 넉백)
+  // 돌멩이 (액티브, 오브 - 넉백)
   {
     id: "stone",
     name: "돌멩이",
@@ -217,7 +217,7 @@ export const skillsData: SkillData[] = [
     },
   },
 
-  // 15. 번개 (액티브, 전체 정지)
+  // 번개 (액티브, 전체 정지)
   {
     id: "lightning",
     name: "번개",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { sortedSkillsByUnlock } from "@/lib/phaser/data/skillData";
 import SkillCard from "./SkillCard";
 
@@ -9,6 +9,7 @@ interface SkillSelectTabProps {
   purchasedSkills: string[];
   selectedSkills: string[];
   currency: number;
+  maxSelection: number; // 언락된 슬롯 수 (0~3)
   onPurchaseSkill: (skillId: string) => Promise<void>;
   onSelectSkills: (skills: string[]) => void;
 }
@@ -18,6 +19,7 @@ export default function SkillSelectTab({
   purchasedSkills,
   selectedSkills,
   currency,
+  maxSelection,
   onPurchaseSkill,
   onSelectSkills,
 }: SkillSelectTabProps) {
@@ -25,7 +27,10 @@ export default function SkillSelectTab({
     useState<string[]>(selectedSkills);
   const [purchasing, setPurchasing] = useState<string | null>(null);
 
-  const MAX_SELECTION = 3;
+  // 슬롯 박스에서 스킬 제거 시 동기화
+  useEffect(() => {
+    setLocalSelectedSkills(selectedSkills);
+  }, [selectedSkills.join(",")]);
 
   const handlePurchase = async (skillId: string) => {
     try {
@@ -42,11 +47,9 @@ export default function SkillSelectTab({
     let newSelection: string[];
 
     if (localSelectedSkills.includes(skillId)) {
-      // 이미 선택된 스킬이면 제거
       newSelection = localSelectedSkills.filter((id) => id !== skillId);
     } else {
-      // 최대 3개까지만 선택 가능
-      if (localSelectedSkills.length >= MAX_SELECTION) {
+      if (localSelectedSkills.length >= maxSelection) {
         return;
       }
       newSelection = [...localSelectedSkills, skillId];
@@ -56,26 +59,25 @@ export default function SkillSelectTab({
     onSelectSkills(newSelection);
   };
 
-  return (
-    <div className="flex flex-col h-full">
-      {/* 헤더 */}
-      <div className="mb-4">
-        <div className="flex justify-between items-center mb-2">
-          <h2 className="text-xl font-bold text-white">스킬 선택</h2>
-          <div className="text-yellow-400 font-bold">
-            💰 {currency.toLocaleString()}원
-          </div>
+  // 슬롯이 없으면 안내 메시지
+  if (maxSelection === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-10 text-center">
+        <div className="text-4xl mb-3">🔒</div>
+        <div className="text-gray-300 text-sm font-bold mb-1">
+          스킬 슬롯이 없습니다
         </div>
-        <p className="text-sm text-gray-300 mb-2">
-          구매한 스킬 중 최대 {MAX_SELECTION}개를 선택하세요
-        </p>
-        <div className="text-xs text-gray-400">
-          선택: {localSelectedSkills.length} / {MAX_SELECTION}
+        <div className="text-gray-500 text-xs">
+          위의 슬롯을 먼저 구매하세요
         </div>
       </div>
+    );
+  }
 
+  return (
+    <div className="flex flex-col h-full">
       {/* 스킬 그리드 */}
-      <div className="flex-1 overflow-y-auto pr-2">
+      <div className="flex-1 overflow-y-auto pr-1">
         <div className="grid grid-cols-3 gap-3">
           {sortedSkillsByUnlock.map((skill) => (
             <SkillCard
@@ -91,7 +93,6 @@ export default function SkillSelectTab({
           ))}
         </div>
 
-        {/* 구매 중 오버레이 */}
         {purchasing && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className="bg-gray-800 p-6 rounded-lg">
@@ -104,19 +105,18 @@ export default function SkillSelectTab({
         )}
       </div>
 
-      {/* 안내 메시지 */}
       {purchasedSkills.length === 0 && (
-        <div className="mt-4 p-4 bg-gray-800 rounded text-center text-gray-300 text-sm">
-          <div className="mb-2">💡 스킬을 구매하세요!</div>
-          <div className="text-xs">
+        <div className="mt-3 p-3 bg-gray-800 text-center text-gray-300 text-xs">
+          <div className="mb-1">💡 스킬을 구매하세요!</div>
+          <div className="text-gray-500">
             게임을 플레이하여 누적 스코어를 쌓으면 스킬이 언락됩니다.
           </div>
         </div>
       )}
 
       {purchasedSkills.length > 0 && localSelectedSkills.length === 0 && (
-        <div className="mt-4 p-4 bg-yellow-900/30 border border-yellow-600 rounded text-center text-yellow-200 text-sm">
-          <div>⚠️ 스킬을 선택하지 않으면 스킬 없이 게임이 시작됩니다</div>
+        <div className="mt-3 p-3 bg-yellow-900/30 border border-yellow-600 text-center text-yellow-200 text-xs">
+          ⚠️ 스킬을 선택하지 않으면 스킬 없이 게임이 시작됩니다
         </div>
       )}
     </div>

@@ -166,6 +166,7 @@ export async function GET(request: NextRequest) {
     let userUnlockedSkills = undefined;
     let userPurchasedSkills = undefined;
     let userCurrency = undefined;
+    let userUnlockedSlots = undefined;
 
     if (userId) {
       const { data: userScore } = await supabase
@@ -192,6 +193,7 @@ export async function GET(request: NextRequest) {
         userUnlockedSkills = userScore.unlocked_skills ?? [];
         userPurchasedSkills = userScore.purchased_skills ?? [];
         userCurrency = userScore.currency ?? 0;
+        userUnlockedSlots = userScore.unlocked_slots ?? 0;
       }
     }
 
@@ -203,6 +205,7 @@ export async function GET(request: NextRequest) {
       userUnlockedSkills,
       userPurchasedSkills,
       userCurrency,
+      userUnlockedSlots,
     });
   } catch (error) {
     console.error("Leaderboard fetch error:", error);

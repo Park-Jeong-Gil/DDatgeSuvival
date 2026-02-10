@@ -17,6 +17,7 @@ export default function HomePage() {
   const [unlockedSkills, setUnlockedSkills] = useState<string[]>([]);
   const [purchasedSkills, setPurchasedSkills] = useState<string[]>([]);
   const [currency, setCurrency] = useState(0);
+  const [unlockedSlots, setUnlockedSlots] = useState(0);
   const [isCheckingCostumes, setIsCheckingCostumes] = useState(false);
 
   useEffect(() => {
@@ -82,6 +83,8 @@ export default function HomePage() {
           typeof window !== "undefined" &&
           localStorage.getItem("DEBUG_MODE") === "true";
 
+        let userUnlockedSlots = data.userUnlockedSlots ?? 0;
+
         if (isDebugMode) {
           // 모든 스킬 ID 목록
           const allSkillIds = [
@@ -104,6 +107,7 @@ export default function HomePage() {
           skills = allSkillIds;
           purchased = allSkillIds;
           userCurrency = 999999; // 충분한 화폐
+          userUnlockedSlots = 3;
           console.log("[DEBUG MODE] All skills unlocked and purchased");
         }
 
@@ -111,14 +115,10 @@ export default function HomePage() {
         setUnlockedSkills(skills);
         setPurchasedSkills(purchased);
         setCurrency(userCurrency);
+        setUnlockedSlots(userUnlockedSlots);
 
-        // 코스튬이나 구매한 스킬이 있으면 선택 모달 표시
-        if (costumes.length > 0 || purchased.length > 0) {
-          setCostumeSelectOpen(true);
-        } else {
-          // 둘 다 없으면 바로 게임 시작
-          router.push("/game");
-        }
+        // 항상 게임 셋업 모달 표시
+        setCostumeSelectOpen(true);
       } else {
         // API 실패 시 바로 게임 시작
         router.push("/game");
@@ -152,6 +152,29 @@ export default function HomePage() {
     setCostumeSelectOpen(false);
     // 게임 페이지로 이동
     router.push("/game");
+  };
+
+  const handlePurchaseSlot = async (slotIndex: number) => {
+    try {
+      const userId = getOrCreateUserId();
+      const res = await fetch("/api/slots", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, slotIndex }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setCurrency(data.newCurrency);
+        setUnlockedSlots(data.unlockedSlots);
+      } else {
+        const error = await res.json();
+        alert(error.error || "슬롯 구매 실패");
+      }
+    } catch (error) {
+      console.error("Failed to purchase slot:", error);
+      alert("슬롯 구매 중 오류가 발생했습니다");
+    }
   };
 
   const handlePurchaseSkill = async (skillId: string) => {
@@ -238,8 +261,10 @@ export default function HomePage() {
         unlockedSkills={unlockedSkills}
         purchasedSkills={purchasedSkills}
         currency={currency}
+        unlockedSlots={unlockedSlots}
         onSelect={handleGameSetup}
         onPurchaseSkill={handlePurchaseSkill}
+        onPurchaseSlot={handlePurchaseSlot}
       />
 
       {/* 푸터 */}
