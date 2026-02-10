@@ -113,6 +113,7 @@ a.pixel-ui {
   z-index: 1;
   text-shadow: 2px 2px 0px #000000c2;
 }
+div.pixel-ui:active,
 button.pixel-ui:active,
 a.pixel-ui:active {
   transform: translateY(4px);
@@ -122,6 +123,27 @@ a.pixel-ui:active {
     4px 0px #222,
     -4px 0px #222,
     inset 0px 4px #00000038;
+}
+
+div.pixel-ui {
+  color: #fff;
+  letter-spacing: 1px;
+  /* padding: 12px 20px; */
+  border: 0;
+  text-decoration: none;
+  box-shadow:
+    0px 4px #222,
+    0px -4px #222,
+    4px 0px #222,
+    -4px 0px #222,
+    0px 8px #00000038,
+    4px 4px #00000038,
+    -4px 4px #00000038,
+    inset 0px 4px #ffffff36;
+  cursor: pointer;
+  padding-top: 10px;
+  z-index: 1;
+  text-shadow: 2px 2px 0px #000000c2;
 }
 
 /* Pixel UI Input Style */
@@ -246,6 +268,24 @@ input.pixel-ui {
     0px 8px #00000038,
     4px 4px #00000038,
     inset 0px 4px #ffffff10;
+}
+
+.pixel-panel_light {
+  background-color: #5e5e5e59;
+  box-shadow:
+    0px 3px #91919190,
+    0px -3px #91919190,
+    3px 0px #91919190,
+    -3px 0px #91919190;
+}
+
+.pixel-panel_light2 {
+  background-color: #54a81759;
+  box-shadow:
+    0px 3px #40c11c90,
+    0px -3px #40c11c90,
+    3px 0px #40c11c90,
+    -3px 0px #40c11c90;
 }
 
 /* Pixel Volume Slider */

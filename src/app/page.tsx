@@ -14,6 +14,11 @@ export default function HomePage() {
   const [howToPlayOpen, setHowToPlayOpen] = useState(false);
   const [costumeSelectOpen, setCostumeSelectOpen] = useState(false);
   const [unlockedCostumes, setUnlockedCostumes] = useState<string[]>([]);
+  const [unlockedSkills, setUnlockedSkills] = useState<string[]>([]);
+  const [purchasedSkills, setPurchasedSkills] = useState<string[]>([]);
+  const [currency, setCurrency] = useState(0);
+  const [totalScore, setTotalScore] = useState(0);
+  const [unlockedSlots, setUnlockedSlots] = useState(0);
   const [isCheckingCostumes, setIsCheckingCostumes] = useState(false);
 
   useEffect(() => {
@@ -70,21 +75,58 @@ export default function HomePage() {
       if (res.ok) {
         const data = await res.json();
         const costumes = data.userUnlockedCostumes ?? [];
-        setUnlockedCostumes(costumes);
+        let skills = data.userUnlockedSkills ?? [];
+        let purchased = data.userPurchasedSkills ?? [];
+        let userCurrency = data.userCurrency ?? 0;
 
-        // 코스튬이 있으면 선택 모달 표시
-        if (costumes.length > 0) {
-          setCostumeSelectOpen(true);
-        } else {
-          // 코스튬이 없으면 바로 게임 시작
-          router.push("/game");
+        // 디버그 모드: 모든 스킬 언락 및 구매 처리
+        const isDebugMode =
+          typeof window !== "undefined" &&
+          localStorage.getItem("DEBUG_MODE") === "true";
+
+        let userUnlockedSlots = data.userUnlockedSlots ?? 0;
+
+        if (isDebugMode) {
+          // 모든 스킬 ID 목록
+          const allSkillIds = [
+            "skateboard",
+            "milk",
+            "mushroom",
+            "detector",
+            "pick",
+            "ax",
+            "crown",
+            "clover",
+            "bubbles",
+            "revolver",
+            "cobweb",
+            "fireball",
+            "iceball",
+            "stone",
+            "lightning",
+          ];
+          skills = allSkillIds;
+          purchased = allSkillIds;
+          userCurrency = 999999; // 충분한 화폐
+          userUnlockedSlots = 3;
+          console.log("[DEBUG MODE] All skills unlocked and purchased");
         }
+
+        setUnlockedCostumes(costumes);
+        setUnlockedSkills(skills);
+        setPurchasedSkills(purchased);
+        setCurrency(userCurrency);
+        setTotalScore(data.userTotalScore ?? 0);
+        setUnlockedSlots(userUnlockedSlots);
+
+        // 항상 게임 셋업 모달 표시
+        setCostumeSelectOpen(true);
       } else {
         // API 실패 시 바로 게임 시작
         router.push("/game");
       }
     } catch (error) {
-      console.error("Failed to fetch unlocked costumes:", error);
+      console.error("Failed to fetch game data:", error);
       // 에러 발생 시 바로 게임 시작
       router.push("/game");
     } finally {
@@ -92,22 +134,72 @@ export default function HomePage() {
     }
   };
 
-  const handleCostumeSelect = (costumeId: string | null) => {
-    // console.log("🎨 선택한 코스튬:", costumeId);
-
+  const handleGameSetup = (data: {
+    costume: string | null;
+    skills: string[];
+  }) => {
     // 선택한 코스튬을 gameStore에 저장
-    useGameStore.getState().setCurrentCostume(costumeId);
-    if (costumeId) {
-      useGameStore.getState().addUnlockedCostume(costumeId);
+    useGameStore.getState().setCurrentCostume(data.costume);
+    if (data.costume) {
+      useGameStore.getState().addUnlockedCostume(data.costume);
     }
 
+    // 선택한 스킬을 gameStore에 저장
+    useGameStore.getState().setSelectedSkills(data.skills);
+
     // localStorage에도 저장 (페이지 이동 시 유지하기 위해)
-    localStorage.setItem("selected_costume", costumeId ?? "");
-    // console.log("💾 localStorage에 저장:", localStorage.getItem("selected_costume"));
+    localStorage.setItem("selected_costume", data.costume ?? "");
+    localStorage.setItem("selected_skills", JSON.stringify(data.skills));
 
     setCostumeSelectOpen(false);
     // 게임 페이지로 이동
     router.push("/game");
+  };
+
+  const handlePurchaseSlot = async (slotIndex: number) => {
+    try {
+      const userId = getOrCreateUserId();
+      const res = await fetch("/api/slots", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, slotIndex }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setCurrency(data.newCurrency);
+        setUnlockedSlots(data.unlockedSlots);
+      } else {
+        const error = await res.json();
+        alert(error.error || "슬롯 구매 실패");
+      }
+    } catch (error) {
+      console.error("Failed to purchase slot:", error);
+      alert("슬롯 구매 중 오류가 발생했습니다");
+    }
+  };
+
+  const handlePurchaseSkill = async (skillId: string) => {
+    try {
+      const userId = getOrCreateUserId();
+      const res = await fetch("/api/skills", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, skillId }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setCurrency(data.newCurrency);
+        setPurchasedSkills(data.purchasedSkills);
+      } else {
+        const error = await res.json();
+        alert(error.error || "스킬 구매 실패");
+      }
+    } catch (error) {
+      console.error("Failed to purchase skill:", error);
+      alert("스킬 구매 중 오류가 발생했습니다");
+    }
   };
 
   return (
@@ -168,7 +260,14 @@ export default function HomePage() {
         isOpen={costumeSelectOpen}
         onClose={() => setCostumeSelectOpen(false)}
         unlockedCostumes={unlockedCostumes}
-        onSelect={handleCostumeSelect}
+        unlockedSkills={unlockedSkills}
+        purchasedSkills={purchasedSkills}
+        currency={currency}
+        totalScore={totalScore}
+        unlockedSlots={unlockedSlots}
+        onSelect={handleGameSetup}
+        onPurchaseSkill={handlePurchaseSkill}
+        onPurchaseSlot={handlePurchaseSlot}
       />
 
       {/* 푸터 */}

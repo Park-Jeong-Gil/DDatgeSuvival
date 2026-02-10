@@ -16,7 +16,10 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
   private chaseStartTime: number = 0;
   private readonly MAX_CHASE_DURATION = 8000;
   private _stunUntil: number = 0;
+  private _slowUntil: number = 0; // 감속 종료 시간
+  private _slowMultiplier: number = 1.0; // 감속 배율 (1.0 = 정상, 0.5 = 50% 감속)
   public isKnockedBack: boolean = false; // 넉백 중인지 여부
+  public knockbackUntil: number = 0; // 넉백 지속 종료 시간
   private nameLabel: Phaser.GameObjects.Text;
   private currentLabelColor: string = "";
   private lastSeenAt: number = -Infinity;
@@ -27,6 +30,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
   private readonly FLIP_COOLDOWN = 200; // 최소 200ms 간격
   private shadow?: Phaser.GameObjects.Graphics; // 그림자
   private outlineFX?: Phaser.FX.Glow | null; // 포식자 아웃라인
+  private webOverlay?: Phaser.GameObjects.Image; // 거미줄 슬로우 오버레이
 
   constructor(scene: Phaser.Scene, x: number, y: number, data: NPCData) {
     // walk 이미지를 기본으로 사용
@@ -130,6 +134,22 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     return this._stunUntil;
   }
 
+  public set slowUntil(time: number) {
+    this._slowUntil = time;
+  }
+
+  public get slowUntil(): number {
+    return this._slowUntil;
+  }
+
+  public set slowMultiplier(multiplier: number) {
+    this._slowMultiplier = multiplier;
+  }
+
+  public get slowMultiplier(): number {
+    return this._slowMultiplier;
+  }
+
   private isTextureReady(): boolean {
     const textureKey = this.texture?.key;
     if (!textureKey || !this.scene.textures.exists(textureKey)) return false;
@@ -167,6 +187,16 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
 
   preUpdate(time: number, delta: number) {
     super.preUpdate(time, delta);
+
+    // 거미줄 오버레이 위치 동기화 및 감속 만료 시 제거
+    if (this.webOverlay) {
+      if (Date.now() >= this._slowUntil) {
+        this.removeWebOverlay();
+      } else {
+        this.webOverlay.setPosition(this.x, this.y);
+      }
+    }
+
     const cam = this.scene?.cameras?.main;
     if (!cam) return;
     if (time - this.lastRenderCheckAt >= 150) {
@@ -308,6 +338,8 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     isMobile?: boolean,
     predatorSpeedMultiplier?: number,
     hasAttractPreyBuff?: boolean,
+    shouldHighlightPredators?: boolean,
+    hasBubblesActive?: boolean,
   ) {
     if (!this.active) return;
 
@@ -356,14 +388,22 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
 
     const now = Date.now();
 
-    // 정지 상태 체크
+    // 포식자 하이라이트 (detector 스킬) - 추격 여부와 관계없이 항상 적용
+    const isNPCPredator = this.level > playerLevel;
+    if (shouldHighlightPredators && isNPCPredator) {
+      this.addPredatorOutline();
+    } else if (!shouldHighlightPredators || !isNPCPredator) {
+      this.removePredatorOutline();
+    }
+
+    // 정지 상태 체크 (기절)
     if (now < this._stunUntil) {
       // 넉백 중이 아니면 속도를 0으로 설정 (일반 기절)
       if (!this.isKnockedBack) {
         this.setVelocity(0, 0);
       }
-      // 기절 중에는 어두운 색상 유지
-      if (!this.tintTopLeft || this.tintTopLeft === 0xffffff) {
+      // 기절 중에는 어두운 회색 (우선순위 높음)
+      if (!this.tintTopLeft || this.tintTopLeft === 0xffffff || this.tintTopLeft === 0x88ccff) {
         this.setTint(0x888888);
       }
       // 정지 중에도 라벨 위치 업데이트
@@ -373,9 +413,34 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       return;
     }
 
-    // 기절이 풀렸으면 원래 색으로 복구
-    if (this.tintTopLeft === 0x888888) {
+    // 넉백 상태 체크 (날아가는 중 - AI/속도 완전 차단)
+    if (now < this.knockbackUntil) {
+      const offsetY = this.displayHeight / 2 + 5;
+      this.nameLabel.setPosition(this.x, this.y - offsetY);
+      this.nameLabel.setVisible(true);
+      return;
+    }
+
+    // 감속 상태 체크 (기절보다 우선순위 낮음)
+    const isSlowed = now < this._slowUntil;
+    if (isSlowed) {
+      // 감속 중에는 파란 회색 틴트 (기절이 아닐 때만)
+      if (!this.tintTopLeft || this.tintTopLeft === 0xffffff) {
+        this.setTint(0x88ccff); // 파란 회색
+      }
+    } else if (this._slowUntil > 0) {
+      // 감속 효과 만료 시 틴트 제거
+      if (this.tintTopLeft === 0x88ccff) {
+        this.clearTint();
+      }
+    }
+
+    // 기절이 풀렸으면 원래 색으로 복구 (단, 감속 중이면 감속 색상 유지)
+    if (this.tintTopLeft === 0x888888 && !isSlowed) {
       this.clearTint();
+    } else if (this.tintTopLeft === 0x888888 && isSlowed) {
+      // 기절이 끝났지만 감속 중이면 감속 색상으로 전환
+      this.setTint(0x88ccff);
     }
 
     this.updateLabels(playerLevel);
@@ -409,6 +474,11 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       }
     }
 
+    // 비눗방울 스킬: 포식자 감지 거리 반감
+    if (hasBubblesActive && levelDiff < 0) {
+      detectionRange *= 0.5;
+    }
+
     // If player is invisible or out of range, wander
     if (isPlayerInvisible || distance > detectionRange) {
       if (this.aiState === NPCState.CHASE) {
@@ -431,8 +501,10 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
         this.setDepth(12);
         // chase 텍스처로 변경
         this.updateTexture("chase");
-        // 포식자 빨간색 아웃라인 추가
-        this.addPredatorOutline();
+        // 포식자 빨간색 아웃라인 추가 (탐지기 스킬이 있을 때만)
+        if (shouldHighlightPredators) {
+          this.addPredatorOutline();
+        }
       }
 
       // Chase duration limit (공룡은 제한 없음)
@@ -542,6 +614,16 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       speed *= predatorSpeedMultiplier;
     }
 
+    // 감속 효과 적용 (아이스볼)
+    const now = Date.now();
+    if (now < this._slowUntil) {
+      speed *= this._slowMultiplier;
+    } else if (this._slowUntil > 0) {
+      // 감속 효과 만료 시 리셋
+      this._slowMultiplier = 1.0;
+      this._slowUntil = 0;
+    }
+
     this.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
 
     this.safeSetFlipX(Math.cos(angle));
@@ -634,7 +716,18 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       }
     }
 
-    const speed = playerSpeed * 0.3;
+    let speed = playerSpeed * 0.3;
+
+    // 감속 효과 적용 (아이스볼)
+    const now = Date.now();
+    if (now < this._slowUntil) {
+      speed *= this._slowMultiplier;
+    } else if (this._slowUntil > 0) {
+      // 감속 효과 만료 시 리셋
+      this._slowMultiplier = 1.0;
+      this._slowUntil = 0;
+    }
+
     this.setVelocity(Math.cos(fleeAngle) * speed, Math.sin(fleeAngle) * speed);
 
     this.safeSetFlipX(Math.cos(fleeAngle));
@@ -649,7 +742,18 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       this.wanderDirection.set(Math.cos(angle), Math.sin(angle));
     }
 
-    const speed = this.baseSpeed * 0.5;
+    let speed = this.baseSpeed * 0.5;
+
+    // 감속 효과 적용 (아이스볼)
+    const now = Date.now();
+    if (now < this._slowUntil) {
+      speed *= this._slowMultiplier;
+    } else if (this._slowUntil > 0) {
+      // 감속 효과 만료 시 리셋
+      this._slowMultiplier = 1.0;
+      this._slowUntil = 0;
+    }
+
     this.setVelocity(
       this.wanderDirection.x * speed,
       this.wanderDirection.y * speed,
@@ -710,6 +814,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
 
     this.nameLabel?.destroy();
     this.destroyShadow();
+    this.removeWebOverlay();
 
     super.destroy(fromScene);
   }
@@ -771,7 +876,8 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
   // 포식자 빨간색 아웃라인 추가
   private addPredatorOutline() {
     if (!this.outlineFX && this.preFX) {
-      this.outlineFX = this.preFX.addGlow(0xff0000, 3, 0, false, 0.3, 10);
+      this.outlineFX = this.preFX.addGlow(0xff0000, 3, 1, false, 0.5, 16);
+      this.setTint(0xff9999);
     }
   }
 
@@ -781,7 +887,27 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       if (this.preFX) {
         this.preFX.remove(this.outlineFX);
       }
+      this.clearTint();
       this.outlineFX = null;
+    }
+  }
+
+  // 거미줄 슬로우 오버레이 추가
+  addWebOverlay() {
+    if (this.webOverlay || !this.scene) return;
+    if (!this.scene.textures.exists("effect_web")) return;
+
+    this.webOverlay = this.scene.add.image(this.x, this.y, "effect_web");
+    this.webOverlay.setDepth(this.depth + 1);
+    this.webOverlay.setDisplaySize(this.displayWidth * 1.4, this.displayHeight * 1.4);
+    this.webOverlay.setAlpha(0.85);
+  }
+
+  // 거미줄 슬로우 오버레이 제거
+  removeWebOverlay() {
+    if (this.webOverlay) {
+      this.webOverlay.destroy();
+      this.webOverlay = undefined;
     }
   }
 

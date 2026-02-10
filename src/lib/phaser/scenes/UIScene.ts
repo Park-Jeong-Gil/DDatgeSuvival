@@ -2,7 +2,6 @@ import * as Phaser from "phaser";
 import { VirtualJoystick } from "../ui/VirtualJoystick";
 import { EventBus } from "../EventBus";
 
-
 export class UIScene extends Phaser.Scene {
   private joystick!: VirtualJoystick;
   private bottomBg!: Phaser.GameObjects.Graphics;

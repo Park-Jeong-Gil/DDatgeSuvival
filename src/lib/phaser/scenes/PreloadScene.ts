@@ -153,6 +153,39 @@ export class PreloadScene extends Phaser.Scene {
       );
     });
 
+    // Skill sprites (모든 스킬)
+    const skillNames = [
+      "skateboard",
+      "milk",
+      "mushroom",
+      "detector",
+      "pick",
+      "ax",
+      "crown",
+      "clover",
+      "bubbles",
+      "revolver",
+      "cobweb",
+      "fireball",
+      "iceball",
+      "stone",
+      "lightning",
+    ];
+    skillNames.forEach((skillName) => {
+      this.load.image(
+        `skill_${skillName}`,
+        `assets/sprites/skills/skills_${skillName}.png`,
+      );
+    });
+
+    // Skill effect overlays
+    this.load.image("effect_boom", "assets/sprites/skills/effect_boom.png");
+    this.load.image("effect_web", "assets/sprites/skills/effect_web.png");
+    this.load.image(
+      "effect_bubble",
+      "assets/sprites/skills/effect_bubble.png",
+    );
+
     // Sound effects
     this.load.audio("bite", "assets/sounds/player/bite.wav");
     this.load.audio("death", "assets/sounds/player/death.wav");
