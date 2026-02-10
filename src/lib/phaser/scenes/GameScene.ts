@@ -247,6 +247,9 @@ export class GameScene extends Phaser.Scene {
       : useGameStore.getState().selectedSkills;
     this.skillManager = new SkillManager(this, selectedSkills);
 
+    // store에 반영 (HUD UI 표시용)
+    useGameStore.getState().setSelectedSkills(selectedSkills);
+
     // localStorage 클리어
     if (selectedSkillsJson) {
       localStorage.removeItem("selected_skills");
@@ -260,6 +263,16 @@ export class GameScene extends Phaser.Scene {
 
     // Player에 SkillManager 연결
     this.skillManager.setPlayer(this.player);
+
+    // 리볼버 스킬 - 먹이 처치 시 실제 handleEat 처리 연결
+    this.skillManager.setPreyEatenCallback((npcObj) => {
+      const npc = npcObj as NPC;
+      if (npc && npc.active && !npc.destroyed) {
+        this.handleEat(npc);
+      } else {
+        npc?.destroy();
+      }
+    });
 
     // 곡괭이/도끼 스킬로 장애물 제거
     if (this.skillManager.hasPick()) {
@@ -1342,16 +1355,19 @@ export class GameScene extends Phaser.Scene {
       this.mapElements.obstacles.getChildren() as Phaser.Physics.Arcade.Sprite[];
     if (obstacles.length === 0) return;
 
-    let removedCount = 0;
-    obstacles.forEach((obstacle) => {
-      if (obstacle.active && obstacle.texture.key === textureKey) {
-        this.mapElements.obstacles.remove(obstacle, true, true);
-        removedCount++;
-      }
+    const toRemove = obstacles.filter(
+      (obstacle) => obstacle.active && obstacle.texture.key === textureKey,
+    );
+
+    toRemove.forEach((obstacle) => {
+      this.mapElements.obstacles.remove(obstacle, true, true);
     });
 
+    // StaticGroup 물리 바디 갱신
+    this.mapElements.obstacles.refresh();
+
     console.log(
-      `[SkillManager] Removed ${removedCount} ${textureKey} obstacles`,
+      `[SkillManager] Removed ${toRemove.length} ${textureKey} obstacles`,
     );
   }
 

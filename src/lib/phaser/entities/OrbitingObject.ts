@@ -123,22 +123,52 @@ export class OrbitingObject extends Phaser.Physics.Arcade.Sprite {
         );
         break;
 
-      case "stone":
-        // 넉백 (effectParams에서 distance 가져오기)
+      case "stone": {
+        // 넉백 - 날아가는 애니메이션
         const knockbackDistance = this.effectParams.knockbackDistance ?? 100;
         const dx = npc.x - this.player.x;
         const dy = npc.y - this.player.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
         if (dist > 0) {
-          const knockbackX = (dx / dist) * knockbackDistance;
-          const knockbackY = (dy / dist) * knockbackDistance;
-          npc.setPosition(npc.x + knockbackX, npc.y + knockbackY);
+          const normalX = dx / dist;
+          const normalY = dy / dist;
+          const knockbackDuration = 300;
+          // 넉백 속도: 목표 거리 / 시간 (px/s)
+          const knockbackSpeed = (knockbackDistance / knockbackDuration) * 1000;
+
           npc.isKnockedBack = true;
+          npc.knockbackUntil = Date.now() + knockbackDuration;
+          npc.setVelocity(normalX * knockbackSpeed, normalY * knockbackSpeed);
+
+          // 맞는 순간 흰색 플래시
+          npc.setTint(0xffffff);
+          this.scene.time.delayedCall(80, () => {
+            if (npc && npc.active) npc.clearTint();
+          });
+
+          // 날아가면서 한 바퀴 회전
+          this.scene.tweens.add({
+            targets: npc,
+            angle: npc.angle + (normalX >= 0 ? 360 : -360),
+            duration: knockbackDuration,
+            ease: "Linear",
+          });
+
+          // 넉백 종료 - 속도 및 상태 리셋
+          this.scene.time.delayedCall(knockbackDuration, () => {
+            if (npc && npc.active) {
+              npc.isKnockedBack = false;
+              npc.setVelocity(0, 0);
+              npc.setAngle(0);
+            }
+          });
+
           console.log(
             `[OrbitingObject] Stone knocked back ${npc.npcData.nameKo} ${knockbackDistance}px`,
           );
         }
         break;
+      }
     }
 
     // 파티클 효과 (옵션)

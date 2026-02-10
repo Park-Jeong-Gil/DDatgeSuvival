@@ -178,6 +178,14 @@ export class PreloadScene extends Phaser.Scene {
       );
     });
 
+    // Skill effect overlays
+    this.load.image("effect_boom", "assets/sprites/skills/effect_boom.png");
+    this.load.image("effect_web", "assets/sprites/skills/effect_web.png");
+    this.load.image(
+      "effect_bubble",
+      "assets/sprites/skills/effect_bubble.png",
+    );
+
     // Sound effects
     this.load.audio("bite", "assets/sounds/player/bite.wav");
     this.load.audio("death", "assets/sounds/player/death.wav");

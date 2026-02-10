@@ -9,13 +9,13 @@ export const skillsData: SkillData[] = [
   {
     id: "skateboard",
     name: "스케이트보드",
-    description: "기본 이동 속도 +15% (패시브)",
+    description: "기본 이동 속도 +10% (패시브)",
     type: "passive",
     price: 1000,
     unlockScore: 15000,
     spriteKey: "skills_skateboard",
     effect: "speed_boost_passive",
-    effectParams: { speedMultiplier: 1.15 },
+    effectParams: { speedMultiplier: 1.1 },
   },
 
   // 2. 포만감 우유 (패시브, 공복 감소 저하)
@@ -120,18 +120,24 @@ export const skillsData: SkillData[] = [
     effectParams: { detectionMultiplier: 0.5, duration: 15000 },
   },
 
-  // 10. 리볼버 (액티브, 무작위 사냥)
+  // 10. 리볼버 (액티브, 범위 사냥 - 지속형)
   {
     id: "revolver",
     name: "리볼버",
-    description: "무작위 먹이 1마리 즉시 사냥 (쿨타임 30초)",
+    description:
+      "10초간 범위 내 먹이를 최대 10마리 사냥, 경험치 획득 (범위 300px, 쿨타임 30초)",
     type: "active",
     price: 800,
     unlockScore: 12000,
     cooldown: 30,
     spriteKey: "skills_revolver",
-    effect: "kill_random_prey",
-    effectParams: { range: 500 },
+    effect: "hunt_nearby_prey",
+    effectParams: {
+      duration: 10000,
+      range: 300,
+      maxKills: 10,
+      killInterval: 1000,
+    },
   },
 
   // 11. 거미줄 (액티브, 먹이 감속 - 지속형)
@@ -215,11 +221,11 @@ export const skillsData: SkillData[] = [
   {
     id: "lightning",
     name: "번개",
-    description: "5초간 모든 NPC 정지 (쿨타임 60초)",
+    description: "5초간 모든 NPC 정지 (쿨타임 45초)",
     type: "active",
     price: 2500,
     unlockScore: 35000,
-    cooldown: 60,
+    cooldown: 45,
     spriteKey: "skills_lightning",
     effect: "freeze_all_npcs",
     effectParams: { freezeDuration: 5000 },

@@ -17,12 +17,12 @@ export default function HUD() {
   const level = useGameStore((s) => s.level);
   const survivalTime = useGameStore((s) => s.survivalTime);
   const activeBuffs = useGameStore((s) => s.activeBuffs);
-  const skillCooldowns = useGameStore((s) => s.skillCooldowns);
+  const selectedSkills = useGameStore((s) => s.selectedSkills);
   const isPlaying = useGameStore((s) => s.isPlaying);
   if (!isPlaying) return null;
 
   const hasActiveBuffs = activeBuffs.length > 0;
-  const hasSkills = skillCooldowns.length > 0;
+  const hasSkills = selectedSkills.length > 0;
 
   return (
     <div className="absolute top-4 left-1/2 -translate-x-1/2 pointer-events-none flex flex-col gap-6">

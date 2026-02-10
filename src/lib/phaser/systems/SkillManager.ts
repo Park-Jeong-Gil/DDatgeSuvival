@@ -27,17 +27,22 @@ export class SkillManager {
   // 거미줄 업데이트 타이머
   private cobwebUpdateTimer: number = 0;
 
+  // 리볼버 상태
+  private revolverKillCount: number = 0;
+  private revolverUpdateTimer: number = 0;
+
+  // 먹이를 먹었을 때 호출되는 콜백 (GameScene.handleEat와 연결)
+  private preyEatenCallback: ((npc: unknown) => void) | null = null;
+
   // 액티브 버프 (비눗방울용)
-  private activeBuffs: Map<
-    string,
-    { effect: string; remainingTime: number }
-  > = new Map();
+  private activeBuffs: Map<string, { effect: string; remainingTime: number }> =
+    new Map();
 
   // 오브 관리 (파이어볼, 아이스볼, 돌멩이)
   private activeOrbs: OrbitingObject[] = [];
 
   // 비눗방울 시각 효과
-  private bubblesVisual: Phaser.GameObjects.Arc | null = null;
+  private bubblesVisual: Phaser.GameObjects.Image | null = null;
 
   // 오브 소멸 이벤트 핸들러 (화살표 함수로 this 바인딩)
   private orbDestroyedHandler = (skillId: unknown) => {
@@ -76,6 +81,13 @@ export class SkillManager {
    */
   setPlayer(player: Player) {
     this.player = player;
+  }
+
+  /**
+   * 먹이 처치 콜백 연결 (리볼버 스킬에서 실제 경험치/점수 처리용)
+   */
+  setPreyEatenCallback(callback: (npc: unknown) => void) {
+    this.preyEatenCallback = callback;
   }
 
   /**
@@ -188,7 +200,10 @@ export class SkillManager {
       buff.remainingTime -= delta;
 
       // 디버그: 거미줄 버프 시간 감소 확인
-      if (buffId === "cobweb" && Math.floor(prevTime / 1000) !== Math.floor(buff.remainingTime / 1000)) {
+      if (
+        buffId === "cobweb" &&
+        Math.floor(prevTime / 1000) !== Math.floor(buff.remainingTime / 1000)
+      ) {
         console.log(
           `[SkillManager] Cobweb buff time: ${Math.ceil(buff.remainingTime / 1000)}s remaining`,
         );
@@ -231,6 +246,27 @@ export class SkillManager {
       }
     }
 
+    // 리볼버 버프 활성화 중 - 주기적으로 범위 내 먹이 사냥
+    if (this.activeBuffs.has("revolver")) {
+      const revolverSkill = this.selectedSkills.find(
+        (s) => s.id === "revolver",
+      );
+      const maxKills = revolverSkill?.effectParams?.maxKills ?? 10;
+      const killInterval = revolverSkill?.effectParams?.killInterval ?? 1000;
+
+      if (this.revolverKillCount < maxKills) {
+        this.revolverUpdateTimer += delta;
+        if (this.revolverUpdateTimer >= killInterval) {
+          this.tryRevolverKill();
+          this.revolverUpdateTimer = 0;
+        }
+      } else {
+        // 최대 킬 수 달성 시 버프 즉시 종료
+        const buff = this.activeBuffs.get("revolver");
+        if (buff) buff.remainingTime = 0;
+      }
+    }
+
     // 오브 업데이트
     this.activeOrbs = this.activeOrbs.filter((orb) => {
       if (!orb.active || orb.used) {
@@ -255,7 +291,7 @@ export class SkillManager {
     const isOrbSkill = orbSkillIds.includes(skillId);
 
     // 지속형 스킬 목록 (효과 종료 후 쿨타임 시작)
-    const durationSkills = ["bubbles", "cobweb"];
+    const durationSkills = ["bubbles", "cobweb", "revolver"];
     const isDurationSkill = durationSkills.includes(skillId);
 
     switch (skillId) {
@@ -301,17 +337,18 @@ export class SkillManager {
       remainingTime: duration,
     });
 
-    // 시각 효과: 플레이어 주변에 투명한 흰색 원형
-    if (this.player) {
-      this.bubblesVisual = this.scene.add.circle(
+    // 시각 효과: 플레이어 위에 bubble 이미지 오버레이
+    if (this.player && this.scene.textures.exists("effect_bubble")) {
+      this.bubblesVisual = this.scene.add.image(
         this.player.x,
         this.player.y,
-        100, // 반지름
-        0xffffff,
-        0.2, // 투명도
+        "effect_bubble",
       );
-      this.bubblesVisual.setDepth(8); // 플레이어 아래
-      this.bubblesVisual.setStrokeStyle(2, 0xffffff, 0.5);
+      this.bubblesVisual.setDepth(9); // 플레이어(10) 바로 아래
+      this.bubblesVisual.setAlpha(0.85);
+      const size =
+        Math.max(this.player.displayWidth, this.player.displayHeight) * 1.8;
+      this.bubblesVisual.setDisplaySize(size, size);
     }
 
     console.log(
@@ -320,39 +357,88 @@ export class SkillManager {
   }
 
   /**
-   * 리볼버 - 화면 내 무작위 먹이 1마리 제거
+   * 리볼버 - 10초간 범위 내 먹이를 최대 10마리 사냥
    */
   private activateRevolver(skill: SkillData) {
-    if (!this.npcManager) return;
+    if (this.activeBuffs.has("revolver")) return;
 
-    const killedNPC = this.npcManager.killRandomPrey();
-    if (killedNPC) {
-      // 총에 맞는 시각 효과
-      const hitFlash = this.scene.add.circle(
-        killedNPC.x,
-        killedNPC.y,
-        20,
-        0xff0000,
-        0.8,
-      );
-      hitFlash.setDepth(15);
+    const duration = skill.effectParams?.duration ?? 10000;
 
-      // 쓰러지는 애니메이션
-      this.scene.tweens.add({
-        targets: killedNPC,
-        alpha: 0,
-        scale: 0.5,
-        angle: 90,
-        duration: 300,
-        ease: "Power2",
-        onComplete: () => {
-          hitFlash.destroy();
-          killedNPC.destroy(); // 애니메이션 완료 후 제거
-        },
-      });
+    this.revolverKillCount = 0;
+    this.revolverUpdateTimer = 0;
 
-      console.log("[SkillManager] Revolver killed a prey");
-    }
+    this.activeBuffs.set("revolver", {
+      effect: "hunt_nearby_prey",
+      remainingTime: duration,
+    });
+
+    console.log(
+      `[SkillManager] Revolver activated - ${duration / 1000}s duration`,
+    );
+  }
+
+  /**
+   * 리볼버 - 범위 내 먹이 1마리 사냥 시도 (주기적으로 호출)
+   */
+  private tryRevolverKill() {
+    if (!this.player || !this.npcManager) return;
+
+    const revolverSkill = this.selectedSkills.find((s) => s.id === "revolver");
+    const range = revolverSkill?.effectParams?.range ?? 500;
+    const playerLevel = this.player.level;
+
+    const npc = this.npcManager.findNearbyPrey(
+      range,
+      this.player.x,
+      this.player.y,
+      playerLevel,
+    );
+
+    if (!npc) return;
+
+    this.revolverKillCount++;
+
+    // 총에 맞는 시각 효과 (effect_boom 이미지)
+    const boomSize = Math.max(npc.displayWidth, npc.displayHeight) * 2;
+    const hitFlash = this.scene.textures.exists("effect_boom")
+      ? this.scene.add
+          .image(npc.x, npc.y, "effect_boom")
+          .setDisplaySize(boomSize, boomSize)
+          .setAlpha(0.9)
+          .setDepth(16)
+      : this.scene.add.circle(npc.x, npc.y, 20, 0xff0000, 0.8).setDepth(16);
+
+    // boom 이미지 페이드아웃 (NPC 쓰러짐과 동시)
+    this.scene.tweens.add({
+      targets: hitFlash,
+      alpha: 0,
+      scale: 1.5,
+      duration: 350,
+      ease: "Power2",
+      onComplete: () => hitFlash.destroy(),
+    });
+
+    // 쓰러지는 애니메이션 후 경험치 처리
+    this.scene.tweens.add({
+      targets: npc,
+      alpha: 0,
+      scale: 0.5,
+      angle: 90,
+      duration: 300,
+      ease: "Power2",
+      onComplete: () => {
+        // 실제 먹기 처리 (경험치/점수/배고픔 회복) - GameScene 콜백 호출
+        if (this.preyEatenCallback) {
+          this.preyEatenCallback(npc);
+        } else {
+          npc.destroy();
+        }
+      },
+    });
+
+    console.log(
+      `[SkillManager] Revolver hunted prey (${this.revolverKillCount}/${revolverSkill?.effectParams?.maxKills ?? 10})`,
+    );
   }
 
   /**
@@ -364,7 +450,9 @@ export class SkillManager {
 
     // 이미 활성화된 버프가 있다면 경고 (디버깅용)
     if (this.activeBuffs.has("cobweb")) {
-      console.warn("[SkillManager] Cobweb already active - should not reactivate!");
+      console.warn(
+        "[SkillManager] Cobweb already active - should not reactivate!",
+      );
       return;
     }
 
@@ -422,6 +510,7 @@ export class SkillManager {
 
     const freezeDuration = skill.effectParams?.freezeDuration ?? 5000;
     this.npcManager.freezeAllNPCs(freezeDuration);
+    this.scene.cameras.main.flash(300, 255, 255, 200);
     console.log(
       `[SkillManager] Lightning - all NPCs frozen for ${freezeDuration / 1000}s`,
     );

@@ -19,6 +19,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
   private _slowUntil: number = 0; // 감속 종료 시간
   private _slowMultiplier: number = 1.0; // 감속 배율 (1.0 = 정상, 0.5 = 50% 감속)
   public isKnockedBack: boolean = false; // 넉백 중인지 여부
+  public knockbackUntil: number = 0; // 넉백 지속 종료 시간
   private nameLabel: Phaser.GameObjects.Text;
   private currentLabelColor: string = "";
   private lastSeenAt: number = -Infinity;
@@ -29,6 +30,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
   private readonly FLIP_COOLDOWN = 200; // 최소 200ms 간격
   private shadow?: Phaser.GameObjects.Graphics; // 그림자
   private outlineFX?: Phaser.FX.Glow | null; // 포식자 아웃라인
+  private webOverlay?: Phaser.GameObjects.Image; // 거미줄 슬로우 오버레이
 
   constructor(scene: Phaser.Scene, x: number, y: number, data: NPCData) {
     // walk 이미지를 기본으로 사용
@@ -185,6 +187,16 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
 
   preUpdate(time: number, delta: number) {
     super.preUpdate(time, delta);
+
+    // 거미줄 오버레이 위치 동기화 및 감속 만료 시 제거
+    if (this.webOverlay) {
+      if (Date.now() >= this._slowUntil) {
+        this.removeWebOverlay();
+      } else {
+        this.webOverlay.setPosition(this.x, this.y);
+      }
+    }
+
     const cam = this.scene?.cameras?.main;
     if (!cam) return;
     if (time - this.lastRenderCheckAt >= 150) {
@@ -376,6 +388,14 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
 
     const now = Date.now();
 
+    // 포식자 하이라이트 (detector 스킬) - 추격 여부와 관계없이 항상 적용
+    const isNPCPredator = this.level > playerLevel;
+    if (shouldHighlightPredators && isNPCPredator) {
+      this.addPredatorOutline();
+    } else if (!shouldHighlightPredators || !isNPCPredator) {
+      this.removePredatorOutline();
+    }
+
     // 정지 상태 체크 (기절)
     if (now < this._stunUntil) {
       // 넉백 중이 아니면 속도를 0으로 설정 (일반 기절)
@@ -387,6 +407,14 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
         this.setTint(0x888888);
       }
       // 정지 중에도 라벨 위치 업데이트
+      const offsetY = this.displayHeight / 2 + 5;
+      this.nameLabel.setPosition(this.x, this.y - offsetY);
+      this.nameLabel.setVisible(true);
+      return;
+    }
+
+    // 넉백 상태 체크 (날아가는 중 - AI/속도 완전 차단)
+    if (now < this.knockbackUntil) {
       const offsetY = this.displayHeight / 2 + 5;
       this.nameLabel.setPosition(this.x, this.y - offsetY);
       this.nameLabel.setVisible(true);
@@ -786,6 +814,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
 
     this.nameLabel?.destroy();
     this.destroyShadow();
+    this.removeWebOverlay();
 
     super.destroy(fromScene);
   }
@@ -847,7 +876,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
   // 포식자 빨간색 아웃라인 추가
   private addPredatorOutline() {
     if (!this.outlineFX && this.preFX) {
-      this.outlineFX = this.preFX.addGlow(0xff0000, 3, 0, false, 0.3, 10);
+      this.outlineFX = this.preFX.addGlow(0xff0000, 10, 2, false, 0.5, 20);
     }
   }
 
@@ -858,6 +887,25 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
         this.preFX.remove(this.outlineFX);
       }
       this.outlineFX = null;
+    }
+  }
+
+  // 거미줄 슬로우 오버레이 추가
+  addWebOverlay() {
+    if (this.webOverlay || !this.scene) return;
+    if (!this.scene.textures.exists("effect_web")) return;
+
+    this.webOverlay = this.scene.add.image(this.x, this.y, "effect_web");
+    this.webOverlay.setDepth(this.depth + 1);
+    this.webOverlay.setDisplaySize(this.displayWidth * 1.4, this.displayHeight * 1.4);
+    this.webOverlay.setAlpha(0.85);
+  }
+
+  // 거미줄 슬로우 오버레이 제거
+  removeWebOverlay() {
+    if (this.webOverlay) {
+      this.webOverlay.destroy();
+      this.webOverlay = undefined;
     }
   }
 

@@ -449,43 +449,32 @@ export class NPCManager {
   // ========================================
 
   /**
-   * 리볼버 스킬 - 화면 내 무작위 먹이 1마리 제거
-   * @returns 제거된 NPC 객체 (시각 효과용)
+   * 리볼버 스킬 - 플레이어 주변 범위 내 먹이 1마리 반환 (리스트에서 즉시 제거)
+   * @param range 탐지 범위 (px)
+   * @param playerX 플레이어 X 좌표
+   * @param playerY 플레이어 Y 좌표
+   * @param playerLevel 플레이어 레벨
+   * @returns 사냥할 NPC (없으면 null)
    */
-  killRandomPrey(): NPC | null {
-    const cam = this.scene.cameras.main;
-    const bounds = cam.worldView;
-
-    // 플레이어의 현재 레벨 가져오기
-    const player = this.scene.children.getByName("player") as any;
-    if (!player) return null;
-
-    // 플레이어의 현재 레벨 가져오기 (checkLevelUp은 boolean을 반환하므로 store에서 직접 가져옴)
-    const playerLevel = useGameStore.getState().level;
-
-    // 화면 내 먹이 필터링 (플레이어보다 낮은 레벨만)
-    const preyInView = this.npcs.filter((npc) => {
+  findNearbyPrey(
+    range: number,
+    playerX: number,
+    playerY: number,
+    playerLevel: number,
+  ): NPC | null {
+    const nearbyPrey = this.npcs.filter((npc) => {
       if (!npc.active || npc.destroyed) return false;
-      if (npc.x < bounds.x || npc.x > bounds.right) return false;
-      if (npc.y < bounds.y || npc.y > bounds.bottom) return false;
-      return npc.level < playerLevel; // 플레이어보다 레벨이 낮은 먹이만
+      if (npc.level >= playerLevel) return false;
+      const dist = Phaser.Math.Distance.Between(npc.x, npc.y, playerX, playerY);
+      return dist <= range;
     });
 
-    if (preyInView.length === 0) {
-      console.log(
-        `[NPCManager] Revolver - no prey found (player level: ${playerLevel})`,
-      );
-      return null;
-    }
+    if (nearbyPrey.length === 0) return null;
 
-    // 무작위 선택
-    const target = Phaser.Utils.Array.GetRandom(preyInView);
+    const target = Phaser.Utils.Array.GetRandom(nearbyPrey);
     if (target) {
-      // 리스트에서만 제거, 실제 destroy는 호출자가 애니메이션 후 처리
+      // 리스트에서 제거 (실제 destroy는 호출자가 애니메이션 후 처리)
       this.npcs = this.npcs.filter((n) => n !== target);
-      console.log(
-        `[NPCManager] Revolver killed ${target.npcData.nameKo} (level ${target.level})`,
-      );
       return target;
     }
 
@@ -535,6 +524,7 @@ export class NPCManager {
       if (dist <= radius && npc.level < playerLevel) {
         npc.slowUntil = slowUntil;
         npc.slowMultiplier = 0.5; // 50% 속도로 감속
+        npc.addWebOverlay();
         slowedNPCs.push(npc);
         console.log(
           `[NPCManager] Cobweb slowed ${npc.npcData.nameKo} (level ${npc.level}, dist: ${Math.round(dist)}px)`,
