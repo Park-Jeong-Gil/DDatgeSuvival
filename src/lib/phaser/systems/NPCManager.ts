@@ -254,7 +254,12 @@ export class NPCManager {
       const y = playerY + offsetY;
 
       // 맵 경계 체크
-      if (x < 100 || x > this.mapWidth - 100 || y < 100 || y > this.mapHeight - 100) {
+      if (
+        x < 100 ||
+        x > this.mapWidth - 100 ||
+        y < 100 ||
+        y > this.mapHeight - 100
+      ) {
         continue;
       }
 
@@ -320,7 +325,7 @@ export class NPCManager {
     if (diff < 0) {
       // Edible NPCs - spawn more
       if (absDiff === 1)
-        count = 20; // 약한 먹이 NPC는 더 많이 스폰
+        count = 30; // 약한 먹이 NPC는 더 많이 스폰
       else if (absDiff === 2)
         count = 20; // 중간 먹이 NPC는 적당히 스폰
       else if (absDiff === 3) count = 10; // 강한 먹이 NPC는 덜 스폰
