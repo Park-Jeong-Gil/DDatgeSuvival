@@ -11,26 +11,31 @@ export default function SkillCooldownDisplay() {
   // 선택된 모든 스킬을 아이콘으로 표시
   // active 스킬은 cooldown 정보를 함께 표시
   const displaySkills = useMemo(() => {
-    return selectedSkills.map((skillId) => {
-      const skill = getSkillById(skillId);
-      if (!skill) return null;
+    return selectedSkills
+      .map((skillId) => {
+        const skill = getSkillById(skillId);
+        if (!skill) return null;
 
-      const cooldownInfo = skillCooldowns.find((cd) => cd.skillId === skillId);
-      const remainingCooldown = cooldownInfo?.remainingCooldown ?? 0;
-      const maxCooldown = cooldownInfo?.maxCooldown ?? 1;
-      const displaySeconds = Math.ceil(remainingCooldown / 1000);
-      const cooldownRatio =
-        cooldownInfo ? remainingCooldown / maxCooldown : 0;
+        const cooldownInfo = skillCooldowns.find(
+          (cd) => cd.skillId === skillId,
+        );
+        const remainingCooldown = cooldownInfo?.remainingCooldown ?? 0;
+        const maxCooldown = cooldownInfo?.maxCooldown ?? 1;
+        const displaySeconds = Math.ceil(remainingCooldown / 1000);
+        const cooldownRatio = cooldownInfo
+          ? remainingCooldown / maxCooldown
+          : 0;
 
-      return {
-        skillId,
-        spriteKey: skill.spriteKey,
-        type: skill.type,
-        cooldownRatio,
-        displaySeconds,
-        hasCooldown: !!cooldownInfo,
-      };
-    }).filter(Boolean) as {
+        return {
+          skillId,
+          spriteKey: skill.spriteKey,
+          type: skill.type,
+          cooldownRatio,
+          displaySeconds,
+          hasCooldown: !!cooldownInfo,
+        };
+      })
+      .filter(Boolean) as {
       skillId: string;
       spriteKey: string;
       type: string;
@@ -50,22 +55,22 @@ export default function SkillCooldownDisplay() {
   const iconSize = 40;
 
   return (
-    <div className="flex gap-2 justify-center">
+    <div className="flex gap-2 justify-center ">
       {displaySkills.map((skill) => {
         const cooldownPercent = Math.round(skill.cooldownRatio * 100);
 
         // 스킬 타입별 테두리 색상
         const borderColor =
           skill.type === "passive"
-            ? "rgba(74, 222, 128, 0.8)"   // 초록 - 패시브
+            ? "rgba(74, 222, 128, 0.8)" // 초록 - 패시브
             : skill.type === "onstart"
-              ? "rgba(96, 165, 250, 0.8)"  // 파랑 - 시작 시
+              ? "rgba(96, 165, 250, 0.8)" // 파랑 - 시작 시
               : "rgba(255, 255, 255, 0.3)"; // 흰색 - 액티브
 
         return (
           <div
             key={skill.skillId}
-            className="relative overflow-hidden"
+            className="relative overflow-hidden pixel-panel_hud"
             style={{
               width: `${iconSize}px`,
               height: `${iconSize}px`,
@@ -74,7 +79,7 @@ export default function SkillCooldownDisplay() {
             }}
           >
             {/* 스킬 아이콘 */}
-            <div className="absolute inset-0 flex items-center justify-center">
+            <div className="absolute inset-0 flex items-center justify-center p-2">
               <img
                 src={`/assets/sprites/skills/${skill.spriteKey}.png`}
                 alt={skill.skillId}

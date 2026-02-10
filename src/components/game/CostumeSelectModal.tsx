@@ -14,6 +14,7 @@ interface CostumeSelectModalProps {
   unlockedSkills: string[];
   purchasedSkills: string[];
   currency: number;
+  totalScore: number;
   unlockedSlots: number; // 0~3
   onSelect: (data: { costume: string | null; skills: string[] }) => void;
   onClose: () => void;
@@ -27,6 +28,7 @@ export default function CostumeSelectModal({
   unlockedSkills,
   purchasedSkills,
   currency,
+  totalScore,
   unlockedSlots,
   onSelect,
   onClose,
@@ -90,8 +92,13 @@ export default function CostumeSelectModal({
         {/* 타이틀 + 화폐 */}
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold text-white">▪︎ GAME SETUP ▪︎</h2>
-          <div className="text-yellow-400 font-bold text-sm">
-            💰 {currency.toLocaleString()}원
+          <div className="flex flex-col items-end gap-0.5">
+            <div className="text-blue-300 font-bold text-sm">
+              ★ {totalScore.toLocaleString()}점
+            </div>
+            <div className="text-yellow-400 font-bold text-sm">
+              💰 {currency.toLocaleString()}원
+            </div>
           </div>
         </div>
 
@@ -219,23 +226,23 @@ export default function CostumeSelectModal({
         </div>
 
         {/* 탭 메뉴 */}
-        <div className="flex gap-0 shrink-0 pb-2">
+        <div className="flex gap-2 shrink-0 pb-2">
           <button
             onClick={() => setActiveTab("costume")}
-            className={`flex-1 py-2 px-4 font-bold text-sm transition-all ${
+            className={`flex-1 py-2 px-4 font-bold text-sm transition-all pixel-ui ${
               activeTab === "costume"
-                ? "bg-[#1a963e] text-white"
-                : "bg-[#2a2a2a] text-gray-400 hover:bg-[#333]"
+                ? "bg-[#52a9ff] text-white"
+                : "bg-[#595959] text-gray-400 hover:bg-[#333]"
             }`}
           >
             🎨 코스튬
           </button>
           <button
             onClick={() => setActiveTab("skill")}
-            className={`flex-1 py-2 px-4 font-bold text-sm transition-all ${
+            className={`flex-1 py-2 px-4 font-bold text-sm transition-all pixel-ui ${
               activeTab === "skill"
-                ? "bg-[#1a963e] text-white"
-                : "bg-[#2a2a2a] text-gray-400 hover:bg-[#333]"
+                ? "bg-[#52a9ff] text-white"
+                : "bg-[#595959] text-gray-400 hover:bg-[#333]"
             }`}
           >
             ✨ 스킬
@@ -247,7 +254,7 @@ export default function CostumeSelectModal({
           {activeTab === "costume" ? (
             <div className="flex flex-col h-full">
               <div className="flex-1 overflow-y-auto">
-                <div className="grid grid-cols-3 gap-3 px-2 py-1">
+                <div className="grid grid-cols-3 gap-3 px-2 py-2">
                   {allCostumes.map((costume) => {
                     const isSelected = selectedCostume === costume.id;
                     const isLocked = !costume.unlocked;
@@ -270,7 +277,7 @@ export default function CostumeSelectModal({
                           isLocked
                             ? "bg-[#1a1a1a] cursor-not-allowed opacity-60"
                             : isSelected
-                              ? "bg-[#515151] scale-105"
+                              ? "bg-[#515151] scale-103"
                               : "bg-[#2a2a2a] hover:bg-[#333]"
                         }`}
                         style={{

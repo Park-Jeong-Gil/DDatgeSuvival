@@ -67,9 +67,7 @@ export default function SkillSelectTab({
         <div className="text-gray-300 text-sm font-bold mb-1">
           스킬 슬롯이 없습니다
         </div>
-        <div className="text-gray-500 text-xs">
-          위의 슬롯을 먼저 구매하세요
-        </div>
+        <div className="text-gray-500 text-xs">위의 슬롯을 먼저 구매하세요</div>
       </div>
     );
   }
@@ -78,7 +76,15 @@ export default function SkillSelectTab({
     <div className="flex flex-col h-full">
       {/* 스킬 그리드 */}
       <div className="flex-1 overflow-y-auto pr-1">
-        <div className="grid grid-cols-3 gap-3">
+        {purchasedSkills.length === 0 && (
+          <div className="mt-0 mb-4 p-3 bg-gray-800 text-center text-gray-300 text-xs">
+            <div className="mb-1">💡 스킬을 구매하세요!</div>
+            <div className="text-gray-500">
+              게임을 플레이하여 누적 스코어를 쌓으면 스킬이 unlocked 됩니다.
+            </div>
+          </div>
+        )}
+        <div className="grid grid-cols-3 gap-3 px-2 py-2">
           {sortedSkillsByUnlock.map((skill) => (
             <SkillCard
               key={skill.id}
@@ -104,15 +110,6 @@ export default function SkillSelectTab({
           </div>
         )}
       </div>
-
-      {purchasedSkills.length === 0 && (
-        <div className="mt-3 p-3 bg-gray-800 text-center text-gray-300 text-xs">
-          <div className="mb-1">💡 스킬을 구매하세요!</div>
-          <div className="text-gray-500">
-            게임을 플레이하여 누적 스코어를 쌓으면 스킬이 언락됩니다.
-          </div>
-        </div>
-      )}
 
       {purchasedSkills.length > 0 && localSelectedSkills.length === 0 && (
         <div className="mt-3 p-3 bg-yellow-900/30 border border-yellow-600 text-center text-yellow-200 text-xs">

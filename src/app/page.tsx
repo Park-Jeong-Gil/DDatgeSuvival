@@ -17,6 +17,7 @@ export default function HomePage() {
   const [unlockedSkills, setUnlockedSkills] = useState<string[]>([]);
   const [purchasedSkills, setPurchasedSkills] = useState<string[]>([]);
   const [currency, setCurrency] = useState(0);
+  const [totalScore, setTotalScore] = useState(0);
   const [unlockedSlots, setUnlockedSlots] = useState(0);
   const [isCheckingCostumes, setIsCheckingCostumes] = useState(false);
 
@@ -115,6 +116,7 @@ export default function HomePage() {
         setUnlockedSkills(skills);
         setPurchasedSkills(purchased);
         setCurrency(userCurrency);
+        setTotalScore(data.userTotalScore ?? 0);
         setUnlockedSlots(userUnlockedSlots);
 
         // 항상 게임 셋업 모달 표시
@@ -261,6 +263,7 @@ export default function HomePage() {
         unlockedSkills={unlockedSkills}
         purchasedSkills={purchasedSkills}
         currency={currency}
+        totalScore={totalScore}
         unlockedSlots={unlockedSlots}
         onSelect={handleGameSetup}
         onPurchaseSkill={handlePurchaseSkill}

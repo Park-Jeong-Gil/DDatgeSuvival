@@ -876,7 +876,8 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
   // 포식자 빨간색 아웃라인 추가
   private addPredatorOutline() {
     if (!this.outlineFX && this.preFX) {
-      this.outlineFX = this.preFX.addGlow(0xff0000, 10, 2, false, 0.5, 20);
+      this.outlineFX = this.preFX.addGlow(0xff0000, 3, 1, false, 0.5, 16);
+      this.setTint(0xff9999);
     }
   }
 
@@ -886,6 +887,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       if (this.preFX) {
         this.preFX.remove(this.outlineFX);
       }
+      this.clearTint();
       this.outlineFX = null;
     }
   }
