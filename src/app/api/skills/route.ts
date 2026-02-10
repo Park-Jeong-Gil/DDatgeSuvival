@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase";
-import { getSkillById } from "@/lib/phaser/data/skillData";
+import { getSkillById, checkSkillUnlocks } from "@/lib/phaser/data/skillData";
 
 /**
  * POST /api/skills - 스킬 구매
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     // 현재 사용자 데이터 조회
     const { data: userScore, error: fetchError } = await supabase
       .from("scores")
-      .select("currency, purchased_skills, unlocked_skills")
+      .select("currency, purchased_skills, unlocked_skills, total_accumulated_score")
       .eq("user_id", userId)
       .single();
 
@@ -37,8 +37,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 언락 확인
-    const unlockedSkills = (userScore.unlocked_skills as string[]) ?? [];
+    // 언락 확인: unlocked_skills가 비어있으면 total_accumulated_score로 동적 계산 (마이그레이션 전 데이터 호환)
+    const storedUnlockedSkills = (userScore.unlocked_skills as string[]) ?? [];
+    const accScore = userScore.total_accumulated_score ?? 0;
+    const unlockedSkills = storedUnlockedSkills.length > 0
+      ? storedUnlockedSkills
+      : checkSkillUnlocks(accScore);
     if (!unlockedSkills.includes(skillId)) {
       return NextResponse.json(
         { error: "Skill not unlocked" },

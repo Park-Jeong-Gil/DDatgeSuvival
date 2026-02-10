@@ -191,11 +191,16 @@ export async function GET(request: NextRequest) {
         userUnlockedCostumes = userScore.unlocked_costumes ?? [];
 
         // 스킬 관련 정보 반환
-        userUnlockedSkills = userScore.unlocked_skills ?? [];
+        // unlocked_skills가 비어있으면 total_accumulated_score로 동적 계산 (마이그레이션 전 데이터 호환)
+        const storedUnlockedSkills = (userScore.unlocked_skills as string[]) ?? [];
+        const accScore = userScore.total_accumulated_score ?? 0;
+        userUnlockedSkills = storedUnlockedSkills.length > 0
+          ? storedUnlockedSkills
+          : checkSkillUnlocks(accScore);
         userPurchasedSkills = userScore.purchased_skills ?? [];
         userCurrency = userScore.currency ?? 0;
         userUnlockedSlots = userScore.unlocked_slots ?? 0;
-        userTotalScore = userScore.total_accumulated_score ?? 0;
+        userTotalScore = accScore;
       }
     }
 
