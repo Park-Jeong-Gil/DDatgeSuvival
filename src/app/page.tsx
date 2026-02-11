@@ -271,7 +271,7 @@ export default function HomePage() {
       />
 
       {/* 푸터 */}
-      <p className="mt-8 text-sm text-gray-100 text-shadow-md">
+      <p className="mt-8 text-sm text-white text-shadow-lg">
         © 2026 by{" "}
         <a href="https://girgir.dev" target="_blank" rel="noopener noreferrer">
           girgir
