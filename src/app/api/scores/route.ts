@@ -43,8 +43,12 @@ export async function POST(request: NextRequest) {
       existing?.total_accumulated_score ?? 0;
     const newAccumulatedScore = previousAccumulatedScore + score;
 
-    // 화폐 계산 (1000 스코어 = 100원)
-    const newCurrency = Math.floor(newAccumulatedScore / 10);
+    // 화폐 계산: 이번 세션에서 새로 얻은 증가분만 기존 잔액에 추가
+    // (기존 방식은 누적 스코어 전체를 재계산하여 구매 차감분을 덮어쓰는 버그 있음)
+    const previousEarnedCurrency = Math.floor(previousAccumulatedScore / 10);
+    const newEarnedCurrency = Math.floor(newAccumulatedScore / 10);
+    const additionalCurrency = newEarnedCurrency - previousEarnedCurrency;
+    const newCurrency = (existing?.currency ?? 0) + additionalCurrency;
 
     // 스킬 언락 체크
     const unlockedSkills = checkSkillUnlocks(newAccumulatedScore);
