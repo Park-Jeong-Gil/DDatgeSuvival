@@ -93,12 +93,12 @@ export default function CostumeSelectModal({
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold text-white">▪︎ GAME SETUP ▪︎</h2>
           <div className="flex flex-col items-end gap-0.5">
-            <div className="text-blue-300 font-bold text-sm">
+            <div className="text-blue-300 font-bold text-xs">
               ★ {totalScore.toLocaleString()}점
             </div>
-            <div className="text-yellow-400 font-bold text-sm">
+            <div className="text-yellow-400 font-bold text-xs">
               💰 {currency.toLocaleString()}원{" "}
-              <span className="text-[10px]">(누적 점수로 획득)</span>
+              <span className="text-[10px]">(스코어 머니)</span>
             </div>
           </div>
         </div>

@@ -91,6 +91,11 @@ export class GameScene extends Phaser.Scene {
     this.isGameOver = false;
     this.survivalTimer = 0;
 
+    // 맵/카메라 상태 초기화 (scene 재사용 시 이전 게임 값이 남지 않도록)
+    this.levelZoomMultiplier = 1.0;
+    this.currentMapWidth = MAP_WIDTH;
+    this.currentMapHeight = MAP_HEIGHT;
+
     // Debug: 시작 레벨 설정
     if (DEBUG_START_LEVEL > 1) {
       const store = useGameStore.getState();
