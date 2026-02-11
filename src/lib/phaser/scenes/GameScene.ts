@@ -23,7 +23,7 @@ import { LevelSystem } from "../systems/LevelSystem";
 import { NPCManager } from "../systems/NPCManager";
 import { ItemManager } from "../systems/ItemManager";
 import { SkillManager } from "../systems/SkillManager";
-import { generateMap, type MapElements } from "../utils/mapGenerator";
+import { generateMap, expandMapElements, type MapElements } from "../utils/mapGenerator";
 import { getCostumeById } from "../data/skinData";
 
 export class GameScene extends Phaser.Scene {
@@ -1263,6 +1263,10 @@ export class GameScene extends Phaser.Scene {
     // 줌이 0.9배 = 보이는 영역이 1/0.9 = 1.111배
     const expansionRatio = 1 / 0.9;
 
+    // 확장 전 크기 저장 (새 경계 영역 계산에 사용)
+    const oldWidth = this.currentMapWidth;
+    const oldHeight = this.currentMapHeight;
+
     // 새로운 맵 크기 계산
     const newWidth = Math.floor(this.currentMapWidth * expansionRatio);
     const newHeight = Math.floor(this.currentMapHeight * expansionRatio);
@@ -1276,23 +1280,19 @@ export class GameScene extends Phaser.Scene {
       this.npcManager.updateMapBounds(newWidth, newHeight);
     }
 
-    // 부드러운 확장 애니메이션 (배경 크기만)
+    // 배경/물리/카메라 바운드를 즉시 업데이트
+    // - 배경 TileSprite를 즉시 확장: 카메라가 새 영역을 보는 순간 검은 경계가 노출되지 않음
+    //   (TileSprite는 텍스처를 타일로 채우므로 크기를 즉시 늘려도 시각적으로 자연스러움)
+    // - 줌 트윈은 즉시 시작되어 매 프레임 카메라 줌을 변경하지만,
+    //   바운드 업데이트가 늦으면 구 바운드가 카메라를 강제 클램핑하여 버벅임 발생
     if (this.backgroundTileSprite) {
-      this.tweens.add({
-        targets: this.backgroundTileSprite,
-        width: newWidth,
-        height: newHeight,
-        duration: 1000,
-        ease: "Cubic.easeInOut",
-        onComplete: () => {
-          // 애니메이션 완료 후 물리/카메라 바운드 업데이트
-          this.updateMapSize();
-        },
-      });
-    } else {
-      // 배경이 없으면 즉시 업데이트
-      this.updateMapSize();
+      this.backgroundTileSprite.setSize(newWidth, newHeight);
     }
+    this.physics.world.setBounds(0, 0, newWidth, newHeight);
+    this.cameras.main.setBounds(0, 0, newWidth, newHeight);
+
+    // 새 경계 영역에 나무/바위/풀숲 자연스럽게 추가
+    expandMapElements(this, this.mapElements, oldWidth, oldHeight, newWidth, newHeight);
 
     console.log(
       `[Map Expansion] New size: ${newWidth}x${newHeight} (${expansionRatio.toFixed(3)}x expansion)`,
