@@ -69,29 +69,11 @@ export function expandMapElements(
   newWidth: number,
   newHeight: number,
 ): void {
-  const newlyPlacedObjects: { x: number; y: number; radius: number }[] = [];
-
-  // 원본 맵 대비 새 경계 면적 비율에 맞게 오브젝트 수 결정
-  // 원본: 2000x2000에 나무 30개, 바위 15개, 풀숲 4개
-  // 확장 비율 ~1.111배 → 새 면적 ≈ 기존 23% → 나무 7개, 바위 3개, 풀숲 1개
-  placeObjectsInBorder(
-    scene, mapElements.obstacles, "tree_tile", 7,
-    oldWidth, oldHeight, newWidth, newHeight,
-    newlyPlacedObjects, 160, 2.0,
-  );
-  placeObjectsInBorder(
-    scene, mapElements.obstacles, "rock_tile", 3,
-    oldWidth, oldHeight, newWidth, newHeight,
-    newlyPlacedObjects, 120, 2.0,
-  );
+  // 나무/바위는 맵 확장 시 시각적 이미지와 물리 바디 위치 불일치 문제로 생성하지 않음
   placeBushesInBorder(
     scene, mapElements.bushes, "obstacle_bush", 1,
     oldWidth, oldHeight, newWidth, newHeight,
   );
-
-  // StaticGroup 물리 업데이트 (새 오브젝트가 즉시 충돌에 포함되도록)
-  mapElements.obstacles.refresh();
-  mapElements.bushes.refresh();
 }
 
 // 비정형 클러스터 풀숲 생성 (구름 모양처럼 여러 크기의 사각형 조합)
@@ -333,66 +315,6 @@ function placeObjects(
       );
 
       // 배치된 객체를 공유 배열에 추가 (실제 body 크기 기준으로)
-      allPlacedObjects.push({ x: x!, y: y!, radius: bodySize / 2 });
-    }
-  }
-}
-
-// 새 경계 영역(구 맵 바깥)에만 장애물 배치
-function placeObjectsInBorder(
-  scene: Phaser.Scene,
-  group: Phaser.Physics.Arcade.StaticGroup,
-  textureKey: string,
-  count: number,
-  oldWidth: number,
-  oldHeight: number,
-  newWidth: number,
-  newHeight: number,
-  allPlacedObjects: { x: number; y: number; radius: number }[],
-  objectRadius: number,
-  scale: number = 1.0,
-) {
-  void scale;
-  const margin = 80;
-  const borderBuffer = 100; // 경계 부근에서도 자연스럽게 섞이도록 약간의 여유
-
-  for (let i = 0; i < count; i++) {
-    let x: number, y: number;
-    let valid = false;
-
-    for (let attempt = 0; attempt < 80; attempt++) {
-      x = margin + Math.random() * (newWidth - margin * 2);
-      y = margin + Math.random() * (newHeight - margin * 2);
-
-      // 구 맵 내부는 제외 (경계 버퍼 제외)
-      const inOldArea = x < oldWidth - borderBuffer && y < oldHeight - borderBuffer;
-      if (inOldArea) continue;
-
-      // 다른 오브젝트와의 겹침 체크
-      const overlaps = allPlacedObjects.some((obj) => {
-        const distance = Phaser.Math.Distance.Between(x, y, obj.x, obj.y);
-        return distance < objectRadius + obj.radius;
-      });
-      if (overlaps) continue;
-
-      valid = true;
-      break;
-    }
-
-    if (valid!) {
-      const obj = group.create(x!, y!, textureKey);
-      obj.setDepth(20);
-
-      const targetSize = (objectRadius * 2) / 3;
-      obj.setDisplaySize(targetSize, targetSize);
-
-      const bodySize = targetSize * 0.6;
-      obj.body.setSize(bodySize, bodySize);
-      obj.body.setOffset(
-        (obj.width - bodySize) / 2,
-        obj.height - bodySize - (obj.height - targetSize) / 2,
-      );
-
       allPlacedObjects.push({ x: x!, y: y!, radius: bodySize / 2 });
     }
   }
