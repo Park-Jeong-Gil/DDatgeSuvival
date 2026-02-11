@@ -19,7 +19,7 @@ export class HungerSystem {
       // 공식 완화: 1.6 + playerLevel * 0.35 (기존 0.8에서 감소)
       // const decreaseRate = (1.8 + playerLevel * 0.5) * hungerMultiplier;
       // const decreaseRate = (1.5 + playerLevel * 0.5) * hungerMultiplier;
-      const decreaseRate = (1.5 + playerLevel * 1.5) * hungerMultiplier;
+      const decreaseRate = (1.3 + playerLevel * 1.5) * hungerMultiplier;
       const newHunger = store.hunger - decreaseRate;
 
       store.setHunger(newHunger);
