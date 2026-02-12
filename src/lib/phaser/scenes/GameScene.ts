@@ -1285,16 +1285,40 @@ export class GameScene extends Phaser.Scene {
       this.npcManager.updateMapBounds(newWidth, newHeight);
     }
 
-    // 배경/물리/카메라 바운드를 즉시 업데이트
-    // - 배경 TileSprite를 즉시 확장: 카메라가 새 영역을 보는 순간 검은 경계가 노출되지 않음
-    //   (TileSprite는 텍스처를 타일로 채우므로 크기를 즉시 늘려도 시각적으로 자연스러움)
-    // - 줌 트윈은 즉시 시작되어 매 프레임 카메라 줌을 변경하지만,
-    //   바운드 업데이트가 늦으면 구 바운드가 카메라를 강제 클램핑하여 버벅임 발생
-    if (this.backgroundTileSprite) {
-      this.backgroundTileSprite.setSize(newWidth, newHeight);
-    }
+    // 물리/카메라 바운드를 즉시 업데이트 (줌 트윈 버벅임 방지)
     this.physics.world.setBounds(0, 0, newWidth, newHeight);
     this.cameras.main.setBounds(0, 0, newWidth, newHeight);
+
+    // 검은 경계 방지용 사전 배치 레이어:
+    // 메인 배경 TileSprite가 트윈으로 커지는 동안, 카메라 줌 아웃이 먼저 새 영역을
+    // 노출하더라도 아래에 타일이 채워져 있어서 검은 화면이 보이지 않음
+    const preFill = this.backgroundTileSprite
+      ? this.add
+          .tileSprite(0, 0, newWidth, newHeight, "base_background")
+          .setOrigin(0, 0)
+          .setDepth(-1)
+          .setTileScale(
+            this.backgroundTileSprite.tileScaleX,
+            this.backgroundTileSprite.tileScaleY,
+          )
+      : null;
+
+    // 메인 배경 TileSprite를 부드럽게 확장 (맵 확장 애니메이션 복원)
+    if (this.backgroundTileSprite) {
+      this.tweens.add({
+        targets: this.backgroundTileSprite,
+        width: newWidth,
+        height: newHeight,
+        duration: 1000,
+        ease: "Cubic.easeInOut",
+        onComplete: () => {
+          // 메인 배경이 새 영역을 완전히 덮었으므로 사전 배치 레이어 제거
+          preFill?.destroy();
+        },
+      });
+    } else {
+      preFill?.destroy();
+    }
 
     // 새 경계 영역에 나무/바위/풀숲 자연스럽게 추가
     expandMapElements(this, this.mapElements, oldWidth, oldHeight, newWidth, newHeight);
