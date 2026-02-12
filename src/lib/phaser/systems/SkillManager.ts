@@ -41,6 +41,11 @@ export class SkillManager {
   // 오브 관리 (파이어볼, 아이스볼, 돌멩이)
   private activeOrbs: OrbitingObject[] = [];
 
+  // 오브 방어 링 (보이지 않는 원형 히트박스)
+  private recentlyHitNpcs: Map<object, number> = new Map(); // npc 객체 -> 마지막 피격 시각
+  private recentlyHitCleanupTimer = 0;
+  private readonly ORB_RING_HIT_COOLDOWN = 500; // 프레임 스팸 방지 (ms)
+
   // 비눗방울 시각 효과
   private bubblesVisual: Phaser.GameObjects.Image | null = null;
 
@@ -275,6 +280,19 @@ export class SkillManager {
       orb.update(delta);
       return true;
     });
+
+    // 오브 방어 링 처리 (보이지 않는 원형 히트박스)
+    this.updateOrbProtectionRing();
+
+    // recentlyHitNpcs 주기적 정리 (메모리 누수 방지)
+    this.recentlyHitCleanupTimer += delta;
+    if (this.recentlyHitCleanupTimer >= 5000) {
+      this.recentlyHitCleanupTimer = 0;
+      const cutoff = Date.now() - this.ORB_RING_HIT_COOLDOWN;
+      for (const [id, time] of this.recentlyHitNpcs) {
+        if (time < cutoff) this.recentlyHitNpcs.delete(id);
+      }
+    }
   }
 
   /**
@@ -589,7 +607,6 @@ export class SkillManager {
       skill.effectParams ?? {},
     );
     this.activeOrbs.push(orb);
-    this.setupOrbCollision(orb);
 
     // 쿨타임 맵에서 제거 (소멸 시 다시 추가됨)
     this.cooldowns.delete("fireball");
@@ -612,7 +629,6 @@ export class SkillManager {
       skill.effectParams ?? {},
     );
     this.activeOrbs.push(orb);
-    this.setupOrbCollision(orb);
 
     // 쿨타임 맵에서 제거 (소멸 시 다시 추가됨)
     this.cooldowns.delete("iceball");
@@ -635,7 +651,6 @@ export class SkillManager {
       skill.effectParams ?? {},
     );
     this.activeOrbs.push(orb);
-    this.setupOrbCollision(orb);
 
     // 쿨타임 맵에서 제거 (소멸 시 다시 추가됨)
     this.cooldowns.delete("stone");
@@ -644,35 +659,90 @@ export class SkillManager {
   }
 
   /**
-   * 오브 충돌 감지 설정
+   * 특정 NPC에 대해 오브 방어 발동 시도
+   * - GameScene의 physics.add.overlap 콜백에서 handleNPCCollision 전에 호출
+   * - 포식자가 플레이어 body에 닿은 순간 기절/감속/넉백을 즉시 적용
+   * - 이를 통해 handleNPCCollision의 게임오버 판정 전에 디버프를 걸 수 있음
    */
-  private setupOrbCollision(orb: OrbitingObject) {
-    if (!this.npcManager) return;
+  tryFireOrbProtection(npc: any): void {
+    if (!this.player) return;
+    if (npc.level <= this.player.level) return;
 
-    // NPC 그룹과 충돌 감지
-    this.scene.physics.add.overlap(
-      orb,
-      this.npcManager.npcGroup,
-      (orbObj, npcObj) => {
-        const orb = orbObj as OrbitingObject;
-        const npc = npcObj as any; // NPC type
+    const now = Date.now();
+    if (now < npc.stunUntil || npc.isKnockedBack) return;
 
-        // 이미 사용됨 또는 먹이인 경우 무시
-        if (orb.used) return;
-        if (!this.player) return;
+    // 같은 NPC에 오브가 연달아 발동되는 것을 방지
+    const lastHit = this.recentlyHitNpcs.get(npc) ?? 0;
+    if (now - lastHit < this.ORB_RING_HIT_COOLDOWN) return;
 
-        // 포식자만 충돌 처리 (플레이어 레벨보다 높은 NPC)
-        const playerLevel =
-          (this.scene as any).levelSystem?.checkLevelUp?.(this.player) ||
-          this.player.level;
-        if (npc.level <= playerLevel) return;
+    const orbOrder = ["stone", "iceball", "fireball"];
+    const orbToFire = this.activeOrbs
+      .filter((orb) => orb.active && !orb.used)
+      .sort((a, b) => orbOrder.indexOf(a.skillId) - orbOrder.indexOf(b.skillId))[0];
 
-        // 충돌 처리
-        orb.onHitPredator(npc);
-      },
-      undefined,
-      this,
-    );
+    if (!orbToFire) return;
+
+    orbToFire.onHitPredator(npc);
+
+    if (orbToFire.used) {
+      this.recentlyHitNpcs.set(npc, now);
+    }
+  }
+
+  /**
+   * 오브 방어 링 처리 (매 프레임 호출)
+   * - 오브 이미지 충돌 대신, 궤도 반경 크기의 보이지 않는 원형 경계로 충돌 판정
+   * - 포식자가 경계 안으로 들어오면 활성 오브를 순서대로(fireball→iceball→stone) 발동
+   * - 같은 포식자가 연속 중복 발동되지 않도록 쿨다운 적용
+   */
+  private updateOrbProtectionRing() {
+    if (!this.player || !this.npcManager) return;
+
+    // 활성 오브가 없으면 스킵
+    const hasActiveOrbs = this.activeOrbs.some((orb) => orb.active && !orb.used);
+    if (!hasActiveOrbs) return;
+
+    // 궤도 반경: 오브와 동일한 공식 사용 (player.displayHeight + 30px 여백)
+    const radius = this.player.displayHeight + 30;
+    const radiusSq = radius * radius;
+
+    const now = Date.now();
+    const playerLevel = this.player.level;
+    const orbOrder = ["stone", "iceball", "fireball"];
+
+    this.npcManager.npcGroup.getChildren().forEach((npcObj) => {
+      const npc = npcObj as any;
+      if (!npc.active) return;
+
+      // 포식자만 처리 (플레이어보다 레벨 높은 NPC)
+      if (npc.level <= playerLevel) return;
+
+      // 거리 체크 (궤도 반경 이내인지)
+      const dx = npc.x - this.player!.x;
+      const dy = npc.y - this.player!.y;
+      if (dx * dx + dy * dy > radiusSq) return;
+
+      // 기절 또는 넉백 중이면 스킵 (슬로우는 이동을 멈추지 않으므로 스킵 안 함)
+      if (now < npc.stunUntil || npc.isKnockedBack) return;
+
+      // 프레임 스팸 방지 (동일 NPC 연속 발동 방지)
+      const lastHit = this.recentlyHitNpcs.get(npc) ?? 0;
+      if (now - lastHit < this.ORB_RING_HIT_COOLDOWN) return;
+
+      // 활성 오브를 순서대로 정렬 후 첫 번째 발동
+      const orbToFire = this.activeOrbs
+        .filter((orb) => orb.active && !orb.used)
+        .sort((a, b) => orbOrder.indexOf(a.skillId) - orbOrder.indexOf(b.skillId))[0];
+
+      if (!orbToFire) return;
+
+      orbToFire.onHitPredator(npc);
+
+      // 실제로 발동된 경우에만 기록
+      if (orbToFire.used) {
+        this.recentlyHitNpcs.set(npc, now);
+      }
+    });
   }
 
   // ========================================
@@ -840,6 +910,7 @@ export class SkillManager {
    */
   cleanup() {
     EventBus.off("orb-destroyed", this.orbDestroyedHandler);
+    this.recentlyHitNpcs.clear();
     console.log("[SkillManager] Cleanup completed");
   }
 }

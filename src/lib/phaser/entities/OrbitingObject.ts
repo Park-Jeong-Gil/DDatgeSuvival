@@ -11,7 +11,6 @@ import { EventBus } from "../EventBus";
 export class OrbitingObject extends Phaser.Physics.Arcade.Sprite {
   private player: Player;
   private orbitAngle: number; // 궤도 각도 (Phaser.Sprite의 angle과 구분)
-  private orbitRadius: number;
   private rotationSpeed: number; // 도/초
   public used: boolean = false; // 1회용 플래그
   public skillId: string; // 스킬 ID (fireball, iceball, stone)
@@ -31,7 +30,6 @@ export class OrbitingObject extends Phaser.Physics.Arcade.Sprite {
     this.skillId = skillId;
     this.orbitAngle = initialAngle;
     this.effectParams = effectParams;
-    this.orbitRadius = effectParams.orbitRadius ?? 55; // 기본 55px
     this.rotationSpeed = 500; // 초당 500도 회전
 
     scene.add.existing(this);
@@ -40,7 +38,8 @@ export class OrbitingObject extends Phaser.Physics.Arcade.Sprite {
     // 오브 설정
     this.setDepth(9); // 플레이어(10)보다 아래
     this.setDisplaySize(32, 32);
-    this.setCircle(16); // 원형 충돌 영역
+    // 물리 충돌 비활성화 - 충돌 판정은 SkillManager의 방어 링에서 처리
+    (this.body as Phaser.Physics.Arcade.Body).enable = false;
 
     // 초기 위치 설정
     this.updatePosition(0);
@@ -69,12 +68,22 @@ export class OrbitingObject extends Phaser.Physics.Arcade.Sprite {
   }
 
   /**
+   * 플레이어 크기 기반 동적 궤도 반경
+   * - 플레이어 displayHeight + 30px 여백으로 항상 캐릭터 밖에서 회전
+   * - 레벨업으로 플레이어가 커질수록 자동으로 궤도도 확장됨
+   */
+  private getDynamicOrbitRadius(): number {
+    return this.player.displayHeight + 30;
+  }
+
+  /**
    * 궤도상 위치 계산 및 적용
    */
   private updatePosition(delta: number) {
+    const radius = this.getDynamicOrbitRadius();
     const rad = Phaser.Math.DegToRad(this.orbitAngle);
-    const x = this.player.x + Math.cos(rad) * this.orbitRadius;
-    const y = this.player.y + Math.sin(rad) * this.orbitRadius;
+    const x = this.player.x + Math.cos(rad) * radius;
+    const y = this.player.y + Math.sin(rad) * radius;
 
     this.setPosition(x, y);
 
@@ -88,13 +97,13 @@ export class OrbitingObject extends Phaser.Physics.Arcade.Sprite {
   onHitPredator(npc: NPC) {
     if (this.used) return;
 
-    // 이미 디버프가 적용된 포식자는 스킵 (오브가 관통)
+    // 기절 또는 넉백 중인 포식자는 스킵 (오브가 관통)
+    // 슬로우는 이동을 멈추지 않으므로 다음 오브가 발동되어야 함
     const now = Date.now();
     const hasStun = now < npc.stunUntil;
-    const hasSlow = now < npc.slowUntil;
-    if (hasStun || hasSlow) {
+    if (hasStun || npc.isKnockedBack) {
       console.log(
-        `[OrbitingObject] ${this.skillId} passed through ${npc.npcData.nameKo} (already debuffed)`,
+        `[OrbitingObject] ${this.skillId} passed through ${npc.npcData.nameKo} (stunned or knocked back)`,
       );
       return; // Don't consume the orb, let it pass through
     }

@@ -374,6 +374,10 @@ export class GameScene extends Phaser.Scene {
         const npcBody = npc.body as Phaser.Physics.Arcade.Body;
         if (!npcBody.enable) return;
 
+        // 오브 방어 발동 시도: physics overlap 콜백 안에서 실행하여
+        // handleNPCCollision의 게임오버 판정 전에 기절/감속/넉백을 먼저 적용
+        this.skillManager.tryFireOrbProtection(npc);
+
         this.handleNPCCollision(npc);
       },
     );
@@ -956,6 +960,9 @@ export class GameScene extends Phaser.Scene {
         return;
       }
       if (this.time.now < this.invincibleUntil) return;
+
+      // 오브 스킬로 기절/넉백 중인 포식자는 게임오버 처리 안 함
+      if (Date.now() < npc.stunUntil || npc.isKnockedBack) return;
 
       // 화면에 렌더링되지 않은 포식자와의 충돌은 무시 (유령 포식자 방지)
       const cam = this.cameras.main;

@@ -43,61 +43,6 @@ export const skillsData: SkillData[] = [
     effectParams: { speedMultiplier: 1.1 },
   },
 
-  // 돌멩이 (액티브, 오브 - 넉백)
-  {
-    id: "stone",
-    name: "돌멩이",
-    description: "플레이어 주변을 도는 돌. 포식자 충돌 시 넉백",
-    type: "active",
-    price: 400,
-    unlockScore: 5000,
-    cooldown: 20,
-    spriteKey: "skills_stone",
-    effect: "knockback_predator",
-    effectParams: {
-      knockbackDistance: 200,
-      orbitRadius: 60,
-      effectColor: 0x808080,
-    },
-  },
-
-  // 아이스볼 (액티브, 오브 - 감속)
-  {
-    id: "iceball",
-    name: "아이스볼",
-    description: "플레이어 주변을 도는 얼음구. 포식자 충돌 시 3초간 이속 반감",
-    type: "active",
-    price: 400,
-    unlockScore: 5000,
-    cooldown: 20,
-    spriteKey: "skills_iceball",
-    effect: "slow_predator",
-    effectParams: {
-      slowDuration: 3000,
-      slowMultiplier: 0.5,
-      orbitRadius: 60,
-      effectColor: 0x00bfff,
-    },
-  },
-
-  // 파이어볼 (액티브, 오브 - 기절)
-  {
-    id: "fireball",
-    name: "파이어볼",
-    description: "플레이어 주변을 도는 화염구. 포식자 충돌 시 3초 기절",
-    type: "active",
-    price: 400,
-    unlockScore: 5000,
-    cooldown: 20,
-    spriteKey: "skills_fireball",
-    effect: "stun_predator",
-    effectParams: {
-      stunDuration: 3000,
-      orbitRadius: 60,
-      effectColor: 0xff4500,
-    },
-  },
-
   // 곡괭이 (시작 시, 바위 제거)
   {
     id: "pick",
@@ -133,6 +78,61 @@ export const skillsData: SkillData[] = [
     spriteKey: "skills_mushroom",
     effect: "exp_boost",
     effectParams: { expMultiplier: 1.15 },
+  },
+
+  // 돌멩이 (액티브, 오브 - 넉백)
+  {
+    id: "stone",
+    name: "돌멩이",
+    description: "플레이어 주변을 도는 돌. 포식자 충돌 시 넉백",
+    type: "active",
+    price: 1100,
+    unlockScore: 7000,
+    cooldown: 60,
+    spriteKey: "skills_stone",
+    effect: "knockback_predator",
+    effectParams: {
+      knockbackDistance: 200,
+      orbitRadius: 60,
+      effectColor: 0x808080,
+    },
+  },
+
+  // 아이스볼 (액티브, 오브 - 감속)
+  {
+    id: "iceball",
+    name: "아이스볼",
+    description: "플레이어 주변을 도는 얼음구. 포식자 충돌 시 3초간 이속 감소",
+    type: "active",
+    price: 1100,
+    unlockScore: 7000,
+    cooldown: 60,
+    spriteKey: "skills_iceball",
+    effect: "slow_predator",
+    effectParams: {
+      slowDuration: 3000,
+      slowMultiplier: 0.1,
+      orbitRadius: 60,
+      effectColor: 0x00bfff,
+    },
+  },
+
+  // 파이어볼 (액티브, 오브 - 기절)
+  {
+    id: "fireball",
+    name: "파이어볼",
+    description: "플레이어 주변을 도는 화염구. 포식자 충돌 시 3초 기절",
+    type: "active",
+    price: 1100,
+    unlockScore: 7000,
+    cooldown: 60,
+    spriteKey: "skills_fireball",
+    effect: "stun_predator",
+    effectParams: {
+      stunDuration: 3000,
+      orbitRadius: 60,
+      effectColor: 0xff4500,
+    },
   },
 
   // 거미줄 (액티브, 먹이 감속 - 지속형)
