@@ -80,6 +80,9 @@ export class GameScene extends Phaser.Scene {
   private currentMapWidth: number = MAP_WIDTH; // 현재 맵 너비 (동적 확장)
   private currentMapHeight: number = MAP_HEIGHT; // 현재 맵 높이 (동적 확장)
   private backgroundTileSprite?: Phaser.GameObjects.TileSprite; // 배경 타일 스프라이트
+  private giantPowerOutlineActive: boolean = false;
+  private giantPowerBlinkTimer: number = 0;
+  private giantPowerBlinkState: boolean = true;
 
   constructor() {
     super({ key: "GameScene" });
@@ -491,6 +494,38 @@ export class GameScene extends Phaser.Scene {
       this.player.setAlpha(0.5);
     } else {
       this.player.setAlpha(1.0);
+    }
+
+    // 거인의 힘 주황색 아웃라인 효과
+    const levelBoostRemaining = this.itemManager.getLevelBoostRemainingTime();
+    if (levelBoostRemaining > 0) {
+      if (!this.giantPowerOutlineActive) {
+        this.player.addGiantPowerOutline();
+        this.giantPowerOutlineActive = true;
+        this.giantPowerBlinkTimer = 0;
+        this.giantPowerBlinkState = true;
+      }
+      if (levelBoostRemaining <= 3000) {
+        // 3초 전부터 깜빡임
+        this.giantPowerBlinkTimer += delta;
+        if (this.giantPowerBlinkTimer >= 300) {
+          this.giantPowerBlinkTimer = 0;
+          this.giantPowerBlinkState = !this.giantPowerBlinkState;
+          this.player.setGiantPowerOutlineVisible(this.giantPowerBlinkState);
+        }
+      } else {
+        // 일반 상태: 항상 표시
+        if (!this.giantPowerBlinkState) {
+          this.giantPowerBlinkState = true;
+          this.player.setGiantPowerOutlineVisible(true);
+        }
+        this.giantPowerBlinkTimer = 0;
+      }
+    } else if (this.giantPowerOutlineActive) {
+      this.player.removeGiantPowerOutline();
+      this.giantPowerOutlineActive = false;
+      this.giantPowerBlinkTimer = 0;
+      this.giantPowerBlinkState = true;
     }
 
     // Survival time
@@ -1183,8 +1218,10 @@ export class GameScene extends Phaser.Scene {
       this.expandMap(data.level);
     }
 
-    // Update NPC spawns
-    this.npcManager.onLevelUp(data.level, this.player.x, this.player.y);
+    // 거인의 힘 버프 활성화 중에는 NPC 리스폰 하지 않음
+    if (!this.itemManager.hasActiveBuff("level_boost")) {
+      this.npcManager.onLevelUp(data.level, this.player.x, this.player.y);
+    }
 
     // 레벨 20 이상: 모든 장애물 제거
     if (data.level >= 25) {

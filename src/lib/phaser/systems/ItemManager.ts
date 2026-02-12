@@ -224,6 +224,15 @@ export class ItemManager {
     return this.hasActiveBuff("level_boost") ? 2 : 0;
   }
 
+  getLevelBoostRemainingTime(): number {
+    for (const buff of this.activeBuffs.values()) {
+      if (buff.effect === "level_boost" && buff.remainingTime > 0) {
+        return buff.remainingTime;
+      }
+    }
+    return 0;
+  }
+
   hasStunPredatorBuff(): boolean {
     return this.hasActiveBuff("stun_predator");
   }

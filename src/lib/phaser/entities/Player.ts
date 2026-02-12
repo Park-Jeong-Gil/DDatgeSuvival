@@ -12,6 +12,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private walkBounceSpeed: number = 0; // 걷기 애니메이션 속도
   private isWalking: boolean = false; // 걷는 중인지 여부
   private shadow?: Phaser.GameObjects.Graphics; // 그림자
+  private giantPowerFX?: Phaser.FX.Glow | null; // 거인의 힘 아웃라인
 
   // 스프라이트 원본 크기 (370x262)
   public static readonly TEX_W = 370;
@@ -219,6 +220,30 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       shadowWidth * shadowScale * 0.7,
       shadowHeight * shadowScale * 0.7,
     );
+  }
+
+  // 거인의 힘 주황색 아웃라인 추가
+  addGiantPowerOutline() {
+    if (!this.giantPowerFX && this.preFX) {
+      this.giantPowerFX = this.preFX.addGlow(0xff8800, 4, 0, false, 0.5, 16);
+    }
+  }
+
+  // 거인의 힘 아웃라인 제거
+  removeGiantPowerOutline() {
+    if (this.giantPowerFX) {
+      if (this.preFX) {
+        this.preFX.remove(this.giantPowerFX);
+      }
+      this.giantPowerFX = null;
+    }
+  }
+
+  // 거인의 힘 아웃라인 표시/숨김 (깜빡임용)
+  setGiantPowerOutlineVisible(visible: boolean) {
+    if (this.giantPowerFX) {
+      this.giantPowerFX.active = visible;
+    }
   }
 
   // 그림자 제거
