@@ -151,8 +151,7 @@ export default function HomePage() {
     localStorage.setItem("selected_costume", data.costume ?? "");
     localStorage.setItem("selected_skills", JSON.stringify(data.skills));
 
-    setCostumeSelectOpen(false);
-    // 게임 페이지로 이동
+    // 게임 페이지로 이동 (setCostumeSelectOpen 제거 - 모달을 닫으면 메인 화면이 잠깐 노출되므로)
     router.push("/game");
   };
 

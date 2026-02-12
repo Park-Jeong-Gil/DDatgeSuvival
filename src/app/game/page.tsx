@@ -23,6 +23,9 @@ export default function GamePage() {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
+    // Phaser 초기화 전 이전 게임 상태가 남아있을 수 있으므로 초기화
+    useGameStore.getState().setIsPlaying(false);
+
     useAudioStore.getState().initFromStorage();
 
     // 닉네임 설정
@@ -68,9 +71,7 @@ export default function GamePage() {
   return (
     <div className="relative w-screen h-dvh bg-black">
       {!isReady ? (
-        <div className="flex items-center justify-center h-full">
-          <div className="text-white text-xl">Loading...</div>
-        </div>
+        <div className="w-full h-full bg-black" />
       ) : (
         <>
           <GameCanvas />
