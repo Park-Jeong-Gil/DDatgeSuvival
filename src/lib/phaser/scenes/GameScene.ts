@@ -23,7 +23,11 @@ import { LevelSystem } from "../systems/LevelSystem";
 import { NPCManager } from "../systems/NPCManager";
 import { ItemManager } from "../systems/ItemManager";
 import { SkillManager } from "../systems/SkillManager";
-import { generateMap, expandMapElements, type MapElements } from "../utils/mapGenerator";
+import {
+  generateMap,
+  expandMapElements,
+  type MapElements,
+} from "../utils/mapGenerator";
 import { getCostumeById } from "../data/skinData";
 
 export class GameScene extends Phaser.Scene {
@@ -474,14 +478,12 @@ export class GameScene extends Phaser.Scene {
     this.skillManager.update(delta);
 
     // 스킬 쿨타임 정보를 Store와 UIScene에 전달
-    const skillCooldowns = this.skillManager
-      .getSkillCooldowns()
-      .map((cd) => ({
-        skillId: cd.skillId,
-        remainingCooldown: cd.remainingCooldown,
-        maxCooldown: cd.maxCooldown,
-        spriteKey: cd.skill.spriteKey,
-      }));
+    const skillCooldowns = this.skillManager.getSkillCooldowns().map((cd) => ({
+      skillId: cd.skillId,
+      remainingCooldown: cd.remainingCooldown,
+      maxCooldown: cd.maxCooldown,
+      spriteKey: cd.skill.spriteKey,
+    }));
 
     // React 컴포넌트용 (최적화: 초 단위로만 업데이트)
     store.setSkillCooldowns(skillCooldowns);
@@ -1061,7 +1063,8 @@ export class GameScene extends Phaser.Scene {
       levelDiffMultiplier = Math.min(1.2, 1 - levelDiff * 0.05);
     }
 
-    const hungerRestoreAmount = npc.hungerRestore * levelPenalty * levelDiffMultiplier;
+    const hungerRestoreAmount =
+      npc.hungerRestore * levelPenalty * levelDiffMultiplier;
     this.hungerSystem.restore(hungerRestoreAmount);
 
     // Kill count
@@ -1210,7 +1213,7 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.shake(200, 0.01);
 
     // Flash effect
-    this.cameras.main.flash(500, 255, 255, 100);
+    this.cameras.main.flash(500, 255, 255, 60);
 
     // 레벨 5마다 카메라 줌 아웃 및 맵 확장 (시야 확장)
     if (data.level % 5 === 0) {
@@ -1365,7 +1368,14 @@ export class GameScene extends Phaser.Scene {
     }
 
     // 새 경계 영역에 나무/바위/풀숲 자연스럽게 추가
-    expandMapElements(this, this.mapElements, oldWidth, oldHeight, newWidth, newHeight);
+    expandMapElements(
+      this,
+      this.mapElements,
+      oldWidth,
+      oldHeight,
+      newWidth,
+      newHeight,
+    );
 
     console.log(
       `[Map Expansion] New size: ${newWidth}x${newHeight} (${expansionRatio.toFixed(3)}x expansion)`,
