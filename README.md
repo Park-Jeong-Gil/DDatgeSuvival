@@ -1,5 +1,10 @@
 # DDatge Survival
-뱀파이어 서바이벌 + agar.io 감성의 탑다운 성장형 생존 게임입니다.  
+
+[![DDatge Survival](docs/screenshots/ddatge.jpg)](https://ddatge-survival.vercel.app/)
+
+**플레이하기: https://ddatge-survival.vercel.app/**
+
+뱀파이어 서바이벌 + agar.io 감성의 탑다운 성장형 생존 게임입니다.
 플레이어는 작은 땃쥐로 시작해 먹이사슬을 따라 성장하고, 공복 게이지를 관리하며 최대한 오래 생존합니다.
 
 ## 1. 게임 개요
