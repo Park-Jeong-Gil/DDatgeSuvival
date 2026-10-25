@@ -439,8 +439,8 @@ export class GameScene extends Phaser.Scene {
     // Match run animation playback to the actual movement speed
     this.player.updateWalkAnimation();
 
-    // 의상별 투명 여백을 포함한 현재 프레임 중앙을 기준으로 유지한다.
-    this.player.setDisplayOrigin(this.player.width * 0.5, this.player.height * 0.5);
+    // 의상별 여백·화면 배율에 맞춰 발 기준점을 유지한다.
+    this.player.syncDisplayOrigin();
 
     // Update player shadow
     this.player.updateShadow();
@@ -613,7 +613,8 @@ export class GameScene extends Phaser.Scene {
     const label = `Lv${store.level} ${nickname}`;
 
     // 닉네임 라벨 위치 (기본)
-    const labelOffset = Math.round(this.player.bodyDisplayHeight / 2 + 8);
+    // 의상 배율로 커진 그림(모자·왕관 등) 위에 이름표를 둔다
+    const labelOffset = Math.round(this.player.visualTopOffset + 8);
     this.playerLabelText.setText(label);
     this.playerLabelText.setPosition(px, py - labelOffset);
 
