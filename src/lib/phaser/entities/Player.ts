@@ -1,5 +1,6 @@
 import * as Phaser from "phaser";
 import { applyRestPose, movementAnimationKey } from "../animations/movement";
+import { costumeVisualScale } from "../data/costumeVisualScale";
 
 export type PlayerState = "idle" | "run" | "eat";
 
@@ -11,14 +12,21 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private currentCostume: string | null = null; // 현재 착용 중인 코스튬
   private animPausedByPhysics: boolean = false; // 물리 일시정지로 멈춘 달리기 애니메이션
   private shadow?: Phaser.GameObjects.Graphics; // 그림자
+  private baseScale: number = 1; // 레벨 기반 배율 (충돌·스킬 범위 기준)
+  private visualScale: number = 1; // 의상별 화면 배율 (머리 크기 보정)
   private giantPowerFX?: Phaser.FX.Glow | null; // 거인의 힘 아웃라인
 
   // 스프라이트 원본 크기 (370x262)
   public static readonly TEX_W = 370;
   public static readonly TEX_H = 262;
 
-  get bodyDisplayWidth(): number { return Math.abs(Player.TEX_W * this.scaleX); }
-  get bodyDisplayHeight(): number { return Math.abs(Player.TEX_H * this.scaleY); }
+  // 게임 판정 크기. 의상 배율과 관계없이 기본 땃쥐 기준이다.
+  get bodyDisplayWidth(): number { return Player.TEX_W * this.baseScale; }
+  get bodyDisplayHeight(): number { return Player.TEX_H * this.baseScale; }
+  // 중심에서 원본 캔버스 상단까지의 화면 거리 (발 기준 확대 반영, 이름표 위치용)
+  get visualTopOffset(): number {
+    return Player.TEX_H * this.baseScale * (this.visualScale - 0.5);
+  }
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     super(scene, x, y, "player_idle");
@@ -29,21 +37,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setCollideWorldBounds(true);
 
     const size = 30 + this.level * 3; // 플레이어 사이즈
-    this.setScale(size / Player.TEX_H);
+    this.baseScale = size / Player.TEX_H;
+    this.applyScale();
     this.setDepth(10);
 
     // 그림자 생성
     this.createShadow();
-
-    const body = this.body as Phaser.Physics.Arcade.Body;
-    // 물리 바디를 원본 텍스처 크기의 80%로 설정
-    const bodyWidth = Player.TEX_W * 0.8;
-    const bodyHeight = Player.TEX_H * 0.8;
-    body.setSize(bodyWidth, bodyHeight);
-    // 중앙 정렬
-    const offsetX = (this.width - bodyWidth) / 2;
-    const offsetY = (this.height - bodyHeight) / 2;
-    body.setOffset(offsetX, offsetY);
   }
 
   setPlayerState(state: PlayerState) {
@@ -59,6 +58,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   // 코스튬 변경
   changeCostume(costumeName: string) {
     this.currentCostume = costumeName;
+    this.visualScale = costumeVisualScale(costumeName);
+    this.applyScale();
     this.refreshTexture();
   }
   // 현재 코스튼 가져오기
@@ -68,6 +69,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   // 코스튬 제거 (기본 외형으로)
   removeCostume() {
     this.currentCostume = null;
+    this.visualScale = 1;
+    this.applyScale();
     this.refreshTexture();
   }
 
@@ -92,12 +95,27 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (applyRestPose(this, textureKey)) this.syncBodyFrame();
   }
 
+  private applyScale() {
+    this.setScale(this.baseScale * this.visualScale);
+    this.syncBodyFrame();
+  }
+
+  // 원본 캔버스 하단(발)을 기준으로 확대해, 의상 배율과 관계없이 그림자 위에 서도록 한다.
+  // 프레임 크기가 의상마다 달라 매 프레임 호출한다.
+  syncDisplayOrigin() {
+    const groundShift = (Player.TEX_H / 2) * (1 - 1 / this.visualScale);
+    this.setDisplayOrigin(this.width / 2, this.height / 2 + groundShift);
+  }
+
+  // 물리 바디: 화면 배율로 나눠 월드 크기를 기본 땃쥐의 80%로 고정하고, 위치 중심에 맞춘다.
   private syncBodyFrame() {
     const body = this.body as Phaser.Physics.Arcade.Body | null;
     if (!body) return;
-    const width = Player.TEX_W * 0.8, height = Player.TEX_H * 0.8;
+    this.syncDisplayOrigin();
+    const width = (Player.TEX_W * 0.8) / this.visualScale;
+    const height = (Player.TEX_H * 0.8) / this.visualScale;
     body.setSize(width, height);
-    body.setOffset((this.width - width) / 2, (this.height - height) / 2);
+    body.setOffset(this.displayOriginX - width / 2, this.displayOriginY - height / 2);
   }
 
   // 현재 코스튬에 맞는 텍스처 키 반환
@@ -123,22 +141,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.level = level;
     this.currentSpeed = 107 + level * 7;
     const size = 30 + level * 3; // 플레이어 사이즈
-    this.setScale(size / Player.TEX_H);
+    this.baseScale = size / Player.TEX_H;
+    this.applyScale();
 
     // 그림자 업데이트
     this.updateShadow();
-
-    if (this.body) {
-      const body = this.body as Phaser.Physics.Arcade.Body;
-      // 물리 바디를 원본 텍스처 크기의 80%로 설정
-      const bodyWidth = Player.TEX_W * 0.8;
-      const bodyHeight = Player.TEX_H * 0.8;
-      body.setSize(bodyWidth, bodyHeight);
-      // 중앙 정렬
-      const offsetX = (this.width - bodyWidth) / 2;
-      const offsetY = (this.height - bodyHeight) / 2;
-      body.setOffset(offsetX, offsetY);
-    }
   }
 
   preUpdate(time: number, delta: number) {
