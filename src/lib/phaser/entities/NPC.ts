@@ -1,6 +1,13 @@
 import * as Phaser from "phaser";
 import type { NPCData } from "@/types/npc";
 import { NPCState } from "@/types/npc";
+import {
+  applyRestPose,
+  hasPoseTexture,
+  movementAnimationKey,
+  movementRestFrame,
+  spriteReferenceGeometry,
+} from "../animations/movement";
 
 export class NPC extends Phaser.Physics.Arcade.Sprite {
   npcData: NPCData;
@@ -31,11 +38,21 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
   private shadow?: Phaser.GameObjects.Graphics; // 그림자
   private outlineFX?: Phaser.FX.Glow | null; // 포식자 아웃라인
   private webOverlay?: Phaser.GameObjects.Image; // 거미줄 슬로우 오버레이
+  private movementState: "walk" | "chase" = "walk";
+  private poseKeys: Record<"walk" | "chase", string>; // 정지 포즈 텍스처 키
+  private cycleKeys: Record<"walk" | "chase", string>; // 이동 애니메이션 키
+  private chaseReferenceSpeed: number = 0; // 감속 효과 적용 전 추격 속도 (애니메이션 재생 속도 기준)
+  private referenceWidth: number;
+  private referenceHeight: number;
+
+  get bodyDisplayWidth(): number { return Math.abs(this.referenceWidth * this.scaleX); }
+  get bodyDisplayHeight(): number { return Math.abs(this.referenceHeight * this.scaleY); }
 
   constructor(scene: Phaser.Scene, x: number, y: number, data: NPCData) {
     // walk 이미지를 기본으로 사용
-    const walkKey = `${data.name.replace(/ /g, "_")}_walk`;
-    const textureExists = scene.textures.exists(walkKey);
+    const baseName = data.name.replace(/ /g, "_");
+    const walkKey = `${baseName}_walk`;
+    const textureExists = hasPoseTexture(scene, walkKey);
 
     if (!textureExists) {
       console.warn(
@@ -43,13 +60,35 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       );
     }
 
-    super(scene, x, y, textureExists ? walkKey : data.spriteKey);
+    // 정지 포즈는 이동 시트의 rest 프레임을 사용한다
+    const walkSheetKey = movementAnimationKey(walkKey);
+    const initialKey = scene.textures.exists(walkSheetKey)
+      ? walkSheetKey
+      : textureExists
+        ? walkKey
+        : data.spriteKey;
+    super(
+      scene,
+      x,
+      y,
+      initialKey,
+      initialKey === walkSheetKey ? movementRestFrame(walkKey) : undefined,
+    );
+
+    this.poseKeys = { walk: walkKey, chase: `${baseName}_chase` };
+    this.cycleKeys = {
+      walk: movementAnimationKey(this.poseKeys.walk),
+      chase: movementAnimationKey(this.poseKeys.chase),
+    };
 
     this.npcData = data;
     this.level = data.level;
     this.baseSpeed = data.baseSpeed;
     this.scoreValue = data.scoreValue;
     this.hungerRestore = data.hungerRestore;
+    const geometry = spriteReferenceGeometry(walkKey);
+    this.referenceWidth = geometry?.referenceWidth ?? this.width;
+    this.referenceHeight = geometry?.referenceHeight ?? this.height;
 
     scene.add.existing(this);
     scene.physics.add.existing(this);
@@ -57,18 +96,13 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     // NPC는 항상 플레이어(depth 10) 위에 렌더링
     this.setDepth(11);
 
+    this.setScale(data.baseSize / this.referenceHeight);
     // 그림자 생성
     this.createShadow();
 
     this.setCollideWorldBounds(true);
 
-    // 이미지의 원본 비율을 유지하면서 높이를 baseSize로 설정
     const textureFrame = this.texture.get();
-    const aspectRatio = textureFrame.width / textureFrame.height;
-    const displayWidth = data.baseSize * aspectRatio;
-    const displayHeight = data.baseSize;
-
-    this.setDisplaySize(displayWidth, displayHeight);
 
     this.setActive(true);
     this.setVisible(true);
@@ -80,8 +114,8 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
 
     // 공룡(level 99)만 물리 바디를 축소 (실제 보이는 공룡 영역만 충돌 감지)
     if (data.level === 99) {
-      const bodyWidth = textureFrame.width * 0.4; // 원본 크기의 40%
-      const bodyHeight = textureFrame.height * 0.5; // 원본 크기의 50%
+      const bodyWidth = this.referenceWidth * 0.4;
+      const bodyHeight = this.referenceHeight * 0.5;
       body.setSize(bodyWidth, bodyHeight);
 
       // 중앙 정렬을 위한 오프셋 계산
@@ -90,8 +124,8 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       body.setOffset(offsetX, offsetY);
     } else {
       // 일반 NPC는 원본 텍스처 크기의 80%
-      const bodyWidth = textureFrame.width * 0.8;
-      const bodyHeight = textureFrame.height * 0.8;
+      const bodyWidth = this.referenceWidth * 0.8;
+      const bodyHeight = this.referenceHeight * 0.8;
       body.setSize(bodyWidth, bodyHeight);
       // 중앙 정렬
       const offsetX = (textureFrame.width - bodyWidth) / 2;
@@ -186,6 +220,8 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
   }
 
   preUpdate(time: number, delta: number) {
+    // Freeze before Phaser advances a frame when an interruption starts.
+    if (this.isMovementInterrupted() && this.anims.isPlaying) this.anims.pause();
     super.preUpdate(time, delta);
 
     // 거미줄 오버레이 위치 동기화 및 감속 만료 시 제거
@@ -211,15 +247,59 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       }
     }
     this.syncPhysicsWithRenderState(cam, time, this.renderableNow);
+    this.updateMovementAnimation();
   }
 
   private updateTexture(state: "walk" | "chase") {
-    const baseName = this.npcData.name.replace(/ /g, "_");
-    const textureKey = `${baseName}_${state}`;
+    // AI calls this every update while wandering. Replacing the texture would
+    // reset a running frame cycle on every frame.
+    if (this.movementState === state) return;
+    this.movementState = state;
+    if (this.anims.isPaused) this.anims.resume();
+    this.anims.stop();
+    applyRestPose(this, this.poseKeys[state]);
+  }
 
-    if (this.scene.textures.exists(textureKey)) {
-      this.setTexture(textureKey);
+  private isMovementInterrupted(): boolean {
+    const now = Date.now();
+    return this.scene.physics.world.isPaused ||
+      now < this._stunUntil || now < this.knockbackUntil;
+  }
+
+  private updateMovementAnimation() {
+    const body = this.body as Phaser.Physics.Arcade.Body | null;
+    const moving = body?.enable && body.velocity.lengthSq() > 1;
+    const poseKey = this.poseKeys[this.movementState];
+    const key = this.cycleKeys[this.movementState];
+    if (this.isMovementInterrupted()) {
+      if (this.anims.isPlaying) this.anims.pause();
+      return;
     }
+    if (!moving) {
+      if (this.anims.isPlaying || this.anims.isPaused) {
+        if (this.anims.isPaused) this.anims.resume();
+        this.anims.stop();
+        applyRestPose(this, poseKey);
+      }
+      return;
+    }
+
+    if (!this.scene.anims.exists(key)) return;
+    if (this.anims.isPaused && this.anims.currentAnim?.key === key) {
+      this.anims.resume();
+    } else if (!this.anims.isPlaying || this.anims.currentAnim?.key !== key) {
+      this.play({ key, startFrame: movementRestFrame(poseKey) });
+    }
+    // 배회는 baseSpeed * 0.5, 추격은 플레이어 속도 기반이므로 각 기준 속도로 정규화
+    const referenceSpeed =
+      this.movementState === "chase" && this.chaseReferenceSpeed > 0
+        ? this.chaseReferenceSpeed
+        : this.baseSpeed * 0.5;
+    this.anims.timeScale = Phaser.Math.Clamp(
+      body.velocity.length() / referenceSpeed,
+      0.35,
+      1.8,
+    );
   }
 
   // 좌우 반전을 부드럽게 처리
@@ -264,15 +344,15 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       }
       // 공룡(level 99)은 축소된 크기 유지, 나머지는 원본 크기의 80%
       if (this.level === 99) {
-        const bodyWidth = this.width * 0.4;
-        const bodyHeight = this.height * 0.5;
+        const bodyWidth = this.referenceWidth * 0.4;
+        const bodyHeight = this.referenceHeight * 0.5;
         body.setSize(bodyWidth, bodyHeight);
         const offsetX = (this.width - bodyWidth) / 2;
         const offsetY = (this.height - bodyHeight) / 2;
         body.setOffset(offsetX, offsetY);
       } else {
-        const bodyWidth = this.width * 0.8;
-        const bodyHeight = this.height * 0.8;
+        const bodyWidth = this.referenceWidth * 0.8;
+        const bodyHeight = this.referenceHeight * 0.8;
         body.setSize(bodyWidth, bodyHeight);
         const offsetX = (this.width - bodyWidth) / 2;
         const offsetY = (this.height - bodyHeight) / 2;
@@ -310,15 +390,15 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       body.reset(this.x, this.y);
       // 공룡(level 99)은 축소된 크기 유지, 나머지는 원본 크기의 80%
       if (this.level === 99) {
-        const bodyWidth = this.width * 0.4;
-        const bodyHeight = this.height * 0.5;
+        const bodyWidth = this.referenceWidth * 0.4;
+        const bodyHeight = this.referenceHeight * 0.5;
         body.setSize(bodyWidth, bodyHeight);
         const offsetX = (this.width - bodyWidth) / 2;
         const offsetY = (this.height - bodyHeight) / 2;
         body.setOffset(offsetX, offsetY);
       } else {
-        const bodyWidth = this.width * 0.8;
-        const bodyHeight = this.height * 0.8;
+        const bodyWidth = this.referenceWidth * 0.8;
+        const bodyHeight = this.referenceHeight * 0.8;
         body.setSize(bodyWidth, bodyHeight);
         const offsetX = (this.width - bodyWidth) / 2;
         const offsetY = (this.height - bodyHeight) / 2;
@@ -407,7 +487,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
         this.setTint(0x888888);
       }
       // 정지 중에도 라벨 위치 업데이트
-      const offsetY = this.displayHeight / 2 + 5;
+      const offsetY = this.bodyDisplayHeight / 2 + 5;
       this.nameLabel.setPosition(this.x, this.y - offsetY);
       this.nameLabel.setVisible(true);
       return;
@@ -415,7 +495,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
 
     // 넉백 상태 체크 (날아가는 중 - AI/속도 완전 차단)
     if (now < this.knockbackUntil) {
-      const offsetY = this.displayHeight / 2 + 5;
+      const offsetY = this.bodyDisplayHeight / 2 + 5;
       this.nameLabel.setPosition(this.x, this.y - offsetY);
       this.nameLabel.setVisible(true);
       return;
@@ -564,7 +644,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       return;
     }
 
-    const offsetY = this.displayHeight / 2 + 5;
+    const offsetY = this.bodyDisplayHeight / 2 + 5;
     this.nameLabel.setPosition(this.x, this.y - offsetY);
     this.nameLabel.setVisible(true);
 
@@ -593,6 +673,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     // let speed = playerSpeed * 1;
     let speed = playerSpeed * 0.995;
     // let speed = playerSpeed * 1.0001;
+    this.chaseReferenceSpeed = speed;
 
     // 추격 중인 포식자가 풀숲에 있으면 속도 감소 (cached data, squared distance)
     if (bushData) {
@@ -833,13 +914,13 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     this.shadow.clear();
 
     // 그림자 크기는 캐릭터 크기에 비례
-    const shadowWidth = this.displayWidth * 0.8;
-    const shadowHeight = this.displayHeight * 0.2;
+    const shadowWidth = this.bodyDisplayWidth * 0.8;
+    const shadowHeight = this.bodyDisplayHeight * 0.2;
 
     // NPC 데이터에 shadowOffsetY가 있으면 사용, 없으면 기본값 0.45
     const shadowOffsetY = this.npcData.shadowOffsetY ?? 0.45;
     const centerX = this.x;
-    const centerY = this.y + this.displayHeight * shadowOffsetY;
+    const centerY = this.y + this.bodyDisplayHeight * shadowOffsetY;
 
     // 3단계 타원을 겹쳐서 부드러운 경계 효과 (성능 최적화)
     // 외부 - 가장 투명하고 큰 타원
@@ -899,7 +980,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
 
     this.webOverlay = this.scene.add.image(this.x, this.y, "effect_web");
     this.webOverlay.setDepth(this.depth + 1);
-    this.webOverlay.setDisplaySize(this.displayWidth * 1.4, this.displayHeight * 1.4);
+    this.webOverlay.setDisplaySize(this.bodyDisplayWidth * 1.4, this.bodyDisplayHeight * 1.4);
     this.webOverlay.setAlpha(0.85);
   }
 

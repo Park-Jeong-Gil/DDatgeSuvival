@@ -111,15 +111,15 @@ export default function CostumeSelectModal({
               <img
                 src={
                   selectedCostume
-                    ? `/assets/sprites/player/costume/${selectedCostume}_idle.png`
-                    : "/assets/sprites/player/idle.png"
+                    ? `/assets/sprites/characters/player/costumes/${selectedCostume}/idle.png`
+                    : "/assets/sprites/characters/player/base/idle.png"
                 }
                 alt="player preview"
                 className="w-full h-full object-contain"
                 style={{ imageRendering: "pixelated" }}
                 onError={(e) => {
                   (e.target as HTMLImageElement).src =
-                    "/assets/sprites/player/idle.png";
+                    "/assets/sprites/characters/player/base/idle.png";
                 }}
               />
             </div>
@@ -302,8 +302,8 @@ export default function CostumeSelectModal({
                             <img
                               src={
                                 costume.id === null
-                                  ? "/assets/sprites/player/idle.png"
-                                  : `/assets/sprites/player/costume/${costume.id}_idle.png`
+                                  ? "/assets/sprites/characters/player/base/idle.png"
+                                  : `/assets/sprites/characters/player/costumes/${costume.id}/idle.png`
                               }
                               alt={costume.name}
                               className={`relative w-full h-full object-contain ${

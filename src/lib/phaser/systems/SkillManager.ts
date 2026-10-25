@@ -365,7 +365,7 @@ export class SkillManager {
       this.bubblesVisual.setDepth(9); // 플레이어(10) 바로 아래
       this.bubblesVisual.setAlpha(0.85);
       const size =
-        Math.max(this.player.displayWidth, this.player.displayHeight) * 1.8;
+        Math.max(this.player.bodyDisplayWidth, this.player.bodyDisplayHeight) * 1.8;
       this.bubblesVisual.setDisplaySize(size, size);
     }
 
@@ -417,7 +417,7 @@ export class SkillManager {
     this.revolverKillCount++;
 
     // 총에 맞는 시각 효과 (effect_boom 이미지)
-    const boomSize = Math.max(npc.displayWidth, npc.displayHeight) * 2;
+    const boomSize = Math.max(npc.bodyDisplayWidth, npc.bodyDisplayHeight) * 2;
     const hitFlash = this.scene.textures.exists("effect_boom")
       ? this.scene.add
           .image(npc.x, npc.y, "effect_boom")
@@ -703,7 +703,7 @@ export class SkillManager {
     if (!hasActiveOrbs) return;
 
     // 궤도 반경: 오브와 동일한 공식 사용 (player.displayHeight + 30px 여백)
-    const radius = this.player.displayHeight + 30;
+    const radius = this.player.bodyDisplayHeight + 30;
     const radiusSq = radius * radius;
 
     const now = Date.now();

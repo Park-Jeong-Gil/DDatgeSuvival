@@ -419,10 +419,10 @@ export class NPCManager {
       if (!barState) continue;
 
       // const barWidth = Math.max(32, npc.displayWidth * 1.6);
-      const barWidth = Math.max(32, npc.displayWidth);
+      const barWidth = Math.max(32, npc.bodyDisplayWidth);
       const barHeight = 4;
       const barX = npc.x - barWidth / 2;
-      const barY = npc.y + npc.displayHeight / 2 + 6;
+      const barY = npc.y + npc.bodyDisplayHeight / 2 + 6;
 
       // Background
       this.barGraphics.fillStyle(0x666666, 1);

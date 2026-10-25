@@ -1,5 +1,10 @@
 import * as Phaser from "phaser";
 import { EventBus } from "../EventBus";
+import {
+  preloadMovementAnimations,
+  preloadStaticPose,
+  registerMovementAnimations,
+} from "../animations/movement";
 
 export class PreloadScene extends Phaser.Scene {
   private loadingBar!: Phaser.GameObjects.Graphics;
@@ -27,9 +32,10 @@ export class PreloadScene extends Phaser.Scene {
     this.waitForFont();
 
     // Player sprites
-    this.load.image("player_idle", "assets/sprites/player/idle.png");
-    this.load.image("player_run", "assets/sprites/player/run.png");
-    this.load.image("player_eat", "assets/sprites/player/eat.png");
+    preloadStaticPose(this, "player_idle");
+    preloadStaticPose(this, "player_run");
+    preloadStaticPose(this, "player_eat");
+    preloadMovementAnimations(this);
 
     // Background tiles
     this.load.image("base_background", "assets/tiles/base_background.png");
@@ -75,8 +81,8 @@ export class PreloadScene extends Phaser.Scene {
     ];
 
     npcNames.forEach((name) => {
-      this.load.image(`${name}_walk`, `assets/sprites/npcs/${name}_1.png`);
-      this.load.image(`${name}_chase`, `assets/sprites/npcs/${name}_2.png`);
+      preloadStaticPose(this, `${name}_walk`);
+      preloadStaticPose(this, `${name}_chase`);
     });
 
     // Item sprites
@@ -139,17 +145,17 @@ export class PreloadScene extends Phaser.Scene {
     ];
 
     costumeNames.forEach((costume) => {
-      this.load.image(
+      preloadStaticPose(
+        this,
         `costume_${costume}_idle`,
-        `assets/sprites/player/costume/${costume}_idle.png`,
       );
-      this.load.image(
+      preloadStaticPose(
+        this,
         `costume_${costume}_run`,
-        `assets/sprites/player/costume/${costume}_run.png`,
       );
-      this.load.image(
+      preloadStaticPose(
+        this,
         `costume_${costume}_eat`,
-        `assets/sprites/player/costume/${costume}_eat.png`,
       );
     });
 
@@ -260,10 +266,13 @@ export class PreloadScene extends Phaser.Scene {
   }
 
   create() {
+    registerMovementAnimations(this);
     // 플레이어 스프라이트는 고해상도(370x262)를 축소 렌더링하므로
     // NEAREST 대신 LINEAR 필터를 적용하여 이동 시 떨림 방지
     ["player_idle", "player_run", "player_eat"].forEach((key) => {
-      this.textures.get(key).setFilter(Phaser.Textures.FilterMode.LINEAR);
+      if (this.textures.exists(key)) {
+        this.textures.get(key).setFilter(Phaser.Textures.FilterMode.LINEAR);
+      }
     });
 
     // NPC 스프라이트도 LINEAR 필터 적용
