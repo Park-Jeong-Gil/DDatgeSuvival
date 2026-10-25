@@ -216,8 +216,8 @@ export default function LeaderboardPage() {
                     <Image
                       src={
                         record.costume
-                          ? `/assets/sprites/player/costume/${record.costume}_idle.png`
-                          : "/assets/sprites/player/idle.png"
+                          ? `/assets/sprites/characters/player/costumes/${record.costume}/idle.png`
+                          : "/assets/sprites/characters/player/base/idle.png"
                       }
                       alt="player"
                       width={32}

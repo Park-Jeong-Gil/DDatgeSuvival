@@ -436,14 +436,11 @@ export class GameScene extends Phaser.Scene {
     this.ensureInput();
     this.handlePlayerMovement();
 
-    // Update player walk animation and apply visual offset
-    this.player.updateWalkAnimation(delta);
-    const walkOffset = this.player.getWalkBounceOffset();
+    // Match run animation playback to the actual movement speed
+    this.player.updateWalkAnimation();
 
-    // displayOriginY를 조정하여 스프라이트의 렌더링 위치만 변경 (물리는 그대로)
-    // 기본 origin은 0.5 (중앙), 픽셀 단위로 변환하여 offset 적용
-    const originYPixels = Player.TEX_H * 0.5 - walkOffset;
-    this.player.setDisplayOrigin(Player.TEX_W * 0.5, originYPixels);
+    // 의상별 투명 여백을 포함한 현재 프레임 중앙을 기준으로 유지한다.
+    this.player.setDisplayOrigin(this.player.width * 0.5, this.player.height * 0.5);
 
     // Update player shadow
     this.player.updateShadow();
@@ -550,8 +547,8 @@ export class GameScene extends Phaser.Scene {
       this.storeUpdateTimer = 0;
       store.setPlayerPosition(this.player.x, this.player.y);
       store.setPlayerDisplaySize(
-        this.player.displayWidth,
-        this.player.displayHeight,
+        this.player.bodyDisplayWidth,
+        this.player.bodyDisplayHeight,
       );
       store.setCameraScroll(
         this.cameras.main.scrollX,
@@ -616,7 +613,7 @@ export class GameScene extends Phaser.Scene {
     const label = `Lv${store.level} ${nickname}`;
 
     // 닉네임 라벨 위치 (기본)
-    const labelOffset = Math.round(this.player.displayHeight / 2 + 8);
+    const labelOffset = Math.round(this.player.bodyDisplayHeight / 2 + 8);
     this.playerLabelText.setText(label);
     this.playerLabelText.setPosition(px, py - labelOffset);
 
@@ -648,12 +645,12 @@ export class GameScene extends Phaser.Scene {
       this.playerCostumeLabelText.setVisible(false);
     }
 
-    const barWidth = Math.max(32, Math.round(this.player.displayWidth));
-    // const barWidth = Math.max(32, Math.round(this.player.displayWidth * 1.6));
+    const barWidth = Math.max(32, Math.round(this.player.bodyDisplayWidth));
+    // const barWidth = Math.max(32, Math.round(this.player.bodyDisplayWidth * 1.6));
     // const barWidth = 50;
     const barHeight = 6;
     const barX = px - barWidth / 2;
-    const barY = py + Math.round(this.player.displayHeight / 2 + 6);
+    const barY = py + Math.round(this.player.bodyDisplayHeight / 2 + 6);
     const hungerRatio = Phaser.Math.Clamp(store.hunger / store.maxHunger, 0, 1);
 
     const getColor = () => {
@@ -861,17 +858,8 @@ export class GameScene extends Phaser.Scene {
     if (this.player.getPlayerState() !== "eat") {
       if (vx !== 0 || vy !== 0) {
         this.player.setPlayerState("run");
-        this.player.startWalking(); // 걷기 애니메이션 시작
       } else {
         this.player.setPlayerState("idle");
-        this.player.stopWalking(); // 걷기 애니메이션 중지
-      }
-    } else {
-      // eat 상태일 때도 이동 중이면 걷기 애니메이션 유지
-      if (vx !== 0 || vy !== 0) {
-        this.player.startWalking();
-      } else {
-        this.player.stopWalking();
       }
     }
   }
@@ -1172,6 +1160,7 @@ export class GameScene extends Phaser.Scene {
 
     // Freeze player
     this.player.setVelocity(0, 0);
+    this.player.anims.stop();
     this.player.setTint(0xff0000);
 
     // Freeze all NPCs
@@ -1184,6 +1173,7 @@ export class GameScene extends Phaser.Scene {
           typeof npcObj.setVelocity === "function"
         ) {
           npcObj.setVelocity(0, 0);
+          npcObj.anims.stop();
         }
         return null; // 타입 에러 해결
       });

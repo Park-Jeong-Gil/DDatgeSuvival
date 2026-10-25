@@ -73,7 +73,7 @@ export class OrbitingObject extends Phaser.Physics.Arcade.Sprite {
    * - 레벨업으로 플레이어가 커질수록 자동으로 궤도도 확장됨
    */
   private getDynamicOrbitRadius(): number {
-    return this.player.displayHeight + 30;
+    return this.player.bodyDisplayHeight + 30;
   }
 
   /**
